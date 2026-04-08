@@ -17,6 +17,7 @@ namespace Daynum\Formatter;
  * | `n`   | Month, no padding (1-12)                                          |
  * | `d`   | Day of month, zero-padded                                         |
  * | `j`   | Day of month, no padding                                          |
+ * | `z`   | Day of year, 0-indexed (0-365)                                    |
  * | `D`   | Weekday, short form (locale-dependent)                            |
  * | `l`   | Weekday, long form (locale-dependent)                             |
  * | `F`   | Month, long form (locale/calendar-dependent)                      |
@@ -75,6 +76,7 @@ final class DateTokenFormatter
             'n' => (string) $ctx->month,
             'd' => sprintf('%02d', $ctx->day),
             'j' => (string) $ctx->day,
+            'z' => (string) ($ctx->dayOfYear - 1),
             'D' => $ctx->locale->weekdayNameShort($ctx->dayOfWeek),
             'l' => $ctx->locale->weekdayName($ctx->dayOfWeek),
             'F' => $ctx->locale->monthName($ctx->calendarName, $ctx->month),

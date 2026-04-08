@@ -11,6 +11,12 @@ applied. Tagging is a separate release decision.
 ## [Unreleased]
 
 ### Added
+- PHP `date('z')` day-of-year format token — 0-indexed day of the
+  calendar year. Works across Gregorian, Jalali, HijriCivil, and
+  HijriUmmAlQura via the `Calendar::dayOfYear` interface method
+  added in the previous tranche. Not included in format-token
+  conformance fixtures (ICU's `D` is 1-indexed; `z` joins
+  `N w L t T e` as a unit-test-only token).
 - Arabic locale (`ar`, `ar-sa`, `ar_sa`) with Gregorian and Hijri
   month/weekday/meridiem strings sourced byte-for-byte from ICU 78.2
   `ar-SA`. Short forms alias long forms because ICU does not abbreviate

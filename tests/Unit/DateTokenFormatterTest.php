@@ -30,6 +30,7 @@ final class DateTokenFormatterTest extends TestCase
             dayOfWeek: 3,       // Wednesday (Sun=0)
             dayOfWeekIso: 3,    // Wednesday (Mon=1)
             daysInMonth: 30,
+            dayOfYear: 98,      // 31 (Jan) + 28 (Feb) + 31 (Mar) + 8
             isLeapYear: false,
             tzLabel: 'UTC',
             digitScript: DigitTransliterator::LATN,
@@ -69,8 +70,72 @@ final class DateTokenFormatterTest extends TestCase
         yield 'L leap'             => ['L', '0'];
         yield 'T timezone'         => ['T', 'UTC'];
         yield 'e timezone name'    => ['e', 'UTC'];
+        yield 'z day of year'      => ['z', '97'];
+        yield 'zz repeated'        => ['zz', '9797'];
+        yield 'z inline'           => ['Y-m-d (z)', '2026-04-08 (97)'];
+        yield 'Yz adjacent'        => ['Yz', '202697'];
         yield 'full pattern'       => ['Y-m-d H:i:s', '2026-04-08 14:30:45'];
         yield 'human pattern'      => ['l, j F Y', 'Wednesday, 8 April 2026'];
+    }
+
+    public function testZTokenRespectsBackslashEscape(): void
+    {
+        // `\z` → literal `z`. Existing testBackslashEscape already covers
+        // escape-then-token adjacency; this test pins the minimal `\z` case.
+        $this->assertSame('z', DateTokenFormatter::format('\z', $this->sampleContext()));
+    }
+
+    public function testZTokenAcrossGregorianBoundaries(): void
+    {
+        // G2–G8: verify off-by-ones at year start, year end (leap & non-leap),
+        // and the Feb 28/29 → Mar 1 transition in both leap and non-leap years.
+        $cases = [
+            // [year, month, day, daysInMonth, isLeapYear, dayOfYear, expected]
+            [2023,  1,  1, 31, false,   1,   '0'],   // G2: Jan 1 non-leap
+            [2023, 12, 31, 31, false, 365, '364'],   // G3: Dec 31 non-leap
+            [2024, 12, 31, 31, true,  366, '365'],   // G4: Dec 31 leap
+            [2023,  2, 28, 28, false,  59,  '58'],   // G5: Feb 28 non-leap
+            [2024,  2, 29, 29, true,   60,  '59'],   // G6: Feb 29 leap
+            [2024,  3,  1, 31, true,   61,  '60'],   // G7: Mar 1 leap
+            [2023,  3,  1, 31, false,  60,  '59'],   // G8: Mar 1 non-leap
+        ];
+        foreach ($cases as [$year, $month, $day, $dim, $leap, $doy, $expected]) {
+            $ctx = new FormatContext(
+                locale: new EnglishLocale(),
+                calendarName: 'gregorian',
+                year: $year, month: $month, day: $day,
+                hour: 0, minute: 0, second: 0,
+                dayOfWeek: 0, dayOfWeekIso: 7,
+                daysInMonth: $dim,
+                dayOfYear: $doy,
+                isLeapYear: $leap,
+                tzLabel: null,
+                digitScript: DigitTransliterator::LATN,
+            );
+            $this->assertSame(
+                $expected,
+                DateTokenFormatter::format('z', $ctx),
+                "z for {$year}-{$month}-{$day}"
+            );
+        }
+    }
+
+    public function testZTokenWithPersianDigits(): void
+    {
+        // Jalali 1405-01-19: dayOfYear = 19, PHP-style z = 18, Persian digits = ۱۸.
+        $ctx = new FormatContext(
+            locale: new PersianLocale(),
+            calendarName: 'jalali',
+            year: 1405, month: 1, day: 19,
+            hour: 0, minute: 0, second: 0,
+            dayOfWeek: 3, dayOfWeekIso: 3,
+            daysInMonth: 31,
+            dayOfYear: 19,
+            isLeapYear: false,
+            tzLabel: 'Asia/Tehran',
+            digitScript: DigitTransliterator::PERSIAN,
+        );
+        $this->assertSame('۱۸', DateTokenFormatter::format('z', $ctx));
     }
 
     public function testBackslashEscape(): void
@@ -96,6 +161,7 @@ final class DateTokenFormatterTest extends TestCase
             hour: 0, minute: 0, second: 0,
             dayOfWeek: 0, dayOfWeekIso: 7,
             daysInMonth: 31,
+            dayOfYear: 74,      // 31 (Jan) + 28 (Feb) + 15
             isLeapYear: false,
             tzLabel: null,
             digitScript: DigitTransliterator::LATN,
@@ -111,7 +177,9 @@ final class DateTokenFormatterTest extends TestCase
             year: 0, month: 1, day: 1,
             hour: 0, minute: 0, second: 0,
             dayOfWeek: 6, dayOfWeekIso: 6,
-            daysInMonth: 31, isLeapYear: true,
+            daysInMonth: 31,
+            dayOfYear: 1,
+            isLeapYear: true,
             tzLabel: null,
             digitScript: DigitTransliterator::LATN,
         );
@@ -126,7 +194,9 @@ final class DateTokenFormatterTest extends TestCase
             year: 1405, month: 1, day: 19,
             hour: 14, minute: 30, second: 0,
             dayOfWeek: 3, dayOfWeekIso: 3,
-            daysInMonth: 31, isLeapYear: false,
+            daysInMonth: 31,
+            dayOfYear: 19,
+            isLeapYear: false,
             tzLabel: 'Asia/Tehran',
             digitScript: DigitTransliterator::PERSIAN,
         );

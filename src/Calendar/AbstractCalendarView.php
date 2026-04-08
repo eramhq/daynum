@@ -167,9 +167,16 @@ abstract class AbstractCalendarView implements CalendarView
     public function format(string $pattern): string
     {
         $c = $this->components();
+        $calendar = $this->calendar();
+        // Only compute day-of-year when the pattern references it —
+        // dayOfYear is non-trivial on UAQ (bit-walk) and not worth paying
+        // for patterns that omit `z`. A `\z` escape is a benign false
+        // positive; the tokenizer still emits a literal without reaching
+        // the `z` handler.
+        $dayOfYear = str_contains($pattern, 'z') ? $this->dayOfYear() : 0;
         $ctx = new FormatContext(
             locale: $this->locale,
-            calendarName: $this->calendar()->localeFamily(),
+            calendarName: $calendar->localeFamily(),
             year: $c['year'],
             month: $c['month'],
             day: $c['day'],
@@ -179,6 +186,7 @@ abstract class AbstractCalendarView implements CalendarView
             dayOfWeek: $this->dayOfWeek(),
             dayOfWeekIso: $this->dayOfWeekIso(),
             daysInMonth: $c['daysInMonth'],
+            dayOfYear: $dayOfYear,
             isLeapYear: $c['isLeapYear'],
             tzLabel: $this->instant->tzLabel,
             digitScript: $this->digitScript,

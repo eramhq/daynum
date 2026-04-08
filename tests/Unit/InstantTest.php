@@ -154,4 +154,58 @@ final class InstantTest extends TestCase
             Instant::fromHijri(1445, 9, 1)->hijri()->dayOfYear()
         );
     }
+
+    public function testGregorianFormatZ(): void
+    {
+        // 2026-04-08 is the 98th day of 2026; PHP-style z is 97.
+        $this->assertSame(
+            '97',
+            Instant::fromGregorian(2026, 4, 8)->gregorian()->format('z')
+        );
+    }
+
+    public function testJalaliFormatZInLeapYearEsfand(): void
+    {
+        // 1403 is a leap Jalali year: Esfand 30 is day 366, z = 365.
+        $this->assertSame(
+            '365',
+            Instant::fromJalali(1403, 12, 30)->jalali()->format('z')
+        );
+    }
+
+    public function testHijriCivilFormatZInLeapYear(): void
+    {
+        // AH 2 is leap under the tabular civil rule: Dhu al-Hijjah 30 is day
+        // 355, z = 354.
+        $this->assertSame(
+            '354',
+            Instant::fromHijriCivil(2, 12, 30)->hijriCivil()->format('z')
+        );
+    }
+
+    public function testHijriUmmAlQuraFormatZForRamadan1(): void
+    {
+        // Derive expected z independently of the handler implementation:
+        // sum daysInMonth(1445, 1..8), then no +1 and -1 collapse to sum.
+        $c = HijriUmmAlQuraCalendar::instance();
+        $expected = 0;
+        for ($m = 1; $m <= 8; $m++) {
+            $expected += $c->daysInMonth(1445, $m);
+        }
+        $this->assertSame(
+            (string) $expected,
+            Instant::fromHijri(1445, 9, 1)->hijri()->format('z')
+        );
+    }
+
+    public function testFormatZBackslashEscape(): void
+    {
+        // `\z` is a literal `z` even though the hot-path guard sees the
+        // character in the pattern. Exercises the false-positive path of
+        // the str_contains guard in AbstractCalendarView::format.
+        $this->assertSame(
+            'z',
+            Instant::fromGregorian(2026, 4, 8)->gregorian()->format('\z')
+        );
+    }
 }

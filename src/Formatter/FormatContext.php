@@ -28,6 +28,7 @@ final class FormatContext
         /** 1..7, Monday = 1 (ISO convention) */
         public readonly int $dayOfWeekIso,
         public readonly int $daysInMonth,
+        public readonly int $dayOfYear,
         public readonly bool $isLeapYear,
         public readonly ?string $tzLabel,
         public readonly string $digitScript,
