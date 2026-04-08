@@ -7,6 +7,7 @@ namespace Daynum\Calendar\Gregorian;
 use Daynum\Calendar;
 use Daynum\Exception\InvalidDateException;
 use Daynum\Internal\IntMath;
+use Daynum\Internal\Ymd;
 
 /**
  * Proleptic Gregorian calendar — no Julian cutover, year 0 exists, negative
@@ -33,34 +34,8 @@ final class GregorianCalendar implements Calendar
 
     public function toJdn(int $year, int $month, int $day): int
     {
-        if ($year < self::MIN_YEAR || $year > self::MAX_YEAR) {
-            throw InvalidDateException::forComponents(
-                'gregorian',
-                $year,
-                $month,
-                $day,
-                sprintf('year must be in [%d, %d]', self::MIN_YEAR, self::MAX_YEAR),
-            );
-        }
-        if ($month < 1 || $month > 12) {
-            throw InvalidDateException::forComponents(
-                'gregorian',
-                $year,
-                $month,
-                $day,
-                'month must be in [1, 12]',
-            );
-        }
-        $dim = $this->daysInMonth($year, $month);
-        if ($day < 1 || $day > $dim) {
-            throw InvalidDateException::forComponents(
-                'gregorian',
-                $year,
-                $month,
-                $day,
-                sprintf('day must be in [1, %d] for that month', $dim),
-            );
-        }
+        Ymd::validateYearMonth('gregorian', $year, $month, $day, self::MIN_YEAR, self::MAX_YEAR, 12);
+        Ymd::validateDay('gregorian', $year, $month, $day, $this->daysInMonth($year, $month));
 
         $a = IntMath::floorDiv(14 - $month, 12);
         $y = $year + 4800 - $a;
@@ -120,6 +95,11 @@ final class GregorianCalendar implements Calendar
     }
 
     public function name(): string
+    {
+        return 'gregorian';
+    }
+
+    public function localeFamily(): string
     {
         return 'gregorian';
     }

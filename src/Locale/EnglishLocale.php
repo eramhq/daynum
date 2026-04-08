@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace Daynum\Locale;
 
 /**
- * English names for months and weekdays, in both Gregorian and Jalali variants.
+ * English names for months and weekdays, in the Gregorian, Jalali, and Hijri
+ * locale families.
  *
  * Jalali month names are rendered as transliterations of the Persian originals
  * (e.g., `Farvardin`, `Ordibehesht`). ICU emits the same full-name string for
- * both `MMM` and `MMMM` in the English persian-calendar locale, so the short
- * form table aliases the long one.
+ * both `MMM` and `MMMM` in the English persian-calendar locale, so the Jalali
+ * short form table aliases the long one.
+ *
+ * Hijri spellings match ICU's `en-US-u-ca-islamic-civil` output — note that
+ * unlike Jalali, English Hijri has distinct abbreviations (`Muh.`, `Saf.`,
+ * `Rab. I`, etc.) and uses U+02BB MODIFIER LETTER TURNED COMMA (`ʻ`) for
+ * transliterated ʿayn and hamza rather than the more common `ʾ` or `'`.
  */
 final class EnglishLocale extends AbstractTableLocale
 {
@@ -26,6 +32,12 @@ final class EnglishLocale extends AbstractTableLocale
             7  => 'Mehr',       8  => 'Aban',        9  => 'Azar',
             10 => 'Dey',        11 => 'Bahman',      12 => 'Esfand',
         ],
+        'hijri' => [
+            1  => 'Muharram',    2  => 'Safar',       3  => 'Rabiʻ I',
+            4  => 'Rabiʻ II',    5  => 'Jumada I',    6  => 'Jumada II',
+            7  => 'Rajab',       8  => 'Shaʻban',     9  => 'Ramadan',
+            10 => 'Shawwal',     11 => 'Dhuʻl-Qiʻdah', 12 => 'Dhuʻl-Hijjah',
+        ],
     ];
 
     private const SHORT_MONTHS = [
@@ -35,6 +47,12 @@ final class EnglishLocale extends AbstractTableLocale
         ],
         // No traditional abbreviation; short == long to match ICU.
         'jalali' => self::LONG_MONTHS['jalali'],
+        'hijri' => [
+            1  => 'Muh.',    2  => 'Saf.',    3  => 'Rab. I',
+            4  => 'Rab. II', 5  => 'Jum. I',  6  => 'Jum. II',
+            7  => 'Raj.',    8  => 'Sha.',    9  => 'Ram.',
+            10 => 'Shaw.',   11 => 'Dhuʻl-Q.', 12 => 'Dhuʻl-H.',
+        ],
     ];
 
     /** Indexed by PHP day-of-week: Sunday=0..Saturday=6. */

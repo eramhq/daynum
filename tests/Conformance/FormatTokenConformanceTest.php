@@ -27,10 +27,12 @@ final class FormatTokenConformanceTest extends TestCase
     public static function fixtures(): iterable
     {
         $dir = __DIR__ . '/../fixtures';
-        yield 'en gregorian' => [$dir . '/format-tokens-en.jsonl.gz',        'en', 'gregorian'];
-        yield 'fa gregorian' => [$dir . '/format-tokens-fa.jsonl.gz',        'fa', 'gregorian'];
-        yield 'en jalali'    => [$dir . '/format-tokens-en-jalali.jsonl.gz', 'en', 'jalali'];
-        yield 'fa jalali'    => [$dir . '/format-tokens-fa-jalali.jsonl.gz', 'fa', 'jalali'];
+        yield 'en gregorian'  => [$dir . '/format-tokens-en.jsonl.gz',        'en', 'gregorian'];
+        yield 'fa gregorian'  => [$dir . '/format-tokens-fa.jsonl.gz',        'fa', 'gregorian'];
+        yield 'en jalali'     => [$dir . '/format-tokens-en-jalali.jsonl.gz', 'en', 'jalali'];
+        yield 'fa jalali'     => [$dir . '/format-tokens-fa-jalali.jsonl.gz', 'fa', 'jalali'];
+        yield 'en hijri-civil' => [$dir . '/format-tokens-en-hijri.jsonl.gz',  'en', 'hijri-civil'];
+        yield 'fa hijri-civil' => [$dir . '/format-tokens-fa-hijri.jsonl.gz',  'fa', 'hijri-civil'];
     }
 
     /**
@@ -57,9 +59,11 @@ final class FormatTokenConformanceTest extends TestCase
             }
 
             $instant = new Instant($jdn);
-            $view = $calendar === 'gregorian'
-                ? $instant->gregorian()->withLocale($locale)
-                : $instant->jalali()->withLocale($locale);
+            $view = match ($calendar) {
+                'gregorian'   => $instant->gregorian()->withLocale($locale),
+                'jalali'      => $instant->jalali()->withLocale($locale),
+                'hijri-civil' => $instant->hijriCivil()->withLocale($locale),
+            };
 
             foreach ($row['expected'] as $token => $expected) {
                 $actual = $view->format($token);

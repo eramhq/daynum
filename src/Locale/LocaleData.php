@@ -7,9 +7,10 @@ namespace Daynum\Locale;
 /**
  * Locale-specific names and strings used by the token formatter.
  *
- * A locale is defined per-calendar because month names are calendar-specific:
- * the Gregorian "January" and the Jalali "Farvardin" are different concepts
- * even in the same human language.
+ * Month names are looked up by *locale family*, not by individual calendar
+ * identifier, because several calendars can share a naming scheme. The
+ * tabular Hijri civil calendar and the Saudi Umm al-Qura calendar both use
+ * the family `hijri`, so a single Hijri month table serves both.
  */
 interface LocaleData
 {
@@ -19,17 +20,18 @@ interface LocaleData
     public function tag(): string;
 
     /**
-     * Full month name for a given calendar.
+     * Full month name for a given calendar family.
      *
-     * @param string $calendar "gregorian" or "jalali" etc.
-     * @param int $month 1-indexed month number
+     * @param string $family locale family from `Calendar::localeFamily()`:
+     *                       `"gregorian"`, `"jalali"`, `"hijri"`, ...
+     * @param int $month     1-indexed month number
      */
-    public function monthName(string $calendar, int $month): string;
+    public function monthName(string $family, int $month): string;
 
     /**
      * Abbreviated month name (e.g., "Jan").
      */
-    public function monthNameShort(string $calendar, int $month): string;
+    public function monthNameShort(string $family, int $month): string;
 
     /**
      * Full weekday name.

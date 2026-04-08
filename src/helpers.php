@@ -32,7 +32,19 @@ if (!function_exists('jdate')) {
     }
 }
 
-// `hdate()` will land alongside the Hijri Umm al-Qura calendar in a later
-// milestone. Until then this file intentionally does not define it, so users
-// who opt into the helpers get a clean "undefined function" at the real call
-// site rather than a runtime exception from a stub they can't catch by type.
+if (!function_exists('hdate')) {
+    /**
+     * Construct an {@see Instant} from a Saudi Umm al-Qura (KACST) Hijri date.
+     *
+     * Mirrors the `gdate` / `jdate` helpers and defaults to the UAQ
+     * calendar to match `Instant::fromHijri`. If the year is outside the
+     * bundled table range, this throws
+     * {@see \Daynum\Exception\UmmAlQuraOutOfRangeException}; use
+     * `Instant::fromHijriCivil` directly if you need the tabular civil
+     * variant.
+     */
+    function hdate(int $year, int $month, int $day, int $hour = 0, int $minute = 0, int $second = 0, ?string $tz = null): Instant
+    {
+        return Instant::fromHijri($year, $month, $day, $hour, $minute, $second, $tz);
+    }
+}

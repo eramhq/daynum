@@ -33,6 +33,15 @@ final class PersianLocale extends AbstractTableLocale
             7  => 'مهر',        8  => 'آبان',     9  => 'آذر',
             10 => 'دی',         11 => 'بهمن',     12 => 'اسفند',
         ],
+        // Persian Hijri names match ICU fa-IR islamic-civil MMMM output.
+        // Note months 11 and 12 contract to ذیقعده / ذیحجه without an
+        // explicit `ال` — this is ICU's CLDR data for fa, not a typo.
+        'hijri' => [
+            1  => 'محرم',         2  => 'صفر',          3  => 'ربیع‌الاول',
+            4  => 'ربیع‌الثانی',  5  => 'جمادی‌الاول', 6  => 'جمادی‌الثانی',
+            7  => 'رجب',          8  => 'شعبان',        9  => 'رمضان',
+            10 => 'شوال',         11 => 'ذیقعده',       12 => 'ذیحجه',
+        ],
     ];
 
     private const SHORT_MONTHS = [
@@ -43,6 +52,8 @@ final class PersianLocale extends AbstractTableLocale
         ],
         // Jalali has no traditional abbreviation; short == long.
         'jalali' => self::LONG_MONTHS['jalali'],
+        // Persian Hijri has no traditional abbreviation either.
+        'hijri'  => self::LONG_MONTHS['hijri'],
     ];
 
     /** Indexed by PHP day-of-week: Sunday=0..Saturday=6. */

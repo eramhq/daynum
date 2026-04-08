@@ -52,6 +52,18 @@ interface Calendar
     public function name(): string;
 
     /**
+     * Identifier used for locale month-name lookup.
+     *
+     * Distinct from {@see name()}: multiple calendars can share a family when
+     * they use the same month names. Both `hijri-civil` and `hijri-umalqura`
+     * return `'hijri'` because they differ only in leap rules and month
+     * lengths, not in what the months are called.
+     *
+     * @return string e.g. "gregorian", "jalali", "hijri"
+     */
+    public function localeFamily(): string;
+
+    /**
      * Inclusive [min, max] JDN range this calendar can convert to/from.
      *
      * @return array{0: int, 1: int}

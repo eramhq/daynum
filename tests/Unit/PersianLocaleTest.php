@@ -32,6 +32,26 @@ final class PersianLocaleTest extends TestCase
         $this->assertSame('ژانویه', $locale->monthNameShort('gregorian', 1));
     }
 
+    public function testHijriMonthNamesArePersian(): void
+    {
+        $locale = new PersianLocale();
+        $this->assertSame('محرم', $locale->monthName('hijri', 1));
+        $this->assertSame('صفر', $locale->monthName('hijri', 2));
+        $this->assertSame('ربیع‌الاول', $locale->monthName('hijri', 3));
+        $this->assertSame('ربیع‌الثانی', $locale->monthName('hijri', 4));
+        $this->assertSame('جمادی‌الاول', $locale->monthName('hijri', 5));
+        $this->assertSame('جمادی‌الثانی', $locale->monthName('hijri', 6));
+        $this->assertSame('رجب', $locale->monthName('hijri', 7));
+        $this->assertSame('شعبان', $locale->monthName('hijri', 8));
+        $this->assertSame('رمضان', $locale->monthName('hijri', 9));
+        $this->assertSame('شوال', $locale->monthName('hijri', 10));
+        $this->assertSame('ذیقعده', $locale->monthName('hijri', 11));
+        $this->assertSame('ذیحجه', $locale->monthName('hijri', 12));
+        // Persian Hijri has no abbreviated form — short aliases long.
+        $this->assertSame('محرم', $locale->monthNameShort('hijri', 1));
+        $this->assertSame('ذیحجه', $locale->monthNameShort('hijri', 12));
+    }
+
     public function testWeekdayNames(): void
     {
         $locale = new PersianLocale();

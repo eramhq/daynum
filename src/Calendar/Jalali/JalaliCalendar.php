@@ -7,6 +7,7 @@ namespace Daynum\Calendar\Jalali;
 use Daynum\Calendar;
 use Daynum\Calendar\Gregorian\GregorianCalendar;
 use Daynum\Exception\InvalidDateException;
+use Daynum\Internal\Ymd;
 
 /**
  * Jalali (Shamsi / Solar Hijri) calendar using Ahmad Birashk's 33-year
@@ -75,37 +76,12 @@ final class JalaliCalendar implements Calendar
 
     public function toJdn(int $year, int $month, int $day): int
     {
-        if ($year < self::MIN_YEAR || $year > self::MAX_YEAR) {
-            throw InvalidDateException::forComponents(
-                'jalali',
-                $year,
-                $month,
-                $day,
-                sprintf('year must be in [%d, %d]', self::MIN_YEAR, self::MAX_YEAR),
-            );
-        }
-        if ($month < 1 || $month > 12) {
-            throw InvalidDateException::forComponents(
-                'jalali',
-                $year,
-                $month,
-                $day,
-                'month must be in [1, 12]',
-            );
-        }
-        // Fold the leap-year lookup and the day-range check into a single
-        // jalCal call so `toJdn` hits the Birashk tables once, not twice.
+        Ymd::validateYearMonth('jalali', $year, $month, $day, self::MIN_YEAR, self::MAX_YEAR, 12);
+        // Single Birashk-table walk: jalCal feeds both the day-range check
+        // and the Gregorian-anchor math below.
         $r = $this->jalCal($year);
         $dim = $month <= 6 ? 31 : ($month <= 11 ? 30 : ($r['leap'] === 0 ? 30 : 29));
-        if ($day < 1 || $day > $dim) {
-            throw InvalidDateException::forComponents(
-                'jalali',
-                $year,
-                $month,
-                $day,
-                sprintf('day must be in [1, %d] for that month', $dim),
-            );
-        }
+        Ymd::validateDay('jalali', $year, $month, $day, $dim);
 
         $farvardin1Jdn = GregorianCalendar::instance()->toJdn($r['gy'], 3, $r['march']);
 
@@ -180,6 +156,11 @@ final class JalaliCalendar implements Calendar
     }
 
     public function name(): string
+    {
+        return 'jalali';
+    }
+
+    public function localeFamily(): string
     {
         return 'jalali';
     }

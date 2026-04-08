@@ -77,10 +77,12 @@ fprintf(STDERR, "Generating format-token fixtures over %d sample dates…\n", co
 // emits ASCII digits; Daynum handles digit transliteration itself via
 // `withDigits()`, not via the locale.
 foreach ([
-    ['en', 'format-tokens-en.jsonl.gz',          'en-US-u-ca-gregory-nu-latn', 'gregorian'],
-    ['fa', 'format-tokens-fa.jsonl.gz',          'fa-IR-u-ca-gregory-nu-latn', 'gregorian'],
-    ['en-j', 'format-tokens-en-jalali.jsonl.gz', 'en-US-u-ca-persian-nu-latn', 'persian'],
-    ['fa-j', 'format-tokens-fa-jalali.jsonl.gz', 'fa-IR-u-ca-persian-nu-latn', 'persian'],
+    ['en',   'format-tokens-en.jsonl.gz',          'en-US-u-ca-gregory-nu-latn',       'gregorian'],
+    ['fa',   'format-tokens-fa.jsonl.gz',          'fa-IR-u-ca-gregory-nu-latn',       'gregorian'],
+    ['en-j', 'format-tokens-en-jalali.jsonl.gz',   'en-US-u-ca-persian-nu-latn',       'persian'],
+    ['fa-j', 'format-tokens-fa-jalali.jsonl.gz',   'fa-IR-u-ca-persian-nu-latn',       'persian'],
+    ['en-h', 'format-tokens-en-hijri.jsonl.gz',    'en-US-u-ca-islamic-civil-nu-latn', 'islamic-civil'],
+    ['fa-h', 'format-tokens-fa-hijri.jsonl.gz',    'fa-IR-u-ca-islamic-civil-nu-latn', 'islamic-civil'],
 ] as [$tag, $filename, $icuLocale, $calendar]) {
     $path = FIXTURE_DIR . '/' . $filename;
     $out = fopen('compress.zlib://' . $path, 'w');
@@ -106,7 +108,7 @@ foreach ([
                 IntlDateFormatter::FULL,
                 IntlDateFormatter::FULL,
                 'UTC',
-                $calendar === 'persian' ? IntlDateFormatter::TRADITIONAL : IntlDateFormatter::GREGORIAN,
+                $calendar === 'gregorian' ? IntlDateFormatter::GREGORIAN : IntlDateFormatter::TRADITIONAL,
                 $icuPattern,
             );
             $row['expected'][$phpToken] = $fmt->format($ts);

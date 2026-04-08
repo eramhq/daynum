@@ -17,8 +17,10 @@ declare(strict_types=1);
 const FIXTURE_DIR = __DIR__ . '/../tests/fixtures';
 
 $pairs = [
-    ['gregorian.jsonl.gz', 'gregorian.node.jsonl.gz'],
-    ['jalali.jsonl.gz',    'jalali.node.jsonl.gz'],
+    ['gregorian.jsonl.gz',       'gregorian.node.jsonl.gz'],
+    ['jalali.jsonl.gz',          'jalali.node.jsonl.gz'],
+    ['hijri-civil.jsonl.gz',     'hijri-civil.node.jsonl.gz'],
+    ['hijri-umalqura.jsonl.gz',  'hijri-umalqura.node.jsonl.gz'],
 ];
 
 $overallOk = true;

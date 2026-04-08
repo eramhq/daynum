@@ -10,16 +10,29 @@ Fixture refresh is a deliberate, reviewed action performed by maintainers.
 
 ## Files
 
-| File                              | Rows      | Produced by                          |
-|-----------------------------------|-----------|--------------------------------------|
-| `gregorian.jsonl.gz`              | ~220,000  | `tools/generate-fixtures-php.php`    |
-| `jalali.jsonl.gz`                 | ~220,000  | `tools/generate-fixtures-php.php`    |
-| `gregorian.node.jsonl.gz`         | ~220,000  | `tools/generate-fixtures-node.mjs`   |
-| `jalali.node.jsonl.gz`            | ~220,000  | `tools/generate-fixtures-node.mjs`   |
-| `format-tokens-en.jsonl.gz`       | ~1,000    | `tools/generate-format-tokens.php`   |
-| `format-tokens-fa.jsonl.gz`       | ~1,000    | `tools/generate-format-tokens.php`   |
-| `format-tokens-en-jalali.jsonl.gz`| ~1,000    | `tools/generate-format-tokens.php`   |
-| `format-tokens-fa-jalali.jsonl.gz`| ~1,000    | `tools/generate-format-tokens.php`   |
+| File                                | Rows      | Produced by                          |
+|-------------------------------------|-----------|--------------------------------------|
+| `gregorian.jsonl.gz`                | ~220,000  | `tools/generate-fixtures-php.php`    |
+| `jalali.jsonl.gz`                   | ~220,000  | `tools/generate-fixtures-php.php`    |
+| `hijri-civil.jsonl.gz`              | ~220,000  | `tools/generate-fixtures-php.php`    |
+| `hijri-umalqura.jsonl.gz`           | ~107,000  | `tools/generate-fixtures-php.php`    |
+| `gregorian.node.jsonl.gz`           | ~220,000  | `tools/generate-fixtures-node.mjs`   |
+| `jalali.node.jsonl.gz`              | ~220,000  | `tools/generate-fixtures-node.mjs`   |
+| `hijri-civil.node.jsonl.gz`         | ~220,000  | `tools/generate-fixtures-node.mjs`   |
+| `hijri-umalqura.node.jsonl.gz`      | ~107,000  | `tools/generate-fixtures-node.mjs`   |
+| `format-tokens-en.jsonl.gz`         | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-fa.jsonl.gz`         | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-en-jalali.jsonl.gz`  | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-fa-jalali.jsonl.gz`  | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-en-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-fa-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
+
+The `hijri-umalqura` fixture is **filtered to the native ICU UAQ year range**
+(currently AH 1300..1600, recorded in the file's header). Rows whose Hijri
+year falls outside this range are deliberately excluded — outside the table,
+ICU silently falls back to `islamic-civil`, which would make those rows a
+worthless oracle. Use `hijri-civil.jsonl.gz` for far-historical and
+far-future date coverage instead.
 
 Node-generated files (`*.node.jsonl.gz`) are NOT consumed by the conformance
 suite directly — they exist so `tools/verify-oracles-agree.php` can diff them
@@ -45,9 +58,18 @@ row, we want to know before committing.
 ...
 ```
 
-* `jdn` — integer Julian Day Number (same across both files)
+### `hijri-civil.jsonl.gz` / `hijri-umalqura.jsonl.gz`
+
+```json
+{"meta":{"icuVersion":"78.2","calendar":"islamic-umalqura","uaqMinYear":1300,"uaqMaxYear":1600, ...}}
+{"jdn":2408762,"g":[1882,11,12],"h":[1300,1,1],"dow":0}
+...
+```
+
+* `jdn` — integer Julian Day Number (same across all files)
 * `g` — `[year, month, day]` Gregorian, 1-indexed month
 * `j` — `[year, month, day]` Jalali, 1-indexed month
+* `h` — `[year, month, day]` Hijri (civil or UAQ depending on file), 1-indexed month
 * `dow` — 0..6, Sunday = 0 (PHP `date('w')` convention)
 
 ### Format-token files
@@ -71,21 +93,24 @@ claims to support. Daynum's `DateTokenFormatter` must match byte-for-byte.
 **Procedure:**
 
 ```bash
-# 1. Regenerate from PHP (requires ext-intl)
+# 1. Regenerate the bundled UAQ table (only if ICU version changed)
+php tools/generate-uaq-table.php   # writes src/Calendar/Hijri/Table.php
+
+# 2. Regenerate from PHP (requires ext-intl)
 php tools/generate-fixtures-php.php
 php tools/generate-format-tokens.php
 
-# 2. Regenerate from Node (requires a recent Node)
+# 3. Regenerate from Node (requires a recent Node)
 node tools/generate-fixtures-node.mjs
 
-# 3. Verify PHP ↔ Node agree byte-for-byte
+# 4. Verify PHP ↔ Node agree byte-for-byte
 php tools/verify-oracles-agree.php
 
-# 4. Re-run the full conformance suite
+# 5. Re-run the full conformance suite
 vendor/bin/phpunit --testsuite=conformance
 
-# 5. Review git diff carefully before committing
-git diff tests/fixtures/
+# 6. Review git diff carefully before committing
+git diff tests/fixtures/ src/Calendar/Hijri/Table.php
 ```
 
 ## Pinned versions

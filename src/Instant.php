@@ -6,6 +6,10 @@ namespace Daynum;
 
 use Daynum\Calendar\Gregorian\GregorianCalendar;
 use Daynum\Calendar\Gregorian\GregorianView;
+use Daynum\Calendar\Hijri\HijriCivilCalendar;
+use Daynum\Calendar\Hijri\HijriCivilView;
+use Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
+use Daynum\Calendar\Hijri\HijriUmmAlQuraView;
 use Daynum\Calendar\Jalali\JalaliCalendar;
 use Daynum\Calendar\Jalali\JalaliView;
 use Daynum\Exception\InvalidDateException;
@@ -69,6 +73,51 @@ final class Instant
     }
 
     /**
+     * Construct from a Saudi Umm al-Qura (KACST) Hijri date.
+     *
+     * This is the default Hijri entry point because the Saudi/Gulf audience
+     * and most Persian websites that display Hijri dates expect Umm al-Qura
+     * specifically. For dates outside the bundled table range, Daynum
+     * throws rather than silently falling back to the civil calendar — use
+     * {@see fromHijriCivil} explicitly when you need far-historical or
+     * far-future dates.
+     *
+     * @throws \Daynum\Exception\UmmAlQuraOutOfRangeException
+     */
+    public static function fromHijri(
+        int $year,
+        int $month,
+        int $day,
+        int $hour = 0,
+        int $minute = 0,
+        int $second = 0,
+        ?string $tzLabel = null,
+    ): self {
+        $jdn = HijriUmmAlQuraCalendar::instance()->toJdn($year, $month, $day);
+        return new self($jdn, self::encodeTime($hour, $minute, $second), $tzLabel);
+    }
+
+    /**
+     * Construct from a tabular Hijri (arithmetic Islamic "civil") date.
+     *
+     * Works for any AH year in `[HijriCivilCalendar::MIN_YEAR,
+     * HijriCivilCalendar::MAX_YEAR]` — no Umm al-Qura table lookup is
+     * involved. For the Saudi Umm al-Qura calendar, use {@see fromHijri}.
+     */
+    public static function fromHijriCivil(
+        int $year,
+        int $month,
+        int $day,
+        int $hour = 0,
+        int $minute = 0,
+        int $second = 0,
+        ?string $tzLabel = null,
+    ): self {
+        $jdn = HijriCivilCalendar::instance()->toJdn($year, $month, $day);
+        return new self($jdn, self::encodeTime($hour, $minute, $second), $tzLabel);
+    }
+
+    /**
      * Adapter from native PHP DateTime/DateTimeImmutable.
      *
      * Reads the proleptic Gregorian calendar date, the time-of-day, and the
@@ -120,6 +169,32 @@ final class Instant
     public function jalali(): JalaliView
     {
         return JalaliView::of($this);
+    }
+
+    /**
+     * View as a Saudi Umm al-Qura (KACST) Hijri date.
+     *
+     * Component accessors and formatting on this view can throw
+     * {@see \Daynum\Exception\UmmAlQuraOutOfRangeException} if the
+     * underlying JDN falls outside the bundled table — use
+     * {@see hijriCivil()} for dates outside that window.
+     */
+    public function hijri(): HijriUmmAlQuraView
+    {
+        return HijriUmmAlQuraView::of($this);
+    }
+
+    /**
+     * View as a tabular Hijri (arithmetic Islamic "civil") date.
+     *
+     * Unlike {@see hijri()}, this view has no bounded range — it works for
+     * any JDN the civil calendar can represent (AH 1..9666). Prefer
+     * {@see hijri()} for Saudi/Gulf audiences who expect Umm al-Qura;
+     * use this view for historical and far-future dates.
+     */
+    public function hijriCivil(): HijriCivilView
+    {
+        return HijriCivilView::of($this);
     }
 
     // ─── Comparison ──────────────────────────────────────────────────

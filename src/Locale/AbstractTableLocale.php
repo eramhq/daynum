@@ -10,14 +10,15 @@ use InvalidArgumentException;
  * Table-driven {@see LocaleData} base.
  *
  * Concrete locales supply four arrays (months / short months / weekdays /
- * short weekdays) keyed first by calendar name, and this class handles the
- * lookups and the error paths. This keeps new locales pure data declarations
- * and ensures every locale uses identical error messages.
+ * short weekdays) keyed first by locale family (the string returned by
+ * `Calendar::localeFamily()`), and this class handles the lookups and the
+ * error paths. This keeps new locales pure data declarations and ensures
+ * every locale uses identical error messages.
  */
 abstract class AbstractTableLocale implements LocaleData
 {
     /**
-     * Full month names, keyed by calendar name then 1-indexed month.
+     * Full month names, keyed by locale family then 1-indexed month.
      *
      * @return array<string, array<int, string>>
      */
@@ -43,14 +44,14 @@ abstract class AbstractTableLocale implements LocaleData
      */
     abstract protected function shortWeekdayTable(): array;
 
-    public function monthName(string $calendar, int $month): string
+    public function monthName(string $family, int $month): string
     {
-        return self::lookupMonth($this->longMonthTable(), $calendar, $month);
+        return self::lookupMonth($this->longMonthTable(), $family, $month);
     }
 
-    public function monthNameShort(string $calendar, int $month): string
+    public function monthNameShort(string $family, int $month): string
     {
-        return self::lookupMonth($this->shortMonthTable(), $calendar, $month);
+        return self::lookupMonth($this->shortMonthTable(), $family, $month);
     }
 
     public function weekdayName(int $dayOfWeek): string
@@ -66,13 +67,13 @@ abstract class AbstractTableLocale implements LocaleData
     /**
      * @param array<string, array<int, string>> $table
      */
-    private static function lookupMonth(array $table, string $calendar, int $month): string
+    private static function lookupMonth(array $table, string $family, int $month): string
     {
-        if (!isset($table[$calendar])) {
-            throw new InvalidArgumentException("Unknown calendar: {$calendar}");
+        if (!isset($table[$family])) {
+            throw new InvalidArgumentException("Unknown calendar family: {$family}");
         }
-        return $table[$calendar][$month]
-            ?? throw new InvalidArgumentException("Invalid {$calendar} month: {$month}");
+        return $table[$family][$month]
+            ?? throw new InvalidArgumentException("Invalid {$family} month: {$month}");
     }
 
     /**

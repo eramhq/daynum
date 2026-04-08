@@ -10,7 +10,6 @@ use Daynum\Formatter\DateTokenFormatter;
 use Daynum\Formatter\DigitTransliterator;
 use Daynum\Formatter\FormatContext;
 use Daynum\Instant;
-use Daynum\Internal\IntMath;
 use Daynum\Locale\LocaleData;
 use Daynum\Locale\LocaleRegistry;
 
@@ -171,7 +170,7 @@ abstract class AbstractCalendarView implements CalendarView
         $c = $this->components();
         $ctx = new FormatContext(
             locale: $this->locale,
-            calendarName: $this->calendar()->name(),
+            calendarName: $this->calendar()->localeFamily(),
             year: $c['year'],
             month: $c['month'],
             day: $c['day'],
@@ -221,14 +220,40 @@ abstract class AbstractCalendarView implements CalendarView
     public function addMonths(int $months): Instant
     {
         $c = $this->components();
-        $totalMonths = ($c['year'] * 12) + ($c['month'] - 1) + $months;
-        $newYear = IntMath::floorDiv($totalMonths, 12);
-        $newMonth = $totalMonths - $newYear * 12 + 1;
-
         $calendar = $this->calendar();
-        $dim = $calendar->daysInMonth($newYear, $newMonth);
+        $year = $c['year'];
+        $month = $c['month'];
+
+        // Chunk by year so calendars whose year length varies across years
+        // (Hebrew's 12-or-13-month year, future) stay correct. For v1 every
+        // year has 12 months so this loop runs |months|/12 times.
+        if ($months >= 0) {
+            while (true) {
+                $monthsInYear = $calendar->monthsInYear($year);
+                if ($month + $months <= $monthsInYear) {
+                    $month += $months;
+                    break;
+                }
+                $months -= ($monthsInYear - $month + 1);
+                $year++;
+                $month = 1;
+            }
+        } else {
+            $months = -$months;
+            while (true) {
+                if ($month - $months >= 1) {
+                    $month -= $months;
+                    break;
+                }
+                $months -= $month;
+                $year--;
+                $month = $calendar->monthsInYear($year);
+            }
+        }
+
+        $dim = $calendar->daysInMonth($year, $month);
         $newDay = min($c['day'], $dim);
-        return $this->instant->withJdn($calendar->toJdn($newYear, $newMonth, $newDay));
+        return $this->instant->withJdn($calendar->toJdn($year, $month, $newDay));
     }
 
     public function subMonths(int $months): Instant

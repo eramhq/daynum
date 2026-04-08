@@ -33,6 +33,31 @@ final class EnglishLocaleTest extends TestCase
         $this->assertSame('Farvardin', $locale->monthNameShort('jalali', 1));
     }
 
+    public function testHijriMonthNamesMatchIcuTransliteration(): void
+    {
+        $locale = new EnglishLocale();
+        // Long form — every month.
+        $long = [
+            1  => 'Muharram',    2  => 'Safar',       3  => 'Rabiʻ I',
+            4  => 'Rabiʻ II',    5  => 'Jumada I',    6  => 'Jumada II',
+            7  => 'Rajab',       8  => 'Shaʻban',     9  => 'Ramadan',
+            10 => 'Shawwal',     11 => 'Dhuʻl-Qiʻdah', 12 => 'Dhuʻl-Hijjah',
+        ];
+        foreach ($long as $m => $expected) {
+            $this->assertSame($expected, $locale->monthName('hijri', $m));
+        }
+        // Short form is distinct for English Hijri.
+        $short = [
+            1  => 'Muh.',    2  => 'Saf.',    3  => 'Rab. I',
+            4  => 'Rab. II', 5  => 'Jum. I',  6  => 'Jum. II',
+            7  => 'Raj.',    8  => 'Sha.',    9  => 'Ram.',
+            10 => 'Shaw.',   11 => 'Dhuʻl-Q.', 12 => 'Dhuʻl-H.',
+        ];
+        foreach ($short as $m => $expected) {
+            $this->assertSame($expected, $locale->monthNameShort('hijri', $m));
+        }
+    }
+
     public function testWeekdayNames(): void
     {
         $locale = new EnglishLocale();
