@@ -19,6 +19,41 @@ applied. Tagging is a separate release decision.
   conformance fixtures.
 - `ArabicLocaleTest` with 22 unit tests covering the new locale and
   the Arabic + Jalali throw-path (see below).
+- `arabic` keyword in `composer.json` (post-Arabic-tranche cleanup).
+- `GregorianCalendar::dayOfYear(int $year, int $month, int $day): int`
+  — 1-indexed day of year, proleptic Gregorian. Used internally by
+  `JalaliCalendar::fromJdn` (see Performance below) and a useful
+  addition to the public surface for ISO-week and YTD arithmetic.
+- `tools/bench.php` — minimal `hrtime`-based micro-benchmark harness
+  with warmup, GC control, and JIT-on/off comparison support. No
+  dependencies. The numbers below were captured with this harness.
+
+### Performance
+M3 milestone — three targeted optimizations on the Jalali hot path,
+zero behavior change. Numbers are µs/op, JIT-off, 50k iterations.
+
+- **Memoize `JalaliCalendar::jalCal`** — instance-level cache bounded
+  to `MIN_YEAR..MAX_YEAR` so adversarial out-of-range callers cannot
+  grow it without bound. Eliminates 2 of the 3 `jalCal` invocations
+  per format() round-trip.
+- **Cache `DigitTransliterator::toScript` strtr map** — once-per-script
+  population (max 2 entries), eliminates a 10-entry array allocation
+  per non-Latin format call.
+- **Eliminate redundant `toJdn` in `JalaliCalendar::fromJdn`** —
+  rewrites the day-of-Jalali-year offset to use the new
+  `GregorianCalendar::dayOfYear` helper, dropping a full Gregorian
+  `toJdn` (with validation) per `fromJdn`.
+
+| benchmark              | before | after | win  |
+|------------------------|--------|-------|------|
+| jalali.toJdn.warm      |  1.07  | 0.69  | -36% |
+| jalali.fromJdn.warm    |  2.09  | 1.06  | -49% |
+| jalali.format.numeric  |  3.00  | 1.97  | -35% |
+| jalali.format.textual  |  3.15  | 2.11  | -33% |
+| jalali.format.persianDigits | 3.49 | 2.34 | -33% |
+
+Wins are similar magnitude under JIT-on (`opcache.jit=tracing`).
+Gregorian and Hijri benchmarks are unchanged within ±2% noise.
 
 ### Changed
 - `LocaleRegistry::get()` error message now names all three shipped

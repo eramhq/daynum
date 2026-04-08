@@ -88,4 +88,39 @@ final class GregorianCalendarTest extends TestCase
     {
         $this->assertSame(12, GregorianCalendar::instance()->monthsInYear(2026));
     }
+
+    /**
+     * @dataProvider dayOfYearCases
+     */
+    public function testDayOfYear(int $year, int $month, int $day, int $expected): void
+    {
+        $this->assertSame($expected, GregorianCalendar::instance()->dayOfYear($year, $month, $day));
+    }
+
+    /**
+     * @return iterable<string, array{int,int,int,int}>
+     */
+    public static function dayOfYearCases(): iterable
+    {
+        // Non-leap year boundaries.
+        yield 'non-leap Jan 1'    => [2023, 1, 1, 1];
+        yield 'non-leap Feb 28'   => [2023, 2, 28, 59];
+        yield 'non-leap Mar 1'    => [2023, 3, 1, 60];
+        yield 'non-leap Dec 31'   => [2023, 12, 31, 365];
+
+        // Leap year boundaries — the +1 leap bump only kicks in for month > 2,
+        // so Feb 29 itself comes from the cumulative table directly.
+        yield 'leap Feb 28'       => [2024, 2, 28, 59];
+        yield 'leap Feb 29'       => [2024, 2, 29, 60];
+        yield 'leap Mar 1'        => [2024, 3, 1, 61];
+        yield 'leap Dec 31'       => [2024, 12, 31, 366];
+
+        // Negative-year proleptic dates. Year -4 is divisible by 4 and not by
+        // 100, so it's a leap year under the proleptic rule.
+        yield 'negative year Jan 1' => [-4, 1, 1, 1];
+        yield 'negative leap Mar 1' => [-4, 3, 1, 61];
+
+        // Year 0 (proleptic; div 400, leap).
+        yield 'year 0 leap Mar 1' => [0, 3, 1, 61];
+    }
 }

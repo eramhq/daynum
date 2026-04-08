@@ -31,6 +31,9 @@ final class DigitTransliterator
         self::ARAB    => ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'],
     ];
 
+    /** @var array<string, array<string, string>> */
+    private static array $toScriptMap = [];
+
     /**
      * Convert all ASCII digits in $text to the digits of $script.
      *
@@ -41,17 +44,22 @@ final class DigitTransliterator
         if ($script === self::LATN) {
             return $text;
         }
-        if (!isset(self::DIGITS[$script])) {
-            throw new InvalidArgumentException(
-                "Unknown digit script '{$script}'. Expected one of: latn, persian, arab."
-            );
+        if (!isset(self::$toScriptMap[$script])) {
+            // Validate inside the populate branch so an unknown script never
+            // poisons the cache with a bad key.
+            if (!isset(self::DIGITS[$script])) {
+                throw new InvalidArgumentException(
+                    "Unknown digit script '{$script}'. Expected one of: latn, persian, arab."
+                );
+            }
+            $d = self::DIGITS[$script];
+            self::$toScriptMap[$script] = [
+                '0' => $d[0], '1' => $d[1], '2' => $d[2], '3' => $d[3],
+                '4' => $d[4], '5' => $d[5], '6' => $d[6], '7' => $d[7],
+                '8' => $d[8], '9' => $d[9],
+            ];
         }
-        $digits = self::DIGITS[$script];
-        return strtr($text, [
-            '0' => $digits[0], '1' => $digits[1], '2' => $digits[2], '3' => $digits[3],
-            '4' => $digits[4], '5' => $digits[5], '6' => $digits[6], '7' => $digits[7],
-            '8' => $digits[8], '9' => $digits[9],
-        ]);
+        return strtr($text, self::$toScriptMap[$script]);
     }
 
     /**

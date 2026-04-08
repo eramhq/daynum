@@ -89,6 +89,20 @@ final class GregorianCalendar implements Calendar
         return $days[$month - 1];
     }
 
+    /**
+     * 1-indexed day of year, proleptic Gregorian. No validation: callers
+     * pass an already-decomposed `(year, month, day)` tuple.
+     */
+    public function dayOfYear(int $year, int $month, int $day): int
+    {
+        static $cum = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+        $d = $cum[$month - 1] + $day;
+        if ($month > 2 && $this->isLeapYear($year)) {
+            $d++;
+        }
+        return $d;
+    }
+
     public function monthsInYear(int $year): int
     {
         return 12;

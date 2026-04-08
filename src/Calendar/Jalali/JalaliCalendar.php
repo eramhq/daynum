@@ -69,6 +69,9 @@ final class JalaliCalendar implements Calendar
 
     private static ?self $instance = null;
 
+    /** @var array<int, array{leap:int, gy:int, march:int}> */
+    private array $jalCalCache = [];
+
     public static function instance(): self
     {
         return self::$instance ??= new self();
@@ -99,11 +102,14 @@ final class JalaliCalendar implements Calendar
         // Use the Gregorian year of the given JDN as a starting guess; Farvardin 1
         // always falls in March, so the Gregorian year of any Jalali date is either
         // $gy (Farvardin..Dey) or $gy - 1 (rolled-back case for early Farvardin).
-        [$gy, , ] = GregorianCalendar::instance()->fromJdn($jdn);
+        $greg = GregorianCalendar::instance();
+        [$gy, $gm, $gd] = $greg->fromJdn($jdn);
         $jy = $gy - 621;
         $r = $this->jalCal($jy);
-        $farvardin1Jdn = GregorianCalendar::instance()->toJdn($gy, 3, $r['march']);
-        $k = $jdn - $farvardin1Jdn;
+        // Day-of-Jalali-year offset, computed in Gregorian-year space to
+        // avoid an extra `toJdn` round-trip. Algebraically identical to
+        // `$jdn - toJdn($gy, 3, $r['march'])` since both terms share `$gy`.
+        $k = $greg->dayOfYear($gy, $gm, $gd) - $greg->dayOfYear($gy, 3, $r['march']);
 
         if ($k >= 0) {
             if ($k <= 185) {
@@ -187,6 +193,10 @@ final class JalaliCalendar implements Calendar
      */
     private function jalCal(int $jy): array
     {
+        if (isset($this->jalCalCache[$jy])) {
+            return $this->jalCalCache[$jy];
+        }
+
         $breaks = self::BREAKS;
         $bl = count($breaks);
         $gy = $jy + 621;
@@ -225,6 +235,13 @@ final class JalaliCalendar implements Calendar
             $leap = 4;
         }
 
-        return ['leap' => $leap, 'gy' => $gy, 'march' => $march];
+        $result = ['leap' => $leap, 'gy' => $gy, 'march' => $march];
+        // Cache only the documented year range so adversarial out-of-range
+        // callers (reachable via `isLeapYear` / `fromJdn`) cannot grow it
+        // without bound.
+        if ($jy >= self::MIN_YEAR && $jy <= self::MAX_YEAR) {
+            $this->jalCalCache[$jy] = $result;
+        }
+        return $result;
     }
 }
