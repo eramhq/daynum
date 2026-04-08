@@ -1,0 +1,71 @@
+name: oracle
+
+# Refreshes oracle fixtures from both PHP and Node ICU and verifies the two
+# agree byte-for-byte. This is the "fixture refresh is a deliberate reviewed
+# action" gate — a PR that touches the generators must show a clean diff here
+# before it can merge.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/**'
+      - '.github/workflows/oracle.yml'
+  pull_request:
+    paths:
+      - 'tools/**'
+      - 'tests/fixtures/**'
+      - '.github/workflows/oracle.yml'
+  workflow_dispatch:
+
+jobs:
+  refresh-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP with ext-intl
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: intl, mbstring, dom, xml, zlib
+          coverage: none
+          tools: composer:v2
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Record ICU versions
+        run: |
+          php -r 'echo "PHP  ICU: " . INTL_ICU_VERSION . PHP_EOL;'
+          node -e 'console.log("Node ICU: " + process.versions.icu)'
+
+      - name: Install composer dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Regenerate PHP-side fixtures
+        run: |
+          php tools/generate-fixtures-php.php
+          php tools/generate-format-tokens.php
+
+      - name: Regenerate Node-side fixtures
+        run: node tools/generate-fixtures-node.mjs
+
+      - name: Verify PHP and Node ICU fixtures agree
+        run: php tools/verify-oracles-agree.php
+
+      - name: Run the full test suite against the freshly regenerated fixtures
+        run: vendor/bin/phpunit
+
+      - name: Check for unexpected fixture changes
+        run: |
+          # Ignore the header lines (generator, timestamp, ICU version) — they
+          # legitimately change on every run. Data-line diffs are the signal.
+          if git diff --quiet -- tests/fixtures/; then
+            echo "No fixture data changed."
+          else
+            echo "::warning::Fixture data changed — review carefully before merging."
+            git diff --stat -- tests/fixtures/
+          fi

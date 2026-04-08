@@ -1,0 +1,46 @@
+{
+    "name": "daynum/daynum",
+    "description": "Immutable, zero-runtime-dependency multi-calendar library for PHP 8.1+. Gregorian, Jalali (Shamsi), and Hijri, differentially tested against ICU.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "calendar",
+        "jalali",
+        "shamsi",
+        "persian",
+        "hijri",
+        "gregorian",
+        "date",
+        "immutable"
+    ],
+    "require": {
+        "php": ">=8.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5"
+    },
+    "suggest": {
+        "ext-intl": "Only required for regenerating test oracle fixtures; not needed at runtime."
+    },
+    "autoload": {
+        "psr-4": {
+            "Daynum\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Daynum\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite=unit",
+        "test:edgecase": "phpunit --testsuite=edgecase",
+        "test:property": "phpunit --testsuite=property",
+        "test:conformance": "phpunit --testsuite=conformance"
+    }
+}
