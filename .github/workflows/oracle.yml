@@ -45,6 +45,15 @@ jobs:
       - name: Install composer dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
 
+      - name: Regenerate the bundled Umm al-Qura table from the runner's ICU
+        run: |
+          # Must run BEFORE the fixture generators: the PHP fixture generator
+          # reads Table::MIN_YEAR/MAX_YEAR to filter the UAQ fixture, so the
+          # table must reflect the same ICU the fixtures are generated from.
+          # `--skip-van-gent` avoids the network cross-check; CI runners may
+          # not have outbound HTTP, and the cross-check is a human sanity step.
+          php tools/generate-uaq-table.php --skip-van-gent
+
       - name: Regenerate PHP-side fixtures
         run: |
           php tools/generate-fixtures-php.php
@@ -59,13 +68,30 @@ jobs:
       - name: Run the full test suite against the freshly regenerated fixtures
         run: vendor/bin/phpunit
 
-      - name: Check for unexpected fixture changes
+      - name: Check for unexpected fixture or UAQ-table drift
         run: |
-          # Ignore the header lines (generator, timestamp, ICU version) — they
-          # legitimately change on every run. Data-line diffs are the signal.
-          if git diff --quiet -- tests/fixtures/; then
-            echo "No fixture data changed."
-          else
-            echo "::warning::Fixture data changed — review carefully before merging."
+          # Fail-hard: any content drift between committed and freshly
+          # regenerated fixtures is a correctness signal, not a style nit.
+          # The fixture generators are deterministic (no wall-clock timestamps
+          # in their headers) so a clean run should produce zero diff.
+          changed=0
+          if ! git diff --quiet -- tests/fixtures/; then
+            echo "::error::Fixture data changed vs committed version:"
             git diff --stat -- tests/fixtures/
+            changed=1
           fi
+          # Table.php carries a GENERATED_AT constant that legitimately
+          # changes every run; ignore only that one line. A data-line diff
+          # inside the same hunk would still surface because git only
+          # suppresses a hunk when *every* changed line in it matches the
+          # ignore regex.
+          if ! git diff --ignore-matching-lines='GENERATED_AT' --quiet -- src/Calendar/Hijri/Table.php; then
+            echo "::error::src/Calendar/Hijri/Table.php drifted vs committed version (ICU mismatch?):"
+            git diff --ignore-matching-lines='GENERATED_AT' -- src/Calendar/Hijri/Table.php
+            changed=1
+          fi
+          if [ $changed -ne 0 ]; then
+            echo "::error::Regenerate locally with tools/generate-uaq-table.php + generate-fixtures-*.php and commit the result."
+            exit 1
+          fi
+          echo "No fixture or Table.php drift."

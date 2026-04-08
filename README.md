@@ -9,8 +9,11 @@ transitive dependencies, and is differentially tested against ICU on ~220,000
 dates per calendar per CI build.
 
 v1 ships **Gregorian**, **Jalali**, and **Hijri** (Saudi Umm al-Qura + tabular
-civil). Hebrew, Buddhist, Japanese and friends follow in post-v1 milestones,
-each with its own ICU-oracle fixture set.
+civil), with **English**, **Persian**, and **Arabic** locales. Hebrew, Buddhist,
+Japanese and friends follow in post-v1 milestones, each with its own ICU-oracle
+fixture set.
+
+See [`CHANGELOG.md`](CHANGELOG.md) for release notes.
 
 ## Design decisions
 
@@ -68,7 +71,8 @@ $d->jalali()->withLocale('fa')->withDigits('persian')->format('Y/m/d'); // "۱۴
 $d->jalali()->format('Y/m/d H:i T');                                   // "1405/01/19 14:30 Asia/Tehran"
 $d->hijri()->format('j F Y');                                          // "21 Shawwal 1447"
 $d->hijri()->withLocale('fa')->format('j F Y');                        // "21 شوال 1447"
-$d->hijri()->withLocale('fa')->withDigits('arab')->format('j F Y');    // "٢١ شوال ١٤٤٧"
+$d->hijri()->withLocale('ar')->format('j F Y');                        // "21 شوال 1447"
+$d->hijri()->withLocale('ar')->withDigits('arab')->format('j F Y');    // "٢١ شوال ١٤٤٧"
 
 // ─── Arithmetic (immutable; returns new Instant) ────────
 $d->jalali()->addDays(7);
@@ -220,8 +224,10 @@ src/
 ├── Locale/
 │   ├── LocaleData.php
 │   ├── LocaleRegistry.php
+│   ├── AbstractTableLocale.php
 │   ├── EnglishLocale.php
-│   └── PersianLocale.php
+│   ├── PersianLocale.php
+│   └── ArabicLocale.php
 └── Calendar/
     ├── AbstractCalendarView.php    # shared arithmetic + formatting
     ├── Gregorian/
@@ -266,7 +272,7 @@ Attribution headers in the ported files name the exact upstream source.
 ## What's NOT shipped in v1
 
 * Observational Hijri (`islamic`), `islamic-tbla` (Thursday-epoch), `islamic-rgsa`
-* Arabic locale (`ar`) — natural fit for Hijri, kept separate so M2 stays focused; coming as a post-v1 milestone
+* Arabic Jalali output — ICU's Arabic transliterations of Persian month names are low quality, so Arabic + Jalali throws on `F`/`M` tokens. Use the Persian locale instead; it renders in the same Perso-Arabic script
 * Hebrew, Buddhist, Japanese, Indian, Coptic, Ethiopic — post-v1 milestones, each with its own ICU oracle
 * Timezone arithmetic — delegate to native `DateTimeImmutable` via `toDateTimeImmutable()`
 * Sub-second precision, leap seconds, Julian/Gregorian cutover

@@ -46,13 +46,14 @@ if (!is_dir(FIXTURE_DIR)) {
 
 $icuVersion = defined('INTL_ICU_VERSION') ? INTL_ICU_VERSION : 'unknown';
 $phpVersion = PHP_VERSION;
-$timestamp  = gmdate('c');
 
+// Deliberately no wall-clock `generated` field: it would make regeneration
+// non-deterministic and turn the oracle CI's fail-on-drift check into a
+// perpetual false alarm. The `icuVersion` field is the real drift signal.
 $header = [
     'generator'  => 'generate-fixtures-php.php',
     'phpVersion' => $phpVersion,
     'icuVersion' => $icuVersion,
-    'generated'  => $timestamp,
     'range'      => sprintf('%d-01-01..%d-12-31', START_YEAR, END_YEAR),
 ];
 

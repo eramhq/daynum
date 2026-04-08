@@ -39,11 +39,13 @@ const END_YEAR = 2300;
 await mkdir(FIXTURE_DIR, { recursive: true });
 
 const icuVersion = process.versions.icu || 'unknown';
+// Deliberately no wall-clock `generated` field: it would make regeneration
+// non-deterministic and turn the oracle CI's fail-on-drift check into a
+// perpetual false alarm. The `icuVersion` field is the real drift signal.
 const header = {
   generator: 'generate-fixtures-node.mjs',
   nodeVersion: process.version,
   icuVersion,
-  generated: new Date().toISOString(),
   range: `${START_YEAR}-01-01..${END_YEAR}-12-31`,
 };
 

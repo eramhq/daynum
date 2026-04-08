@@ -22,10 +22,16 @@ Fixture refresh is a deliberate, reviewed action performed by maintainers.
 | `hijri-umalqura.node.jsonl.gz`      | ~107,000  | `tools/generate-fixtures-node.mjs`   |
 | `format-tokens-en.jsonl.gz`         | ~1,000    | `tools/generate-format-tokens.php`   |
 | `format-tokens-fa.jsonl.gz`         | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-ar.jsonl.gz`         | ~1,000    | `tools/generate-format-tokens.php`   |
 | `format-tokens-en-jalali.jsonl.gz`  | ~1,000    | `tools/generate-format-tokens.php`   |
 | `format-tokens-fa-jalali.jsonl.gz`  | ~1,000    | `tools/generate-format-tokens.php`   |
 | `format-tokens-en-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
 | `format-tokens-fa-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-ar-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
+
+There is no `format-tokens-ar-jalali.jsonl.gz`: the Arabic locale intentionally
+omits Jalali month names because ICU's Arabic transliteration is low quality.
+See `src/Locale/ArabicLocale.php` for the full rationale.
 
 The `hijri-umalqura` fixture is **filtered to the native ICU UAQ year range**
 (currently AH 1300..1600, recorded in the file's header). Rows whose Hijri

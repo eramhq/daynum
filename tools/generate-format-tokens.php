@@ -18,6 +18,16 @@ declare(strict_types=1);
  * Writes:
  *   tests/fixtures/format-tokens-en.jsonl.gz
  *   tests/fixtures/format-tokens-fa.jsonl.gz
+ *   tests/fixtures/format-tokens-ar.jsonl.gz
+ *   tests/fixtures/format-tokens-en-jalali.jsonl.gz
+ *   tests/fixtures/format-tokens-fa-jalali.jsonl.gz
+ *   tests/fixtures/format-tokens-en-hijri.jsonl.gz
+ *   tests/fixtures/format-tokens-fa-hijri.jsonl.gz
+ *   tests/fixtures/format-tokens-ar-hijri.jsonl.gz
+ *
+ * No `format-tokens-ar-jalali.jsonl.gz` is emitted: Arabic does not ship
+ * Jalali month names (ICU's transliteration is low quality), so there is
+ * nothing to cross-check against. See ArabicLocale's class docblock.
  */
 
 if (!extension_loaded('intl')) {
@@ -79,38 +89,51 @@ fprintf(STDERR, "Generating format-token fixtures over %d sample dates…\n", co
 foreach ([
     ['en',   'format-tokens-en.jsonl.gz',          'en-US-u-ca-gregory-nu-latn',       'gregorian'],
     ['fa',   'format-tokens-fa.jsonl.gz',          'fa-IR-u-ca-gregory-nu-latn',       'gregorian'],
+    ['ar',   'format-tokens-ar.jsonl.gz',          'ar-SA-u-ca-gregory-nu-latn',       'gregorian'],
     ['en-j', 'format-tokens-en-jalali.jsonl.gz',   'en-US-u-ca-persian-nu-latn',       'persian'],
     ['fa-j', 'format-tokens-fa-jalali.jsonl.gz',   'fa-IR-u-ca-persian-nu-latn',       'persian'],
     ['en-h', 'format-tokens-en-hijri.jsonl.gz',    'en-US-u-ca-islamic-civil-nu-latn', 'islamic-civil'],
     ['fa-h', 'format-tokens-fa-hijri.jsonl.gz',    'fa-IR-u-ca-islamic-civil-nu-latn', 'islamic-civil'],
+    ['ar-h', 'format-tokens-ar-hijri.jsonl.gz',    'ar-SA-u-ca-islamic-civil-nu-latn', 'islamic-civil'],
 ] as [$tag, $filename, $icuLocale, $calendar]) {
     $path = FIXTURE_DIR . '/' . $filename;
     $out = fopen('compress.zlib://' . $path, 'w');
 
+    // Deliberately no wall-clock `generated` field: it would make
+    // regeneration non-deterministic and turn the oracle CI's fail-on-drift
+    // check into a perpetual false alarm. The `icuVersion` field is the
+    // real drift signal.
     $header = [
         'generator'  => 'generate-format-tokens.php',
         'icuVersion' => defined('INTL_ICU_VERSION') ? INTL_ICU_VERSION : 'unknown',
         'locale'     => $tag,
         'calendar'   => $calendar,
-        'generated'  => gmdate('c'),
     ];
     fwrite($out, json_encode(['meta' => $header]) . "\n");
+
+    // Hoist formatter construction out of the sample loop — one
+    // IntlDateFormatter per token, reused across all rows.
+    $calType = $calendar === 'gregorian'
+        ? IntlDateFormatter::GREGORIAN
+        : IntlDateFormatter::TRADITIONAL;
+    $formatters = [];
+    foreach (TOKEN_TO_ICU as $phpToken => $icuPattern) {
+        $formatters[$phpToken] = new IntlDateFormatter(
+            $icuLocale,
+            IntlDateFormatter::FULL,
+            IntlDateFormatter::FULL,
+            'UTC',
+            $calType,
+            $icuPattern,
+        );
+    }
 
     foreach ($samples as $jdn) {
         // JDN 2440588 = 1970-01-01 00:00:00 UTC
         $ts = ($jdn - 2440588) * 86400;
 
         $row = ['jdn' => $jdn, 'expected' => []];
-
-        foreach (TOKEN_TO_ICU as $phpToken => $icuPattern) {
-            $fmt = new IntlDateFormatter(
-                $icuLocale,
-                IntlDateFormatter::FULL,
-                IntlDateFormatter::FULL,
-                'UTC',
-                $calendar === 'gregorian' ? IntlDateFormatter::GREGORIAN : IntlDateFormatter::TRADITIONAL,
-                $icuPattern,
-            );
+        foreach ($formatters as $phpToken => $fmt) {
             $row['expected'][$phpToken] = $fmt->format($ts);
         }
 
