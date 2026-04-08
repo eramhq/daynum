@@ -39,6 +39,14 @@ interface Calendar
     public function daysInMonth(int $year, int $month): int;
 
     /**
+     * 1-indexed day of the calendar year. Implementations may assume the
+     * components are valid for this calendar; callers are responsible for
+     * pre-validation. Implementations with bundled-data ranges may still
+     * throw their own out-of-range errors.
+     */
+    public function dayOfYear(int $year, int $month, int $day): int;
+
+    /**
      * Number of months in the given year. 12 for all calendars v1 ships; 13 for
      * the Hebrew calendar in a leap year (future).
      */

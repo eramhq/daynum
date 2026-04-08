@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Daynum\Tests\Unit;
 
+use Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
 use Daynum\Exception\InvalidDateException;
 use Daynum\Instant;
 use DateTimeImmutable;
@@ -111,5 +112,46 @@ final class InstantTest extends TestCase
     {
         $this->expectException(InvalidDateException::class);
         Instant::fromJalali(4000, 1, 1);
+    }
+
+    public function testGregorianViewDayOfYear(): void
+    {
+        // 2026-04-08: 31 (Jan) + 28 (Feb) + 31 (Mar) + 8 = 98.
+        $this->assertSame(
+            98,
+            Instant::fromGregorian(2026, 4, 8)->gregorian()->dayOfYear()
+        );
+    }
+
+    public function testJalaliViewDayOfYearHandlesLeapEsfand(): void
+    {
+        // 1403 is a leap year, so Esfand 30 is valid and is day 366.
+        $this->assertSame(
+            366,
+            Instant::fromJalali(1403, 12, 30)->jalali()->dayOfYear()
+        );
+    }
+
+    public function testHijriCivilViewDayOfYearInLeapYear(): void
+    {
+        // AH 2 is leap — Dhu al-Hijjah 30 is the 355th day of the year.
+        $this->assertSame(
+            355,
+            Instant::fromHijriCivil(2, 12, 30)->hijriCivil()->dayOfYear()
+        );
+    }
+
+    public function testHijriUmmAlQuraViewDayOfYearForRamadan1(): void
+    {
+        // UAQ AH 1445: Ramadan 1 should equal sum of daysInMonth(1..8) + 1.
+        $c = HijriUmmAlQuraCalendar::instance();
+        $expected = 1;
+        for ($m = 1; $m <= 8; $m++) {
+            $expected += $c->daysInMonth(1445, $m);
+        }
+        $this->assertSame(
+            $expected,
+            Instant::fromHijri(1445, 9, 1)->hijri()->dayOfYear()
+        );
     }
 }

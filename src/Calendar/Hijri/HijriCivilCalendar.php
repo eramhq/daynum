@@ -143,6 +143,12 @@ final class HijriCivilCalendar implements Calendar
         return ($month % 2 === 1) ? 30 : 29;
     }
 
+    public function dayOfYear(int $year, int $month, int $day): int
+    {
+        // Mirrors the cumulative-day expression in toJdn.
+        return 29 * ($month - 1) + IntMath::floorDiv($month, 2) + $day;
+    }
+
     public function monthsInYear(int $year): int
     {
         return 12;

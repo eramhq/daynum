@@ -143,6 +143,20 @@ final class HijriUmmAlQuraCalendar implements Calendar
         return (Table::MONTH_LENGTHS[$year] & (1 << ($month - 1))) !== 0 ? 30 : 29;
     }
 
+    public function dayOfYear(int $year, int $month, int $day): int
+    {
+        // Throw out-of-range rather than silently fall through — see class docblock.
+        if ($year < Table::MIN_YEAR || $year > Table::MAX_YEAR) {
+            throw UmmAlQuraOutOfRangeException::forYear($year, $month, $day);
+        }
+        $bits = Table::MONTH_LENGTHS[$year];
+        $offset = 0;
+        for ($m = 0; $m < $month - 1; $m++) {
+            $offset += 29 + (($bits >> $m) & 1);
+        }
+        return $offset + $day;
+    }
+
     public function monthsInYear(int $year): int
     {
         return 12;

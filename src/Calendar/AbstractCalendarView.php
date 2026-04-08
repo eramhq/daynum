@@ -117,9 +117,8 @@ abstract class AbstractCalendarView implements CalendarView
 
     public function dayOfYear(): int
     {
-        $calendar = $this->calendar();
-        $startOfYearJdn = $calendar->toJdn($this->year(), 1, 1);
-        return $this->instant->jdn - $startOfYearJdn + 1;
+        $c = $this->components();
+        return $this->calendar()->dayOfYear($c['year'], $c['month'], $c['day']);
     }
 
     public function weekOfYear(): int

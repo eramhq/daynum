@@ -24,6 +24,11 @@ applied. Tagging is a separate release decision.
   — 1-indexed day of year, proleptic Gregorian. Used internally by
   `JalaliCalendar::fromJdn` (see Performance below) and a useful
   addition to the public surface for ISO-week and YTD arithmetic.
+- `JalaliCalendar::dayOfYear`, `HijriCivilCalendar::dayOfYear`,
+  `HijriUmmAlQuraCalendar::dayOfYear` — 1-indexed day of year for
+  each remaining shipped calendar, extracted from the closed-form
+  math already embedded in each calendar's `toJdn`. Satisfies the
+  new `Calendar::dayOfYear` interface contract (see Breaking below).
 - `tools/bench.php` — minimal `hrtime`-based micro-benchmark harness
   with warmup, GC control, and JIT-on/off comparison support. No
   dependencies. The numbers below were captured with this harness.
@@ -56,6 +61,12 @@ Wins are similar magnitude under JIT-on (`opcache.jit=tracing`).
 Gregorian and Hijri benchmarks are unchanged within ±2% noise.
 
 ### Changed
+- `AbstractCalendarView::dayOfYear()` now delegates to the backing
+  calendar's `dayOfYear` instead of round-tripping through `toJdn`
+  (which included the full validation prelude). Behavior is
+  unchanged for every shipped view — this is a structural cleanup
+  that closes the M3 review's open finding without special-casing
+  Gregorian in the abstract base.
 - `LocaleRegistry::get()` error message now names all three shipped
   locales: `Daynum ships 'en', 'fa', and 'ar'.`
 - Fixture generators (`generate-fixtures-php.php`,
@@ -78,6 +89,15 @@ Gregorian and Hijri benchmarks are unchanged within ±2% noise.
   calendar family: jalali`. Numeric patterns like `Y-m-d` and the
   weekday token `l` still work. Users who want Jalali output in the
   Perso-Arabic script should use `withLocale('fa')`.
+
+### Breaking (external `Calendar` implementers only)
+- The `Calendar` interface gained
+  `dayOfYear(int $year, int $month, int $day): int`. Anyone
+  implementing the interface in their own code — not a documented
+  use case, but possible — must add the method. All calendars
+  shipped by Daynum have it. Same kind of source-level break as
+  M2's `localeFamily()`; the `0.x.y` version range signals the v1
+  API is still settling.
 
 ## [0.2.0] — M2 Hijri support
 

@@ -136,4 +136,38 @@ final class HijriUmmAlQuraCalendarTest extends TestCase
     {
         $this->assertSame('hijri', HijriUmmAlQuraCalendar::instance()->localeFamily());
     }
+
+    public function testDayOfYearMinYearStart(): void
+    {
+        $c = HijriUmmAlQuraCalendar::instance();
+        $this->assertSame(1, $c->dayOfYear(Table::MIN_YEAR, 1, 1));
+    }
+
+    public function testDayOfYearLastDayMatchesSummedDaysInMonth(): void
+    {
+        // Cross-check the bit-walk end-to-end against an independent
+        // reference: summing daysInMonth across the whole year must match
+        // dayOfYear of (12, daysInMonth(12)).
+        $c = HijriUmmAlQuraCalendar::instance();
+        $total = 0;
+        for ($m = 1; $m <= 12; $m++) {
+            $total += $c->daysInMonth(1445, $m);
+        }
+        $this->assertSame(
+            $total,
+            $c->dayOfYear(1445, 12, $c->daysInMonth(1445, 12))
+        );
+    }
+
+    public function testDayOfYearBelowMinYearThrows(): void
+    {
+        $this->expectException(UmmAlQuraOutOfRangeException::class);
+        HijriUmmAlQuraCalendar::instance()->dayOfYear(Table::MIN_YEAR - 1, 1, 1);
+    }
+
+    public function testDayOfYearAboveMaxYearThrows(): void
+    {
+        $this->expectException(UmmAlQuraOutOfRangeException::class);
+        HijriUmmAlQuraCalendar::instance()->dayOfYear(Table::MAX_YEAR + 1, 1, 1);
+    }
 }

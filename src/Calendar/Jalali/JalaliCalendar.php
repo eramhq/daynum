@@ -156,6 +156,12 @@ final class JalaliCalendar implements Calendar
         return $this->isLeapYear($year) ? 30 : 29;
     }
 
+    public function dayOfYear(int $year, int $month, int $day): int
+    {
+        // Mirrors the cumulative-day expression in toJdn.
+        return ($month - 1) * 31 - intdiv($month, 7) * ($month - 7) + $day;
+    }
+
     public function monthsInYear(int $year): int
     {
         return 12;

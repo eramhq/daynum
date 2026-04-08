@@ -166,4 +166,31 @@ final class HijriCivilCalendarTest extends TestCase
         $this->assertSame(12, HijriCivilCalendar::instance()->monthsInYear(1));
         $this->assertSame(12, HijriCivilCalendar::instance()->monthsInYear(1445));
     }
+
+    /**
+     * @dataProvider dayOfYearCases
+     */
+    public function testDayOfYear(int $year, int $month, int $day, int $expected): void
+    {
+        $this->assertSame($expected, HijriCivilCalendar::instance()->dayOfYear($year, $month, $day));
+    }
+
+    /**
+     * @return iterable<string, array{int,int,int,int}>
+     */
+    public static function dayOfYearCases(): iterable
+    {
+        // Year-start.
+        yield 'Muharram 1 → 1'              => [1, 1, 1, 1];
+        // End of first 30-day month.
+        yield 'Muharram 30 → 30'            => [1, 1, 30, 30];
+        // First month transition (Safar has 29 days).
+        yield 'Safar 1 → 31'                => [1, 2, 1, 31];
+        // Non-leap year length (AH 1 confirmed non-leap in existing test).
+        yield 'Dhu al-Hijjah 29 non-leap → 354' => [1, 12, 29, 354];
+        // Leap-year length (AH 2 confirmed leap in existing test).
+        yield 'Dhu al-Hijjah 30 leap → 355' => [2, 12, 30, 355];
+        // MAX_YEAR boundary.
+        yield 'MAX_YEAR Muharram 1 → 1'     => [HijriCivilCalendar::MAX_YEAR, 1, 1, 1];
+    }
 }

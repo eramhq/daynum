@@ -117,4 +117,31 @@ final class JalaliCalendarTest extends TestCase
     {
         $this->assertSame('jalali', JalaliCalendar::instance()->name());
     }
+
+    /**
+     * @dataProvider dayOfYearCases
+     */
+    public function testDayOfYear(int $year, int $month, int $day, int $expected): void
+    {
+        $this->assertSame($expected, JalaliCalendar::instance()->dayOfYear($year, $month, $day));
+    }
+
+    /**
+     * @return iterable<string, array{int,int,int,int}>
+     */
+    public static function dayOfYearCases(): iterable
+    {
+        // Year-start.
+        yield 'Farvardin 1 → 1'             => [1405, 1, 1, 1];
+        // End of the 31-day-month run.
+        yield 'Shahrivar 31 → 186'          => [1405, 6, 31, 186];
+        // First 30-day-month transition.
+        yield 'Mehr 1 → 187'                => [1405, 7, 1, 187];
+        // Non-leap year length (1405 is not leap — existing test confirms).
+        yield 'Esfand 29 non-leap → 365'    => [1405, 12, 29, 365];
+        // Leap-year length via $day (1403 is confirmed leap above).
+        yield 'Esfand 30 leap → 366'        => [1403, 12, 30, 366];
+        // MAX_YEAR boundary.
+        yield 'MAX_YEAR Farvardin 1 → 1'    => [JalaliCalendar::MAX_YEAR, 1, 1, 1];
+    }
 }
