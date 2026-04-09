@@ -98,4 +98,21 @@ final class EnglishLocale extends AbstractTableLocale
         }
         return $isPm ? 'pm' : 'am';
     }
+
+    public function ordinalSuffix(int $day): string
+    {
+        // 11/12/13 take `th` despite ending in 1/2/3. The `% 100` lets the
+        // rule apply to hypothetical 111/112/113 if a caller ever passes
+        // values outside the 1..31 month range.
+        $mod100 = $day % 100;
+        if ($mod100 >= 11 && $mod100 <= 13) {
+            return 'th';
+        }
+        return match ($day % 10) {
+            1 => 'st',
+            2 => 'nd',
+            3 => 'rd',
+            default => 'th',
+        };
+    }
 }

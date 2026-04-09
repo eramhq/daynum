@@ -6,6 +6,7 @@ namespace Daynum\Calendar;
 
 use Daynum\Calendar;
 use Daynum\CalendarView;
+use Daynum\Exception\DaynumException;
 use Daynum\Formatter\DateTokenFormatter;
 use Daynum\Formatter\DigitTransliterator;
 use Daynum\Formatter\FormatContext;
@@ -130,10 +131,22 @@ abstract class AbstractCalendarView implements CalendarView
         $isoDow = $this->dayOfWeekIso();           // Mon=1..Sun=7
         $thursdayJdn = $jdn - $isoDow + 4;          // JDN of this week's Thursday
         $calendar = $this->calendar();
-        [$thursdayYear, , ] = $calendar->fromJdn($thursdayJdn);
 
-        // JDN of Jan 4 of $thursdayYear — always in ISO week 1.
-        $jan4 = $calendar->toJdn($thursdayYear, 1, 4);
+        try {
+            [$thursdayYear, , ] = $calendar->fromJdn($thursdayJdn);
+            // JDN of Jan 4 of $thursdayYear — always in ISO week 1.
+            $jan4 = $calendar->toJdn($thursdayYear, 1, 4);
+        } catch (DaynumException) {
+            // The containing ISO week's Thursday falls outside the calendar's
+            // supported year range. This only happens within the first or last
+            // ~6 days of MIN_YEAR / MAX_YEAR (HijriCivil AH 1 Muharram 1 is the
+            // canonical example — its Thursday is one day before the epoch).
+            // Return 1 as a documented non-crashing sentinel; a proper ISO
+            // resolution at these boundaries is calendar-specific and out of
+            // scope for the current tranche.
+            return 1;
+        }
+
         $jan4Iso = (($jan4 % 7) + 7) % 7 + 1;
         $firstThursday = $jan4 - $jan4Iso + 4;
 
@@ -174,6 +187,12 @@ abstract class AbstractCalendarView implements CalendarView
         // positive; the tokenizer still emits a literal without reaching
         // the `z` handler.
         $dayOfYear = str_contains($pattern, 'z') ? $this->dayOfYear() : 0;
+        // `weekOfYear` calls `fromJdn` + `toJdn` — same order of cost as
+        // `z`, so guard it with the same pattern. `str_contains` is
+        // case-sensitive, so this does NOT match the existing lowercase
+        // `w` token. `\W` is a benign false positive (the tokenizer emits
+        // a literal without consulting the `W` handler).
+        $weekOfYear = str_contains($pattern, 'W') ? $this->weekOfYear() : 0;
         $ctx = new FormatContext(
             locale: $this->locale,
             calendarName: $calendar->localeFamily(),
@@ -187,6 +206,7 @@ abstract class AbstractCalendarView implements CalendarView
             dayOfWeekIso: $this->dayOfWeekIso(),
             daysInMonth: $c['daysInMonth'],
             dayOfYear: $dayOfYear,
+            weekOfYear: $weekOfYear,
             isLeapYear: $c['isLeapYear'],
             tzLabel: $this->instant->tzLabel,
             digitScript: $this->digitScript,

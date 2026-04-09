@@ -72,4 +72,14 @@ final class ArabicLocale extends AbstractTableLocale
     {
         return $isPm ? 'م' : 'ص';
     }
+
+    /**
+     * Arabic has no native English-style ordinal suffix. Returning the empty
+     * string lets `jS F Y` render cleanly without leaving `th` residue
+     * inside Arabic-script output.
+     */
+    public function ordinalSuffix(int $day): string
+    {
+        return '';
+    }
 }

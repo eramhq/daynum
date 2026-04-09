@@ -29,6 +29,7 @@ final class FormatContext
         public readonly int $dayOfWeekIso,
         public readonly int $daysInMonth,
         public readonly int $dayOfYear,
+        public readonly int $weekOfYear,
         public readonly bool $isLeapYear,
         public readonly ?string $tzLabel,
         public readonly string $digitScript,

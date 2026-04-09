@@ -14,27 +14,51 @@ use PHPUnit\Framework\TestCase;
 final class DateTokenFormatterTest extends TestCase
 {
     /**
-     * 2026-04-08 Wednesday 14:30:45, Gregorian, English locale.
+     * 2026-04-08 Wednesday 14:30:45, Gregorian, English locale — the base
+     * sample used by most token-coverage tests. Pass `$overrides` to tweak
+     * specific fields without re-typing the whole 16-argument constructor.
      */
-    private function sampleContext(): FormatContext
+    private function sampleContext(array $overrides = []): FormatContext
     {
-        return new FormatContext(
-            locale: new EnglishLocale(),
-            calendarName: 'gregorian',
-            year: 2026,
-            month: 4,
-            day: 8,
-            hour: 14,
-            minute: 30,
-            second: 45,
-            dayOfWeek: 3,       // Wednesday (Sun=0)
-            dayOfWeekIso: 3,    // Wednesday (Mon=1)
-            daysInMonth: 30,
-            dayOfYear: 98,      // 31 (Jan) + 28 (Feb) + 31 (Mar) + 8
-            isLeapYear: false,
-            tzLabel: 'UTC',
-            digitScript: DigitTransliterator::LATN,
-        );
+        $defaults = [
+            'locale' => new EnglishLocale(),
+            'calendarName' => 'gregorian',
+            'year' => 2026,
+            'month' => 4,
+            'day' => 8,
+            'hour' => 14,
+            'minute' => 30,
+            'second' => 45,
+            'dayOfWeek' => 3,       // Wednesday (Sun=0)
+            'dayOfWeekIso' => 3,    // Wednesday (Mon=1)
+            'daysInMonth' => 30,
+            'dayOfYear' => 98,      // 31 (Jan) + 28 (Feb) + 31 (Mar) + 8
+            'weekOfYear' => 15,     // 2026-01-01 is Thursday → ISO week 1 is Jan 1–7
+            'isLeapYear' => false,
+            'tzLabel' => 'UTC',
+            'digitScript' => DigitTransliterator::LATN,
+        ];
+        return new FormatContext(...[...$defaults, ...$overrides]);
+    }
+
+    /**
+     * Jalali 1405-01-19 (equivalent to 2026-04-08) 14:30 under the Persian
+     * locale with Perso-Arabic digits. Shared base for digit-script tests.
+     */
+    private function jalaliPersianContext(array $overrides = []): FormatContext
+    {
+        return $this->sampleContext([
+            'locale' => new PersianLocale(),
+            'calendarName' => 'jalali',
+            'year' => 1405, 'month' => 1, 'day' => 19,
+            'hour' => 14, 'minute' => 30, 'second' => 0,
+            'daysInMonth' => 31,
+            'dayOfYear' => 19,
+            'weekOfYear' => 3,
+            'tzLabel' => 'Asia/Tehran',
+            'digitScript' => DigitTransliterator::PERSIAN,
+            ...$overrides,
+        ]);
     }
 
     /**
@@ -74,8 +98,19 @@ final class DateTokenFormatterTest extends TestCase
         yield 'zz repeated'        => ['zz', '9797'];
         yield 'z inline'           => ['Y-m-d (z)', '2026-04-08 (97)'];
         yield 'Yz adjacent'        => ['Yz', '202697'];
+        yield 'g 12h unpadded'     => ['g', '2'];           // hour 14 → 2 PM
+        yield 'h 12h padded'       => ['h', '02'];
+        yield 'W ISO week'         => ['W', '15'];
+        yield 'WW repeated'        => ['WW', '1515'];
+        yield 'S ordinal en'       => ['S', 'th'];          // day 8 → th
+        yield 'jS ordinal'         => ['jS', '8th'];
+        yield 'dS padded-ordinal'  => ['dS', '08th'];
+        yield 'z-W combined'       => ['z-W', '97-15'];
+        yield 'Wz adjacent'        => ['Wz', '1597'];
+        yield 'gh adjacent'        => ['gh', '202'];        // g=2, h=02
         yield 'full pattern'       => ['Y-m-d H:i:s', '2026-04-08 14:30:45'];
         yield 'human pattern'      => ['l, j F Y', 'Wednesday, 8 April 2026'];
+        yield 'human ordinal'      => ['l jS F Y', 'Wednesday 8th April 2026'];
     }
 
     public function testZTokenRespectsBackslashEscape(): void
@@ -83,6 +118,115 @@ final class DateTokenFormatterTest extends TestCase
         // `\z` → literal `z`. Existing testBackslashEscape already covers
         // escape-then-token adjacency; this test pins the minimal `\z` case.
         $this->assertSame('z', DateTokenFormatter::format('\z', $this->sampleContext()));
+    }
+
+    public function testWTokenRespectsBackslashEscape(): void
+    {
+        // `\W` → literal `W`. Exercises the false-positive path of the
+        // `str_contains($pattern, 'W')` guard threaded through
+        // AbstractCalendarView::format — the view-level test in InstantTest
+        // pins the full path; this test pins the tokenizer half.
+        $this->assertSame('W', DateTokenFormatter::format('\W', $this->sampleContext()));
+    }
+
+    public function testSTokenRespectsBackslashEscape(): void
+    {
+        $this->assertSame('S', DateTokenFormatter::format('\S', $this->sampleContext()));
+    }
+
+    public function testGAndHTokenBackslashEscape(): void
+    {
+        $this->assertSame('gh', DateTokenFormatter::format('\g\h', $this->sampleContext()));
+    }
+
+    /**
+     * @dataProvider twelveHourBoundaries
+     */
+    public function testGAndHTwelveHourBoundaries(int $hour, string $g, string $h): void
+    {
+        // Midnight (0) and noon (12) are the load-bearing cases for the
+        // `% 12 ?: 12` idiom in DateTokenFormatter — without the `?: 12`
+        // fallback they would both render as `0`.
+        $ctx = $this->sampleContext(['hour' => $hour]);
+        $this->assertSame($g, DateTokenFormatter::format('g', $ctx));
+        $this->assertSame($h, DateTokenFormatter::format('h', $ctx));
+    }
+
+    /**
+     * @return iterable<string, array{int, string, string}>
+     */
+    public static function twelveHourBoundaries(): iterable
+    {
+        yield 'midnight'    => [0,  '12', '12'];
+        yield '1 AM'        => [1,  '1',  '01'];
+        yield '11 AM'       => [11, '11', '11'];
+        yield 'noon'        => [12, '12', '12'];
+        yield '1 PM'        => [13, '1',  '01'];
+        yield '11 PM'       => [23, '11', '11'];
+    }
+
+    public function testGAndHInMeridiemPatterns(): void
+    {
+        $this->assertSame('02:30:45 PM', DateTokenFormatter::format('h:i:s A', $this->sampleContext()));
+
+        $midnight = $this->sampleContext(['hour' => 0, 'minute' => 0, 'second' => 0]);
+        $this->assertSame('12:00 am', DateTokenFormatter::format('g:i a', $midnight));
+
+        $endOfDay = $this->sampleContext(['hour' => 23, 'minute' => 59, 'second' => 59]);
+        $this->assertSame('11:59:59 PM', DateTokenFormatter::format('h:i:s A', $endOfDay));
+    }
+
+    public function testGAndHWithPersianDigits(): void
+    {
+        $ctx = $this->jalaliPersianContext();
+        $this->assertSame('۲:۳۰', DateTokenFormatter::format('g:i', $ctx));
+        $this->assertSame('۰۲:۳۰', DateTokenFormatter::format('h:i', $ctx));
+    }
+
+    /**
+     * @dataProvider isoWeekCases
+     */
+    public function testWTokenAcrossGregorianBoundaries(
+        int $year, int $month, int $day, int $dow, int $isoDow, int $week, string $expected
+    ): void {
+        $ctx = $this->sampleContext([
+            'year' => $year, 'month' => $month, 'day' => $day,
+            'dayOfWeek' => $dow, 'dayOfWeekIso' => $isoDow,
+            'weekOfYear' => $week,
+        ]);
+        $this->assertSame($expected, DateTokenFormatter::format('W', $ctx));
+    }
+
+    /**
+     * ISO week-number cases including the cross-year Thursday rule:
+     * 2024-12-30 is W=01 (belongs to 2025) and 2023-01-01 is W=52
+     * (belongs to 2022). Cross-checked with `date('W', strtotime(...))`.
+     *
+     * @return iterable<string, array{int,int,int,int,int,int,string}>
+     */
+    public static function isoWeekCases(): iterable
+    {
+        // [year, month, day, dayOfWeek (Sun=0), dayOfWeekIso, weekOfYear, expected]
+        yield '2026-01-05 Mon W=02'   => [2026, 1,  5, 1, 1,  2, '02'];
+        yield '2024-12-30 Mon W=01'   => [2024, 12, 30, 1, 1, 1, '01'];
+        yield '2026-12-31 Thu W=53'   => [2026, 12, 31, 4, 4, 53, '53'];
+        yield '2023-01-01 Sun W=52'   => [2023, 1,  1, 0, 7, 52, '52'];
+    }
+
+    public function testSTokenFullPatternEnglish(): void
+    {
+        $this->assertSame('8th April 2026', DateTokenFormatter::format('jS F Y', $this->sampleContext()));
+        $this->assertSame('Wednesday 8th April 2026', DateTokenFormatter::format('l jS F Y', $this->sampleContext()));
+    }
+
+    public function testSTokenFullPatternPersianHasNoResidue(): void
+    {
+        // Persian's empty ordinal suffix must not produce stray characters —
+        // `jS F Y` should render identically to `j F Y`.
+        $this->assertSame(
+            '۱۹ فروردین ۱۴۰۵',
+            DateTokenFormatter::format('jS F Y', $this->jalaliPersianContext())
+        );
     }
 
     public function testZTokenAcrossGregorianBoundaries(): void
@@ -108,6 +252,7 @@ final class DateTokenFormatterTest extends TestCase
                 dayOfWeek: 0, dayOfWeekIso: 7,
                 daysInMonth: $dim,
                 dayOfYear: $doy,
+                weekOfYear: 1,
                 isLeapYear: $leap,
                 tzLabel: null,
                 digitScript: DigitTransliterator::LATN,
@@ -131,6 +276,7 @@ final class DateTokenFormatterTest extends TestCase
             dayOfWeek: 3, dayOfWeekIso: 3,
             daysInMonth: 31,
             dayOfYear: 19,
+            weekOfYear: 3,
             isLeapYear: false,
             tzLabel: 'Asia/Tehran',
             digitScript: DigitTransliterator::PERSIAN,
@@ -162,6 +308,7 @@ final class DateTokenFormatterTest extends TestCase
             dayOfWeek: 0, dayOfWeekIso: 7,
             daysInMonth: 31,
             dayOfYear: 74,      // 31 (Jan) + 28 (Feb) + 15
+            weekOfYear: 1,
             isLeapYear: false,
             tzLabel: null,
             digitScript: DigitTransliterator::LATN,
@@ -179,6 +326,7 @@ final class DateTokenFormatterTest extends TestCase
             dayOfWeek: 6, dayOfWeekIso: 6,
             daysInMonth: 31,
             dayOfYear: 1,
+            weekOfYear: 1,
             isLeapYear: true,
             tzLabel: null,
             digitScript: DigitTransliterator::LATN,
@@ -196,6 +344,7 @@ final class DateTokenFormatterTest extends TestCase
             dayOfWeek: 3, dayOfWeekIso: 3,
             daysInMonth: 31,
             dayOfYear: 19,
+            weekOfYear: 3,
             isLeapYear: false,
             tzLabel: 'Asia/Tehran',
             digitScript: DigitTransliterator::PERSIAN,

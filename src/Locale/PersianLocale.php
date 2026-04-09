@@ -99,4 +99,14 @@ final class PersianLocale extends AbstractTableLocale
     {
         return $isPm ? 'ب.ظ' : 'ق.ظ';
     }
+
+    /**
+     * Persian has no native English-style ordinal suffix. Returning the
+     * empty string lets `jS F Y` render cleanly without leaving `th` residue
+     * inside Perso-Arabic output.
+     */
+    public function ordinalSuffix(int $day): string
+    {
+        return '';
+    }
 }

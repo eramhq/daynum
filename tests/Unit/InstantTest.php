@@ -208,4 +208,168 @@ final class InstantTest extends TestCase
             Instant::fromGregorian(2026, 4, 8)->gregorian()->format('\z')
         );
     }
+
+    public function testGregorianFormatG(): void
+    {
+        // Midnight / noon / 1 PM — the load-bearing `% 12 ?: 12` path.
+        $this->assertSame('12', Instant::fromGregorian(2026, 4, 8, 0, 0, 0)->gregorian()->format('g'));
+        $this->assertSame('12', Instant::fromGregorian(2026, 4, 8, 12, 0, 0)->gregorian()->format('g'));
+        $this->assertSame('1',  Instant::fromGregorian(2026, 4, 8, 13, 0, 0)->gregorian()->format('g'));
+    }
+
+    public function testGregorianFormatH(): void
+    {
+        $this->assertSame('12', Instant::fromGregorian(2026, 4, 8, 0, 0, 0)->gregorian()->format('h'));
+        $this->assertSame('12', Instant::fromGregorian(2026, 4, 8, 12, 0, 0)->gregorian()->format('h'));
+        $this->assertSame('01', Instant::fromGregorian(2026, 4, 8, 13, 0, 0)->gregorian()->format('h'));
+    }
+
+    public function testGregorianFormatW(): void
+    {
+        // 2026-04-08 is Wednesday of ISO week 15 of 2026 (cross-checked with
+        // PHP's `date('W', strtotime('2026-04-08'))`).
+        $this->assertSame(
+            '15',
+            Instant::fromGregorian(2026, 4, 8)->gregorian()->format('W')
+        );
+    }
+
+    public function testJalaliFormatW(): void
+    {
+        // Non-Gregorian `W` applies the ISO rule to the calendar's own year
+        // boundaries. Jalali AP 1405-01-19 (= 2026-04-08) is 18 days into
+        // Farvardin 1405, which lands in ISO week 3 of AP 1405 — distinct
+        // from Gregorian's week 15 of 2026 even though the JDN is identical.
+        $this->assertSame(
+            '03',
+            Instant::fromJalali(1405, 1, 19)->jalali()->format('W')
+        );
+    }
+
+    public function testGregorianFormatJSFY(): void
+    {
+        $this->assertSame(
+            '8th April 2026',
+            Instant::fromGregorian(2026, 4, 8)->gregorian()->format('jS F Y')
+        );
+    }
+
+    public function testJalaliFormatJSFYPersian(): void
+    {
+        // Persian has an empty ordinal suffix, so `jS` renders cleanly as
+        // just the day — no `th` residue inside the Perso-Arabic output.
+        $this->assertSame(
+            '۱۹ فروردین ۱۴۰۵',
+            Instant::fromJalali(1405, 1, 19)->jalali()->withLocale('fa')->withDigits('persian')->format('jS F Y')
+        );
+    }
+
+    public function testWeekOfYearBoundaryReturnsSentinelAtHijriCivilEpoch(): void
+    {
+        // AH 1 Muharram 1 is a Friday (JDN 1948440, the epoch). Its ISO
+        // week's Thursday is JDN 1948439 — one day before the epoch,
+        // resolving to year 0 which is below HijriCivil's MIN_YEAR.
+        // Pre-fix this threw InvalidDateException from toJdn; now the
+        // try/catch sentinel returns 1.
+        $this->assertSame(
+            1,
+            Instant::fromHijriCivil(1, 1, 1)->hijriCivil()->weekOfYear()
+        );
+    }
+
+    public function testHijriCivilFormatWAtEpochBoundary(): void
+    {
+        // The `W` format token must also return the sentinel without
+        // throwing, so `format('W')` is safe at the calendar boundary.
+        $this->assertSame(
+            '01',
+            Instant::fromHijriCivil(1, 1, 1)->hijriCivil()->format('W')
+        );
+    }
+
+    public function testHijriCivilFormatWAtMaxBoundary(): void
+    {
+        // AH 9666 Dhu al-Hijjah's last day — the other boundary where the
+        // containing ISO week's Thursday can fall into a notional year
+        // above MAX_YEAR.
+        $cal = \Daynum\Calendar\Hijri\HijriCivilCalendar::instance();
+        $lastDay = $cal->daysInMonth(\Daynum\Calendar\Hijri\HijriCivilCalendar::MAX_YEAR, 12);
+        $this->assertSame(
+            '01',
+            Instant::fromHijriCivil(\Daynum\Calendar\Hijri\HijriCivilCalendar::MAX_YEAR, 12, $lastDay)
+                ->hijriCivil()
+                ->format('W')
+        );
+    }
+
+    public function testHijriUmmAlQuraFormatWAtMinBoundary(): void
+    {
+        // UAQ MIN_YEAR Muharram 1 — UAQ's fromJdn throws
+        // UmmAlQuraOutOfRangeException when the Thursday JDN falls below
+        // the bundled table's first year. The catch clause still returns
+        // the sentinel.
+        $this->assertSame(
+            '01',
+            Instant::fromHijri(\Daynum\Calendar\Hijri\Table::MIN_YEAR, 1, 1)->hijri()->format('W')
+        );
+    }
+
+    public function testHijriUmmAlQuraFormatWAtMaxBoundary(): void
+    {
+        // UAQ MAX_YEAR Dhu al-Hijjah last day. Whether the sentinel fires
+        // depends on the day-of-week of that particular date: if the
+        // Thursday of the containing ISO week stays inside MAX_YEAR, the
+        // normal computation succeeds; if it spills into a notional year
+        // above MAX_YEAR, the catch returns `01`. Both outcomes are valid
+        // — the contract is "does not throw" — so assert against both
+        // valid shapes rather than pinning a specific integer.
+        $cal = HijriUmmAlQuraCalendar::instance();
+        $lastDay = $cal->daysInMonth(\Daynum\Calendar\Hijri\Table::MAX_YEAR, 12);
+        $w = Instant::fromHijri(\Daynum\Calendar\Hijri\Table::MAX_YEAR, 12, $lastDay)
+            ->hijri()
+            ->format('W');
+        $this->assertMatchesRegularExpression('/^(0[1-9]|[1-4][0-9]|5[0-3])$/', $w);
+    }
+
+    public function testJalaliFormatWAtMinBoundary(): void
+    {
+        // Jalali AP 1-01-01 (= 622 CE). MIN_YEAR edge — the containing
+        // week's Thursday can fall in a notional year 0.
+        $this->assertSame(
+            '01',
+            Instant::fromJalali(1, 1, 1)->jalali()->format('W')
+        );
+    }
+
+    public function testFormatWBackslashEscape(): void
+    {
+        // `\W` is a literal `W` — tests the benign false positive of the
+        // hot-path `str_contains($pattern, 'W')` guard.
+        $this->assertSame(
+            'W',
+            Instant::fromGregorian(2026, 4, 8)->gregorian()->format('\W')
+        );
+    }
+
+    public function testFormatZAndWCombined(): void
+    {
+        // Both guarded tokens computed in one call: exercises the two
+        // str_contains guards compounding.
+        $this->assertSame(
+            '97 15',
+            Instant::fromGregorian(2026, 4, 8)->gregorian()->format('z W')
+        );
+    }
+
+    public function testGregorianFormatFullComboSmoke(): void
+    {
+        // Smoke check from the plan — exercises g, h, i, A, j, S, F, Y, W
+        // and backslash escapes all in one pattern.
+        $this->assertSame(
+            '02:30 PM, 8th April 2026, Week 15',
+            Instant::fromGregorian(2026, 4, 8, 14, 30)
+                ->gregorian()
+                ->format('h:i A, jS F Y, \W\e\e\k W')
+        );
+    }
 }

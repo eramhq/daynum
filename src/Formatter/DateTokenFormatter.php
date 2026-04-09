@@ -24,16 +24,20 @@ namespace Daynum\Formatter;
  * | `M`   | Month, short form (locale/calendar-dependent)                     |
  * | `G`   | Hour (24h), no padding                                            |
  * | `H`   | Hour (24h), zero-padded                                           |
+ * | `g`   | Hour (12h), no padding                                            |
+ * | `h`   | Hour (12h), zero-padded                                           |
  * | `i`   | Minute, zero-padded                                               |
  * | `s`   | Second, zero-padded                                               |
  * | `N`   | ISO weekday (Mon=1..Sun=7)                                        |
  * | `w`   | Weekday (Sun=0..Sat=6)                                            |
+ * | `W`   | ISO 8601 week number, zero-padded (01-53)                         |
  * | `t`   | Number of days in the current month                               |
  * | `L`   | 1 if leap year else 0                                             |
  * | `T`   | Timezone label as stored on the instant ("" if none)              |
  * | `e`   | Timezone label as stored on the instant ("" if none)              |
  * | `a`   | am/pm                                                             |
  * | `A`   | AM/PM                                                             |
+ * | `S`   | English ordinal suffix for day of month (locale-dependent)        |
  *
  * Literal characters are passed through unchanged. Backslash (`\`) escapes the
  * next character, so `\Y` produces a literal `Y`. After the tokens are
@@ -83,15 +87,20 @@ final class DateTokenFormatter
             'M' => $ctx->locale->monthNameShort($ctx->calendarName, $ctx->month),
             'G' => (string) $ctx->hour,
             'H' => sprintf('%02d', $ctx->hour),
+            // `?: 12` keeps midnight and noon as 12 (not 0).
+            'g' => (string) ($ctx->hour % 12 ?: 12),
+            'h' => sprintf('%02d', $ctx->hour % 12 ?: 12),
             'i' => sprintf('%02d', $ctx->minute),
             's' => sprintf('%02d', $ctx->second),
             'N' => (string) $ctx->dayOfWeekIso,
             'w' => (string) $ctx->dayOfWeek,
+            'W' => sprintf('%02d', $ctx->weekOfYear),
             't' => (string) $ctx->daysInMonth,
             'L' => $ctx->isLeapYear ? '1' : '0',
             'T', 'e' => $ctx->tzLabel ?? '',
             'a' => $ctx->locale->meridiem($ctx->hour >= 12, false),
             'A' => $ctx->locale->meridiem($ctx->hour >= 12, true),
+            'S' => $ctx->locale->ordinalSuffix($ctx->day),
             default => null,
         };
     }

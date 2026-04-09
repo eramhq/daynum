@@ -62,6 +62,14 @@ final class ArabicLocaleTest extends TestCase
         $this->assertSame('ص', $locale->meridiem(false, true));
     }
 
+    public function testOrdinalSuffixIsEmpty(): void
+    {
+        $locale = new ArabicLocale();
+        $this->assertSame('', $locale->ordinalSuffix(1));
+        $this->assertSame('', $locale->ordinalSuffix(11));
+        $this->assertSame('', $locale->ordinalSuffix(22));
+    }
+
     // ─── LocaleRegistry wiring ────────────────────────────────────────
 
     public function testRegistryReturnsSameSingletonAcrossAliases(): void

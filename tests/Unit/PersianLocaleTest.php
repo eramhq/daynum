@@ -65,4 +65,12 @@ final class PersianLocaleTest extends TestCase
         $this->assertSame('ق.ظ', $locale->meridiem(false, false));
         $this->assertSame('ب.ظ', $locale->meridiem(true, false));
     }
+
+    public function testOrdinalSuffixIsEmpty(): void
+    {
+        $locale = new PersianLocale();
+        $this->assertSame('', $locale->ordinalSuffix(1));
+        $this->assertSame('', $locale->ordinalSuffix(11));
+        $this->assertSame('', $locale->ordinalSuffix(22));
+    }
 }

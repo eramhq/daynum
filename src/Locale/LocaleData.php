@@ -52,4 +52,15 @@ interface LocaleData
      * @param bool $uppercase
      */
     public function meridiem(bool $isPm, bool $uppercase): string;
+
+    /**
+     * English-style ordinal suffix for the `S` token (`st`, `nd`, `rd`,
+     * `th`). Locales that have no native ordinal-suffix convention return an
+     * empty string, so that patterns like `jS F Y` render cleanly across
+     * languages instead of leaving broken English residue inside
+     * non-Latin-script output.
+     *
+     * @param int $day 1-indexed day of month
+     */
+    public function ordinalSuffix(int $day): string;
 }

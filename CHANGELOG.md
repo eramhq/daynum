@@ -11,6 +11,27 @@ applied. Tagging is a separate release decision.
 ## [Unreleased]
 
 ### Added
+- PHP `date()` format tokens `g`, `h`, `W`, `S`:
+  - `g` / `h` — 12-hour clock (unpadded / zero-padded). Midnight and
+    noon both render as `12`, matching PHP's `date()` semantics.
+  - `W` — ISO 8601 week number, zero-padded. Uses the existing
+    `AbstractCalendarView::weekOfYear()`. Non-Gregorian views emit the
+    ISO week of the calendar's own year — Jalali `W` is "ISO week of
+    the Jalali year", HijriCivil / UAQ likewise. Guarded behind a
+    `str_contains($pattern, 'W')` hot-path check, matching the `z`
+    pattern from the previous tranche. Follows the ISO Thursday rule,
+    so cross-year edges (e.g. 2024-12-30 → W=01, 2023-01-01 → W=52)
+    match PHP's `date('W')` output.
+  - `S` — English ordinal suffix (`st`/`nd`/`rd`/`th`). Routes through
+    a new `LocaleData::ordinalSuffix()` method; English returns the
+    correct suffix with the 11/12/13 override, Persian and Arabic
+    return the empty string so `jS F Y` renders cleanly in every
+    locale instead of leaving broken `th` residue inside Perso-Arabic
+    output.
+  - None of the four are added to format-token conformance fixtures —
+    ICU semantics don't map cleanly for any of them (see the
+    docblock in `tools/generate-format-tokens.php` for the existing
+    exclusion policy).
 - PHP `date('z')` day-of-year format token — 0-indexed day of the
   calendar year. Works across Gregorian, Jalali, HijriCivil, and
   HijriUmmAlQura via the `Calendar::dayOfYear` interface method
@@ -88,6 +109,19 @@ Gregorian and Hijri benchmarks are unchanged within ±2% noise.
     and additionally watches `src/Calendar/Hijri/Table.php`
     (ignoring only the `GENERATED_AT` constant).
 
+### Fixed
+- `AbstractCalendarView::weekOfYear()` no longer throws at the first
+  or last ISO week of the first or last supported year for HijriCivil,
+  HijriUmmAlQura, and Jalali. At these boundaries — where the ISO
+  week's Thursday would fall in an unsupported year — it now returns
+  `1` as a documented sentinel. The previous behavior (latent while
+  `W` was unit-test-only, user-facing now that `W` ships as a format
+  token) was to throw `InvalidDateException` from `toJdn` or
+  `UmmAlQuraOutOfRangeException` from `fromJdn`. A future tranche may
+  refine the boundary resolution to match strict ISO semantics (week
+  52/53 of the notional prior year); the sentinel is stable and
+  test-pinned in the meantime.
+
 ### Not supported under Arabic locale
 - Jalali month-name output: ICU's Arabic transliteration of Persian
   month names is low quality. Calling `F`/`M` format tokens on an
@@ -104,6 +138,15 @@ Gregorian and Hijri benchmarks are unchanged within ±2% noise.
   shipped by Daynum have it. Same kind of source-level break as
   M2's `localeFamily()`; the `0.x.y` version range signals the v1
   API is still settling.
+
+### Breaking (external `LocaleData` implementers only)
+- The `LocaleData` interface gained
+  `ordinalSuffix(int $day): string`. All three shipped locales
+  implement it (English returns the PHP-compatible `st`/`nd`/`rd`/`th`
+  table with the 11/12/13 override; Persian and Arabic return the
+  empty string). Custom implementers must add the method — same kind
+  of source-level break as this tranche's `Calendar::dayOfYear`
+  addition.
 
 ## [0.2.0] — M2 Hijri support
 
