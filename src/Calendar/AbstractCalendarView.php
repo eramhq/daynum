@@ -366,6 +366,14 @@ abstract class AbstractCalendarView implements CalendarView
             return ['value' => false, 'end' => $pos + strlen($persianAm)];
         }
 
+        // Arabic meridiem: ص (AM) / م (PM)
+        if (str_starts_with($remaining, 'م')) {
+            return ['value' => true, 'end' => $pos + strlen('م')];
+        }
+        if (str_starts_with($remaining, 'ص')) {
+            return ['value' => false, 'end' => $pos + strlen('ص')];
+        }
+
         return null;
     }
 

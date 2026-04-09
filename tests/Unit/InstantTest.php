@@ -517,10 +517,23 @@ final class InstantTest extends TestCase
         $this->assertEqualsWithDelta($expectedSeconds, $instant->secondsOfDay, 2);
     }
 
-    public function testTodayStillWorksWithNullTzLabel(): void
+    public function testTodayResolvesDefaultTimezone(): void
     {
-        $instant = Instant::today();
-        $this->assertNull($instant->tzLabel);
+        $oldTz = date_default_timezone_get();
+        date_default_timezone_set('Europe/London');
+        try {
+            $instant = Instant::today();
+            $this->assertSame('Europe/London', $instant->tzLabel);
+            $this->assertSame(0, $instant->secondsOfDay);
+        } finally {
+            date_default_timezone_set($oldTz);
+        }
+    }
+
+    public function testTodayWithExplicitTimezoneStoresIt(): void
+    {
+        $instant = Instant::today('UTC');
+        $this->assertSame('UTC', $instant->tzLabel);
         $this->assertSame(0, $instant->secondsOfDay);
     }
 

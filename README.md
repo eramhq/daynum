@@ -175,6 +175,8 @@ Backslash escapes the next character: `\Y` produces a literal `Y`.
 
 > **`W` and `o` tokens at calendar boundaries:** `weekOfYear()` and `weekBasedYear()` can throw `WeekAtBoundaryException` when the ISO week's Thursday falls outside the calendar's supported year range. This affects roughly the first or last 3 days of MIN_YEAR / MAX_YEAR for each calendar. If you format dates near these extremes, catch the exception or avoid the `W` / `o` tokens.
 
+> **Parsing support:** `parseExact()` accepts fixed-width numeric tokens only: `Y`, `m`, `d`, `H`, `h`, `i`, `s`, `a`/`A`. Variable-width tokens (`n`, `j`, `G`, `g`) and locale-dependent tokens (`F`, `M`, `l`, `D`) are format-only. Using `h` (12-hour) requires a companion `a`/`A` token. Digits in any script (Persian U+06F0, Arabic-Indic U+0660) are normalized automatically. The `a`/`A` tokens accept English (`am`/`pm`), Persian (`ق.ظ`/`ب.ظ`), and Arabic (`ص`/`م`) meridiem indicators.
+
 ## Opt-in global helpers
 
 If you're migrating from `morilog/jalali` and miss the `jdate()` shorthand,

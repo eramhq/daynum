@@ -288,4 +288,28 @@ final class ParseExactTest extends TestCase
         $i = GregorianView::parseExact('2026-04-08 08:30:00 ق.ظ', 'Y-m-d h:i:s a');
         $this->assertSame(8, $i->gregorian()->hour());
     }
+
+    // ─── Arabic meridiem ─────────────────────────────────────────────
+
+    public function testArabicMeridiemPm(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08 02:30:00 م', 'Y-m-d h:i:s a');
+        $this->assertSame(14, $i->gregorian()->hour());
+    }
+
+    public function testArabicMeridiemAm(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08 08:30:00 ص', 'Y-m-d h:i:s a');
+        $this->assertSame(8, $i->gregorian()->hour());
+    }
+
+    public function testArabicMeridiemRoundTrip(): void
+    {
+        $original = \Daynum\Instant::fromGregorian(2026, 4, 8, 14, 30, 0);
+        $formatted = $original->gregorian()->withLocale('ar')->format('Y-m-d h:i:s a');
+        $parsed = GregorianView::parseExact($formatted, 'Y-m-d h:i:s a');
+
+        $this->assertSame(14, $parsed->gregorian()->hour());
+        $this->assertSame(30, $parsed->gregorian()->minute());
+    }
 }

@@ -160,23 +160,19 @@ final class Instant implements JsonSerializable
     /**
      * Today in the proleptic Gregorian calendar, time = 00:00:00.
      *
-     * @param ?string $tzLabel Opaque label stored on the Instant. If null, uses
-     *                        the PHP default timezone but does NOT store it.
+     * When no timezone is provided, the PHP default timezone is used for
+     * determining today's date AND is stored on the Instant (matching
+     * how {@see now()} resolves the timezone).
+     *
+     * @param ?string $tzLabel Timezone identifier (e.g. 'Asia/Tehran', 'UTC').
+     *                        When null, resolves from `date_default_timezone_get()`.
      */
     public static function today(?string $tzLabel = null): self
     {
         $zone = $tzLabel !== null ? new DateTimeZone($tzLabel) : null;
         $now = new DateTimeImmutable('today', $zone);
 
-        return self::fromGregorian(
-            (int) $now->format('Y'),
-            (int) $now->format('n'),
-            (int) $now->format('j'),
-            0,
-            0,
-            0,
-            $tzLabel,
-        );
+        return self::fromDateTime($now);
     }
 
     // ─── Safe construction ────────────────────────────────────────
