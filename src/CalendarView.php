@@ -37,7 +37,26 @@ interface CalendarView
 
     public function dayOfYear(): int;
 
+    /**
+     * ISO 8601 week number within the calendar's own year (1–53).
+     *
+     * @throws \Daynum\Exception\WeekAtBoundaryException if this date falls
+     *   within the first or last few days of MIN_YEAR / MAX_YEAR and the
+     *   containing ISO week's Thursday lies outside the calendar's
+     *   supported range.
+     */
     public function weekOfYear(): int;
+
+    /**
+     * ISO 8601 week-based year — the year owning the ISO week of this
+     * date's Thursday. Differs from {@see year()} by ±1 around Jan 1 /
+     * Dec 31. Pair with {@see weekOfYear()} when emitting `Y-W`-style
+     * identifiers that need to round-trip through ISO week arithmetic.
+     *
+     * @throws \Daynum\Exception\WeekAtBoundaryException on the same
+     *   MIN_YEAR / MAX_YEAR boundary conditions as {@see weekOfYear()}.
+     */
+    public function weekBasedYear(): int;
 
     public function isLeapYear(): bool;
 

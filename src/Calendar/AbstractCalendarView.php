@@ -7,6 +7,7 @@ namespace Daynum\Calendar;
 use Daynum\Calendar;
 use Daynum\CalendarView;
 use Daynum\Exception\DaynumException;
+use Daynum\Exception\WeekAtBoundaryException;
 use Daynum\Formatter\DateTokenFormatter;
 use Daynum\Formatter\DigitTransliterator;
 use Daynum\Formatter\FormatContext;
@@ -136,21 +137,53 @@ abstract class AbstractCalendarView implements CalendarView
             [$thursdayYear, , ] = $calendar->fromJdn($thursdayJdn);
             // JDN of Jan 4 of $thursdayYear — always in ISO week 1.
             $jan4 = $calendar->toJdn($thursdayYear, 1, 4);
-        } catch (DaynumException) {
-            // The containing ISO week's Thursday falls outside the calendar's
-            // supported year range. This only happens within the first or last
-            // ~6 days of MIN_YEAR / MAX_YEAR (HijriCivil AH 1 Muharram 1 is the
-            // canonical example — its Thursday is one day before the epoch).
-            // Return 1 as a documented non-crashing sentinel; a proper ISO
-            // resolution at these boundaries is calendar-specific and out of
-            // scope for the current tranche.
-            return 1;
+        } catch (DaynumException $e) {
+            // A sentinel `1` would collide with the real week 1 at the MIN
+            // edge and be indistinguishable from the current year's week 1
+            // at the MAX edge — throwing is the only non-misleading outcome.
+            throw WeekAtBoundaryException::forJdn($thursdayJdn, $e);
         }
 
         $jan4Iso = (($jan4 % 7) + 7) % 7 + 1;
         $firstThursday = $jan4 - $jan4Iso + 4;
 
         return intdiv($thursdayJdn - $firstThursday, 7) + 1;
+    }
+
+    public function weekBasedYear(): int
+    {
+        // ISO 8601 week-based year — the year owning the ISO week of this
+        // date's Thursday. Differs from `year()` by ±1 around Jan 1 / Dec 31.
+        $jdn = $this->instant->jdn;
+        $isoDow = $this->dayOfWeekIso();
+        $thursdayJdn = $jdn - $isoDow + 4;
+        $calendar = $this->calendar();
+
+        try {
+            [$thursdayYear, , ] = $calendar->fromJdn($thursdayJdn);
+        } catch (DaynumException $e) {
+            throw WeekAtBoundaryException::forJdn($thursdayJdn, $e);
+        }
+
+        // Fast path: when the Thursday falls in the view's own year, the
+        // year is known-valid by construction and no probe is needed. This
+        // covers roughly 361/365 days — only early-Jan / late-Dec dates
+        // need to validate a notionally-adjacent year.
+        if ($thursdayYear === $this->components()['year']) {
+            return $thursdayYear;
+        }
+
+        // Closed-form `fromJdn` implementations (HijriCivil, Jalali,
+        // Gregorian) can return a notional out-of-range year that only
+        // `toJdn` would reject. Validate by attempting Jan 4 — any year
+        // ISO week 1 references must itself be a valid year of this calendar.
+        try {
+            $calendar->toJdn($thursdayYear, 1, 4);
+        } catch (DaynumException $e) {
+            throw WeekAtBoundaryException::forYear($thursdayYear, $e);
+        }
+
+        return $thursdayYear;
     }
 
     public function isLeapYear(): bool
@@ -181,18 +214,17 @@ abstract class AbstractCalendarView implements CalendarView
     {
         $c = $this->components();
         $calendar = $this->calendar();
-        // Only compute day-of-year when the pattern references it —
-        // dayOfYear is non-trivial on UAQ (bit-walk) and not worth paying
-        // for patterns that omit `z`. A `\z` escape is a benign false
-        // positive; the tokenizer still emits a literal without reaching
-        // the `z` handler.
-        $dayOfYear = str_contains($pattern, 'z') ? $this->dayOfYear() : 0;
-        // `weekOfYear` calls `fromJdn` + `toJdn` — same order of cost as
-        // `z`, so guard it with the same pattern. `str_contains` is
-        // case-sensitive, so this does NOT match the existing lowercase
-        // `w` token. `\W` is a benign false positive (the tokenizer emits
-        // a literal without consulting the `W` handler).
-        $weekOfYear = str_contains($pattern, 'W') ? $this->weekOfYear() : 0;
+        // `dayOfYear`, `weekOfYear`, and `weekBasedYear` each trigger real
+        // work — UAQ's dayOfYear is a bit-walk, and the week methods can
+        // throw at calendar boundaries. The `str_contains` pre-check is a
+        // zero-allocation `memchr`; if the token doesn't appear at all, the
+        // escape-aware scan is never reached. `\W` / `\o` / `\z` patterns
+        // hit `str_contains` as a false positive, then `patternContainsUnescaped`
+        // rejects them — important because it also means an escaped token
+        // at a calendar boundary never trips the throw.
+        $dayOfYear     = str_contains($pattern, 'z') && self::patternContainsUnescaped($pattern, 'z') ? $this->dayOfYear()     : 0;
+        $weekOfYear    = str_contains($pattern, 'W') && self::patternContainsUnescaped($pattern, 'W') ? $this->weekOfYear()    : 0;
+        $weekBasedYear = str_contains($pattern, 'o') && self::patternContainsUnescaped($pattern, 'o') ? $this->weekBasedYear() : 0;
         $ctx = new FormatContext(
             locale: $this->locale,
             calendarName: $calendar->localeFamily(),
@@ -207,11 +239,32 @@ abstract class AbstractCalendarView implements CalendarView
             daysInMonth: $c['daysInMonth'],
             dayOfYear: $dayOfYear,
             weekOfYear: $weekOfYear,
+            weekBasedYear: $weekBasedYear,
             isLeapYear: $c['isLeapYear'],
             tzLabel: $this->instant->tzLabel,
             digitScript: $this->digitScript,
         );
         return DateTokenFormatter::format($pattern, $ctx);
+    }
+
+    /**
+     * Returns true if `$char` appears unescaped in `$pattern`. A backslash
+     * escapes the next character, so `\W` does not count as a `W`. Runs in
+     * O(n) with no regex — roughly 20 ns per short pattern.
+     */
+    private static function patternContainsUnescaped(string $pattern, string $char): bool
+    {
+        $len = strlen($pattern);
+        for ($i = 0; $i < $len; $i++) {
+            if ($pattern[$i] === '\\') {
+                $i++;
+                continue;
+            }
+            if ($pattern[$i] === $char) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public function __toString(): string

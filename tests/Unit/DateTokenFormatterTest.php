@@ -34,6 +34,7 @@ final class DateTokenFormatterTest extends TestCase
             'daysInMonth' => 30,
             'dayOfYear' => 98,      // 31 (Jan) + 28 (Feb) + 31 (Mar) + 8
             'weekOfYear' => 15,     // 2026-01-01 is Thursday → ISO week 1 is Jan 1–7
+            'weekBasedYear' => 2026, // mid-year: `o` and `Y` agree
             'isLeapYear' => false,
             'tzLabel' => 'UTC',
             'digitScript' => DigitTransliterator::LATN,
@@ -102,6 +103,9 @@ final class DateTokenFormatterTest extends TestCase
         yield 'h 12h padded'       => ['h', '02'];
         yield 'W ISO week'         => ['W', '15'];
         yield 'WW repeated'        => ['WW', '1515'];
+        yield 'o week-based year'  => ['o', '2026'];        // mid-year: matches Y
+        yield 'o-W combined'       => ['o-\WW', '2026-W15'];
+        yield 'oY adjacent'        => ['oY', '20262026'];   // mid-year: both 2026
         yield 'S ordinal en'       => ['S', 'th'];          // day 8 → th
         yield 'jS ordinal'         => ['jS', '8th'];
         yield 'dS padded-ordinal'  => ['dS', '08th'];
@@ -123,10 +127,62 @@ final class DateTokenFormatterTest extends TestCase
     public function testWTokenRespectsBackslashEscape(): void
     {
         // `\W` → literal `W`. Exercises the false-positive path of the
-        // `str_contains($pattern, 'W')` guard threaded through
+        // `patternContainsUnescaped` guard threaded through
         // AbstractCalendarView::format — the view-level test in InstantTest
         // pins the full path; this test pins the tokenizer half.
         $this->assertSame('W', DateTokenFormatter::format('\W', $this->sampleContext()));
+    }
+
+    public function testOTokenRespectsBackslashEscape(): void
+    {
+        // `\o` → literal `o`. The companion to `\W` / `\z` — same
+        // escape-aware guard, same benign false-positive shape.
+        $this->assertSame('o', DateTokenFormatter::format('\o', $this->sampleContext()));
+    }
+
+    /**
+     * @dataProvider isoWeekYearCases
+     */
+    public function testOTokenCrossYearThursdayRule(
+        int $year, int $month, int $day, int $dow, int $isoDow,
+        int $week, int $weekBasedYear, string $expected
+    ): void {
+        $ctx = $this->sampleContext([
+            'year' => $year, 'month' => $month, 'day' => $day,
+            'dayOfWeek' => $dow, 'dayOfWeekIso' => $isoDow,
+            'weekOfYear' => $week,
+            'weekBasedYear' => $weekBasedYear,
+        ]);
+        $this->assertSame($expected, DateTokenFormatter::format('o-\WW', $ctx));
+    }
+
+    /**
+     * The whole point of `o`: around Jan 1 / Dec 31, `o` can differ from
+     * `Y` by ±1. Cross-checked with `date('o-\WW', strtotime(...))`.
+     *
+     * @return iterable<string, array{int,int,int,int,int,int,int,string}>
+     */
+    public static function isoWeekYearCases(): iterable
+    {
+        // [year, month, day, dayOfWeek, isoDow, weekOfYear, weekBasedYear, expected]
+        yield '2024-12-30 Mon (owned by 2025)' => [2024, 12, 30, 1, 1,  1, 2025, '2025-W01'];
+        yield '2023-01-01 Sun (owned by 2022)' => [2023,  1,  1, 0, 7, 52, 2022, '2022-W52'];
+        yield '2026-12-31 Thu (53-week year)'  => [2026, 12, 31, 4, 4, 53, 2026, '2026-W53'];
+        yield '2026-04-08 Wed (mid-year)'      => [2026,  4,  8, 3, 3, 15, 2026, '2026-W15'];
+    }
+
+    public function testOAndYDivergeAtCrossYearBoundary(): void
+    {
+        // 2024-12-30 Monday: `Y`=2024 but `o`=2025. This is the user-facing
+        // bug `o` exists to fix — `Y-W` would render `2024-01` (misleading)
+        // whereas `o-\WW` renders `2025-W01` (correct).
+        $ctx = $this->sampleContext([
+            'year' => 2024, 'month' => 12, 'day' => 30,
+            'dayOfWeek' => 1, 'dayOfWeekIso' => 1,
+            'weekOfYear' => 1,
+            'weekBasedYear' => 2025,
+        ]);
+        $this->assertSame('20252024', DateTokenFormatter::format('oY', $ctx));
     }
 
     public function testSTokenRespectsBackslashEscape(): void
@@ -253,6 +309,7 @@ final class DateTokenFormatterTest extends TestCase
                 daysInMonth: $dim,
                 dayOfYear: $doy,
                 weekOfYear: 1,
+                weekBasedYear: $year,
                 isLeapYear: $leap,
                 tzLabel: null,
                 digitScript: DigitTransliterator::LATN,
@@ -277,6 +334,7 @@ final class DateTokenFormatterTest extends TestCase
             daysInMonth: 31,
             dayOfYear: 19,
             weekOfYear: 3,
+            weekBasedYear: 1405,
             isLeapYear: false,
             tzLabel: 'Asia/Tehran',
             digitScript: DigitTransliterator::PERSIAN,
@@ -309,6 +367,7 @@ final class DateTokenFormatterTest extends TestCase
             daysInMonth: 31,
             dayOfYear: 74,      // 31 (Jan) + 28 (Feb) + 15
             weekOfYear: 1,
+            weekBasedYear: -44,
             isLeapYear: false,
             tzLabel: null,
             digitScript: DigitTransliterator::LATN,
@@ -327,6 +386,7 @@ final class DateTokenFormatterTest extends TestCase
             daysInMonth: 31,
             dayOfYear: 1,
             weekOfYear: 1,
+            weekBasedYear: 0,
             isLeapYear: true,
             tzLabel: null,
             digitScript: DigitTransliterator::LATN,
@@ -345,6 +405,7 @@ final class DateTokenFormatterTest extends TestCase
             daysInMonth: 31,
             dayOfYear: 19,
             weekOfYear: 3,
+            weekBasedYear: 1405,
             isLeapYear: false,
             tzLabel: 'Asia/Tehran',
             digitScript: DigitTransliterator::PERSIAN,

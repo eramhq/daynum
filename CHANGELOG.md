@@ -11,6 +11,23 @@ applied. Tagging is a separate release decision.
 ## [Unreleased]
 
 ### Added
+- PHP `date()` format token `o` — ISO 8601 week-based year. Pairs with
+  `W` to emit `Y-W`-style identifiers that round-trip through ISO week
+  arithmetic. Differs from `Y` by ±1 around the Jan 1 / Dec 31 edge:
+  `Instant::fromGregorian(2024, 12, 30)->gregorian()->format('o-\WW')`
+  correctly returns `2025-W01` whereas `Y-\WW` would have returned the
+  misleading `2024-W01`. Same negative-year and padding semantics as
+  `Y`. Not included in format-token conformance fixtures — ICU's `Y`
+  ≠ PHP `o`, so `o` joins `W g h S z` as a unit-test-only token.
+- `CalendarView::weekBasedYear(): int` — underlying primitive that
+  powers the `o` token. Throws `WeekAtBoundaryException` on the same
+  MIN/MAX-year boundary conditions as `weekOfYear()`.
+- `Daynum\Exception\WeekAtBoundaryException` — dedicated exception
+  thrown by `weekOfYear()` / `weekBasedYear()` when the containing ISO
+  week's Thursday, or the resulting week-based year, falls outside the
+  calendar's supported range. Implements the `DaynumException` marker
+  interface, so existing `catch (DaynumException)` clauses pick it up.
+  Boundary scope is covered in the `Changed` entry below.
 - PHP `date()` format tokens `g`, `h`, `W`, `S`:
   - `g` / `h` — 12-hour clock (unpadded / zero-padded). Midnight and
     noon both render as `12`, matching PHP's `date()` semantics.
@@ -94,6 +111,25 @@ Gregorian and Hijri benchmarks are unchanged within ±2% noise.
   unchanged for every shipped view — this is a structural cleanup
   that closes the M3 review's open finding without special-casing
   Gregorian in the abstract base.
+- `AbstractCalendarView::weekOfYear()` now throws
+  `WeekAtBoundaryException` at MIN_YEAR / MAX_YEAR edges where the
+  containing ISO week's Thursday lies outside the calendar's supported
+  range. An earlier commit in this unreleased tranche returned `1` as
+  a sentinel; that was silently wrong at the MIN edge — it collided
+  with the real week 1 of MIN_YEAR, so `(year, week)` sorts across a
+  boundary silently corrupted two distinct weeks into one label.
+  Throwing is the only outcome that never misleads: Java `java.time`
+  and Joda-Time take the same approach at bounded-chronology edges.
+  The throw fires on ~0–3 days per calendar at each boundary;
+  mid-year code is unaffected.
+- `AbstractCalendarView::format()` hot-path guards (`z`, `W`, `o`) are
+  now escape-aware via a new private `patternContainsUnescaped()`
+  helper. `\z`, `\W`, `\o` no longer trigger the underlying
+  computation and — critically — no longer trip the new boundary
+  throw for users who escaped the token on purpose. A zero-allocation
+  `str_contains` pre-check short-circuits each guard when the token
+  is absent entirely (the common case — `Y-m-d`, `l j F Y`, `H:i:s`),
+  so the added guard is free for the typical format call.
 - `LocaleRegistry::get()` error message now names all three shipped
   locales: `Daynum ships 'en', 'fa', and 'ar'.`
 - Fixture generators (`generate-fixtures-php.php`,
@@ -110,17 +146,10 @@ Gregorian and Hijri benchmarks are unchanged within ±2% noise.
     (ignoring only the `GENERATED_AT` constant).
 
 ### Fixed
-- `AbstractCalendarView::weekOfYear()` no longer throws at the first
-  or last ISO week of the first or last supported year for HijriCivil,
-  HijriUmmAlQura, and Jalali. At these boundaries — where the ISO
-  week's Thursday would fall in an unsupported year — it now returns
-  `1` as a documented sentinel. The previous behavior (latent while
-  `W` was unit-test-only, user-facing now that `W` ships as a format
-  token) was to throw `InvalidDateException` from `toJdn` or
-  `UmmAlQuraOutOfRangeException` from `fromJdn`. A future tranche may
-  refine the boundary resolution to match strict ISO semantics (week
-  52/53 of the notional prior year); the sentinel is stable and
-  test-pinned in the meantime.
+- `format('\z')` no longer forces a `dayOfYear()` computation on the
+  backing calendar. Previous versions documented this as a "benign
+  false positive" of the `str_contains($pattern, 'z')` guard; the new
+  escape-aware guard short-circuits cleanly.
 
 ### Not supported under Arabic locale
 - Jalali month-name output: ICU's Arabic transliteration of Persian
@@ -138,6 +167,15 @@ Gregorian and Hijri benchmarks are unchanged within ±2% noise.
   shipped by Daynum have it. Same kind of source-level break as
   M2's `localeFamily()`; the `0.x.y` version range signals the v1
   API is still settling.
+
+### Breaking (external `CalendarView` implementers only)
+- The `CalendarView` interface gained `weekBasedYear(): int`. Anyone
+  implementing the view interface directly — not a documented use
+  case; `AbstractCalendarView` covers every shipped calendar — must
+  add the method. `weekOfYear()` and `weekBasedYear()` both now
+  document `@throws WeekAtBoundaryException`; external implementers
+  should either mirror the throw at MIN/MAX edges or document their
+  own boundary semantics.
 
 ### Breaking (external `LocaleData` implementers only)
 - The `LocaleData` interface gained

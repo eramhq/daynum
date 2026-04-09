@@ -31,6 +31,7 @@ namespace Daynum\Formatter;
  * | `N`   | ISO weekday (Mon=1..Sun=7)                                        |
  * | `w`   | Weekday (Sun=0..Sat=6)                                            |
  * | `W`   | ISO 8601 week number, zero-padded (01-53)                         |
+ * | `o`   | ISO 8601 week-based year (may differ from `Y` around Jan 1/Dec 31)|
  * | `t`   | Number of days in the current month                               |
  * | `L`   | 1 if leap year else 0                                             |
  * | `T`   | Timezone label as stored on the instant ("" if none)              |
@@ -95,6 +96,7 @@ final class DateTokenFormatter
             'N' => (string) $ctx->dayOfWeekIso,
             'w' => (string) $ctx->dayOfWeek,
             'W' => sprintf('%02d', $ctx->weekOfYear),
+            'o' => self::yearFull($ctx->weekBasedYear),
             't' => (string) $ctx->daysInMonth,
             'L' => $ctx->isLeapYear ? '1' : '0',
             'T', 'e' => $ctx->tzLabel ?? '',
