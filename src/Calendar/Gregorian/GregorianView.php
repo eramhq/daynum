@@ -19,6 +19,11 @@ final class GregorianView extends AbstractCalendarView
         return GregorianCalendar::instance();
     }
 
+    protected static function calendarInstance(): Calendar
+    {
+        return GregorianCalendar::instance();
+    }
+
     protected function defaultFormat(): string
     {
         return 'Y-m-d';

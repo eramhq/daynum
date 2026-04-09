@@ -64,6 +64,13 @@ interface CalendarView
 
     public function daysInYear(): int;
 
+    /**
+     * Calendar-specific array of date/time components.
+     *
+     * @return array{year: int, month: int, day: int, hour: int, minute: int, second: int, tzLabel: ?string}
+     */
+    public function toArray(): array;
+
     public function format(string $pattern): string;
 
     public function withLocale(string $locale): static;

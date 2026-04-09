@@ -13,9 +13,11 @@ use Daynum\Calendar\Hijri\HijriUmmAlQuraView;
 use Daynum\Calendar\Jalali\JalaliCalendar;
 use Daynum\Calendar\Jalali\JalaliView;
 use Daynum\Exception\InvalidDateException;
+use Daynum\Exception\UmmAlQuraOutOfRangeException;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
+use JsonSerializable;
 
 /**
  * The immutable, calendar-agnostic core value type.
@@ -30,7 +32,7 @@ use DateTimeZone;
  * `secondsOfDay` and `tzLabel` are pass-through metadata. Calendar conversions
  * never touch them; formatting uses them for time/zone tokens only.
  */
-final class Instant
+final class Instant implements JsonSerializable
 {
     public function __construct(
         public readonly int $jdn,
@@ -138,10 +140,28 @@ final class Instant
     }
 
     /**
+     * Current date and time.
+     *
+     * When no timezone is provided, the PHP default timezone is used for
+     * determining the current date/time AND is stored on the Instant (matching
+     * how {@see fromDateTime()} resolves the timezone from a DateTimeInterface).
+     *
+     * @param ?string $tzLabel Timezone identifier (e.g. 'Asia/Tehran', 'UTC').
+     *                        When null, resolves from `date_default_timezone_get()`.
+     */
+    public static function now(?string $tzLabel = null): self
+    {
+        $zone = $tzLabel !== null ? new DateTimeZone($tzLabel) : null;
+        $now = new DateTimeImmutable('now', $zone);
+
+        return self::fromDateTime($now);
+    }
+
+    /**
      * Today in the proleptic Gregorian calendar, time = 00:00:00.
      *
      * @param ?string $tzLabel Opaque label stored on the Instant. If null, uses
-     *                        the PHP default timezone.
+     *                        the PHP default timezone but does NOT store it.
      */
     public static function today(?string $tzLabel = null): self
     {
@@ -156,6 +176,153 @@ final class Instant
             0,
             0,
             $tzLabel,
+        );
+    }
+
+    // ─── Safe construction ────────────────────────────────────────
+
+    /**
+     * Try to construct from Gregorian components; return null on invalid input.
+     */
+    public static function tryFromGregorian(
+        int $year,
+        int $month,
+        int $day,
+        int $hour = 0,
+        int $minute = 0,
+        int $second = 0,
+        ?string $tzLabel = null,
+    ): ?self {
+        try {
+            return self::fromGregorian($year, $month, $day, $hour, $minute, $second, $tzLabel);
+        } catch (InvalidDateException) {
+            return null;
+        }
+    }
+
+    /**
+     * Try to construct from Jalali components; return null on invalid input.
+     */
+    public static function tryFromJalali(
+        int $year,
+        int $month,
+        int $day,
+        int $hour = 0,
+        int $minute = 0,
+        int $second = 0,
+        ?string $tzLabel = null,
+    ): ?self {
+        try {
+            return self::fromJalali($year, $month, $day, $hour, $minute, $second, $tzLabel);
+        } catch (InvalidDateException) {
+            return null;
+        }
+    }
+
+    /**
+     * Try to construct from Hijri Umm al-Qura components; return null on
+     * invalid input OR if the year is outside the bundled table range.
+     */
+    public static function tryFromHijri(
+        int $year,
+        int $month,
+        int $day,
+        int $hour = 0,
+        int $minute = 0,
+        int $second = 0,
+        ?string $tzLabel = null,
+    ): ?self {
+        try {
+            return self::fromHijri($year, $month, $day, $hour, $minute, $second, $tzLabel);
+        } catch (InvalidDateException | UmmAlQuraOutOfRangeException) {
+            return null;
+        }
+    }
+
+    /**
+     * Try to construct from tabular Hijri civil components; return null on
+     * invalid input.
+     */
+    public static function tryFromHijriCivil(
+        int $year,
+        int $month,
+        int $day,
+        int $hour = 0,
+        int $minute = 0,
+        int $second = 0,
+        ?string $tzLabel = null,
+    ): ?self {
+        try {
+            return self::fromHijriCivil($year, $month, $day, $hour, $minute, $second, $tzLabel);
+        } catch (InvalidDateException) {
+            return null;
+        }
+    }
+
+    /**
+     * Check whether the given Gregorian components form a valid date.
+     */
+    public static function isValidGregorian(int $year, int $month, int $day): bool
+    {
+        return self::tryFromGregorian($year, $month, $day) !== null;
+    }
+
+    /**
+     * Check whether the given Jalali components form a valid date.
+     */
+    public static function isValidJalali(int $year, int $month, int $day): bool
+    {
+        return self::tryFromJalali($year, $month, $day) !== null;
+    }
+
+    /**
+     * Check whether the given Hijri Umm al-Qura components form a valid date
+     * within the bundled table range.
+     */
+    public static function isValidHijri(int $year, int $month, int $day): bool
+    {
+        return self::tryFromHijri($year, $month, $day) !== null;
+    }
+
+    /**
+     * Check whether the given tabular Hijri civil components form a valid date.
+     */
+    public static function isValidHijriCivil(int $year, int $month, int $day): bool
+    {
+        return self::tryFromHijriCivil($year, $month, $day) !== null;
+    }
+
+    // ─── Serialization ─────────────────────────────────────────────
+
+    /**
+     * Calendar-neutral JSON representation: `{"jdn":…,"secondsOfDay":…,"tzLabel":…}`.
+     *
+     * @return array{jdn: int, secondsOfDay: int, tzLabel: ?string}
+     */
+    public function jsonSerialize(): array
+    {
+        return [
+            'jdn' => $this->jdn,
+            'secondsOfDay' => $this->secondsOfDay,
+            'tzLabel' => $this->tzLabel,
+        ];
+    }
+
+    /**
+     * Reconstruct an Instant from a serialized array (inverse of {@see jsonSerialize}).
+     *
+     * @param array{jdn: int, secondsOfDay?: int, tzLabel?: ?string} $data
+     */
+    public static function fromArray(array $data): self
+    {
+        if (!isset($data['jdn']) || !is_int($data['jdn'])) {
+            throw new \InvalidArgumentException('Instant::fromArray() requires an integer "jdn" key.');
+        }
+
+        return new self(
+            $data['jdn'],
+            $data['secondsOfDay'] ?? 0,
+            $data['tzLabel'] ?? null,
         );
     }
 

@@ -19,6 +19,11 @@ final class JalaliView extends AbstractCalendarView
         return JalaliCalendar::instance();
     }
 
+    protected static function calendarInstance(): Calendar
+    {
+        return JalaliCalendar::instance();
+    }
+
     protected function defaultFormat(): string
     {
         return 'Y/m/d';

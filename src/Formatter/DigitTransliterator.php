@@ -62,18 +62,24 @@ final class DigitTransliterator
         return strtr($text, self::$toScriptMap[$script]);
     }
 
+    /** @var array<string, string>|null */
+    private static ?array $toLatinMap = null;
+
     /**
      * Normalize any Persian or Arabic digits in $text back to ASCII.
      */
     public static function toLatin(string $text): string
     {
-        $map = [];
-        foreach ([self::PERSIAN, self::ARAB] as $script) {
-            foreach (self::DIGITS[$script] as $i => $glyph) {
-                $map[$glyph] = (string) $i;
+        if (self::$toLatinMap === null) {
+            $map = [];
+            foreach ([self::PERSIAN, self::ARAB] as $script) {
+                foreach (self::DIGITS[$script] as $i => $glyph) {
+                    $map[$glyph] = (string) $i;
+                }
             }
+            self::$toLatinMap = $map;
         }
-        return strtr($text, $map);
+        return strtr($text, self::$toLatinMap);
     }
 
     public static function isSupported(string $script): bool

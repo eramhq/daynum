@@ -477,4 +477,266 @@ final class InstantTest extends TestCase
                 ->format('h:i A, jS F Y, \W\e\e\k W')
         );
     }
+
+    // ─── now() ───────────────────────────────────────────────
+
+    public function testNowReturnsCurrentDateWithResolvedTimezone(): void
+    {
+        $before = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        $instant = Instant::now('UTC');
+        $after = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+
+        $g = $instant->gregorian();
+        $this->assertSame((int) $before->format('Y'), $g->year());
+        $this->assertSame('UTC', $instant->tzLabel);
+        // secondsOfDay should be non-negative (it always is, but confirms time is captured)
+        $this->assertGreaterThanOrEqual(0, $instant->secondsOfDay);
+    }
+
+    public function testNowWithoutTimezoneResolvesDefault(): void
+    {
+        $oldTz = date_default_timezone_get();
+        date_default_timezone_set('Asia/Tehran');
+        try {
+            $instant = Instant::now();
+            $this->assertSame('Asia/Tehran', $instant->tzLabel);
+        } finally {
+            date_default_timezone_set($oldTz);
+        }
+    }
+
+    public function testNowCapturesTimeOfDay(): void
+    {
+        $instant = Instant::now('UTC');
+        // now() should capture current time, not midnight
+        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        $expectedSeconds = (int) $now->format('G') * 3600
+                         + (int) $now->format('i') * 60
+                         + (int) $now->format('s');
+        // Allow 2 seconds of drift between the two calls
+        $this->assertEqualsWithDelta($expectedSeconds, $instant->secondsOfDay, 2);
+    }
+
+    public function testTodayStillWorksWithNullTzLabel(): void
+    {
+        $instant = Instant::today();
+        $this->assertNull($instant->tzLabel);
+        $this->assertSame(0, $instant->secondsOfDay);
+    }
+
+    // ─── JsonSerializable + fromArray ────────────────────────────────
+
+    public function testJsonSerializeProducesCalendarNeutralArray(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'Asia/Tehran');
+        $data = $i->jsonSerialize();
+
+        $this->assertSame($i->jdn, $data['jdn']);
+        $this->assertSame($i->secondsOfDay, $data['secondsOfDay']);
+        $this->assertSame('Asia/Tehran', $data['tzLabel']);
+    }
+
+    public function testJsonEncodeProducesExpectedJson(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8, 0, 0, 0, 'UTC');
+        $json = json_encode($i);
+        $decoded = json_decode($json, true);
+
+        $this->assertSame($i->jdn, $decoded['jdn']);
+        $this->assertSame(0, $decoded['secondsOfDay']);
+        $this->assertSame('UTC', $decoded['tzLabel']);
+    }
+
+    public function testJsonSerializeWithNullTzLabel(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8);
+        $data = $i->jsonSerialize();
+
+        $this->assertNull($data['tzLabel']);
+        // Verify JSON encodes null correctly
+        $json = json_encode($i);
+        $this->assertStringContainsString('"tzLabel":null', $json);
+    }
+
+    public function testFromArrayRoundTrips(): void
+    {
+        $original = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'Asia/Tehran');
+        $restored = Instant::fromArray($original->jsonSerialize());
+
+        $this->assertTrue($original->equals($restored));
+        $this->assertSame($original->tzLabel, $restored->tzLabel);
+    }
+
+    public function testFromArrayWithMinimalData(): void
+    {
+        $i = Instant::fromArray(['jdn' => 2461139]);
+        $this->assertSame(2461139, $i->jdn);
+        $this->assertSame(0, $i->secondsOfDay);
+        $this->assertNull($i->tzLabel);
+    }
+
+    public function testFromArrayRejectsInvalidInput(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Instant::fromArray(['secondsOfDay' => 0]);
+    }
+
+    public function testFromArrayJsonRoundTrip(): void
+    {
+        $original = Instant::fromJalali(1405, 1, 19, 8, 15, 0, 'Asia/Tehran');
+        $json = json_encode($original);
+        $restored = Instant::fromArray(json_decode($json, true));
+
+        $this->assertTrue($original->equals($restored));
+        $this->assertSame($original->tzLabel, $restored->tzLabel);
+    }
+
+    // ─── View toArray() ──────────────────────────────────────────────
+
+    public function testGregorianViewToArray(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
+        $arr = $i->gregorian()->toArray();
+
+        $this->assertSame(2026, $arr['year']);
+        $this->assertSame(4, $arr['month']);
+        $this->assertSame(8, $arr['day']);
+        $this->assertSame(14, $arr['hour']);
+        $this->assertSame(30, $arr['minute']);
+        $this->assertSame(45, $arr['second']);
+        $this->assertSame('UTC', $arr['tzLabel']);
+    }
+
+    public function testJalaliViewToArray(): void
+    {
+        $i = Instant::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
+        $arr = $i->jalali()->toArray();
+
+        $this->assertSame(1405, $arr['year']);
+        $this->assertSame(1, $arr['month']);
+        $this->assertSame(19, $arr['day']);
+        $this->assertSame(14, $arr['hour']);
+        $this->assertSame(30, $arr['minute']);
+        $this->assertSame(0, $arr['second']);
+        $this->assertSame('Asia/Tehran', $arr['tzLabel']);
+    }
+
+    public function testHijriViewToArray(): void
+    {
+        $i = Instant::fromHijri(1447, 10, 21);
+        $arr = $i->hijri()->toArray();
+
+        $this->assertSame(1447, $arr['year']);
+        $this->assertSame(10, $arr['month']);
+        $this->assertSame(21, $arr['day']);
+    }
+
+    public function testViewToArrayWithNullTimezone(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8);
+        $arr = $i->gregorian()->toArray();
+
+        $this->assertNull($arr['tzLabel']);
+    }
+
+    // ─── tryFrom* ────────────────────────────────────────────────────
+
+    public function testTryFromGregorianReturnsInstantForValidDate(): void
+    {
+        $i = Instant::tryFromGregorian(2026, 4, 8, 14, 30);
+        $this->assertNotNull($i);
+        $this->assertSame(2026, $i->gregorian()->year());
+    }
+
+    public function testTryFromGregorianReturnsNullForInvalidDate(): void
+    {
+        $this->assertNull(Instant::tryFromGregorian(2026, 2, 30));
+        $this->assertNull(Instant::tryFromGregorian(2026, 13, 1));
+    }
+
+    public function testTryFromGregorianReturnsNullForInvalidTime(): void
+    {
+        $this->assertNull(Instant::tryFromGregorian(2026, 4, 8, 24, 0, 0));
+    }
+
+    public function testTryFromJalaliReturnsInstantForValidDate(): void
+    {
+        $i = Instant::tryFromJalali(1405, 1, 19);
+        $this->assertNotNull($i);
+        $this->assertSame(1405, $i->jalali()->year());
+    }
+
+    public function testTryFromJalaliReturnsNullForInvalidDate(): void
+    {
+        $this->assertNull(Instant::tryFromJalali(1405, 13, 1));
+        $this->assertNull(Instant::tryFromJalali(4000, 1, 1));
+    }
+
+    public function testTryFromHijriReturnsInstantForValidDate(): void
+    {
+        $i = Instant::tryFromHijri(1447, 10, 21);
+        $this->assertNotNull($i);
+        $this->assertSame(1447, $i->hijri()->year());
+    }
+
+    public function testTryFromHijriReturnsNullForInvalidDate(): void
+    {
+        $this->assertNull(Instant::tryFromHijri(1447, 13, 1));
+    }
+
+    public function testTryFromHijriReturnsNullForOutOfRangeYear(): void
+    {
+        // Catches UmmAlQuraOutOfRangeException, not just InvalidDateException
+        $this->assertNull(Instant::tryFromHijri(1200, 1, 1));
+        $this->assertNull(Instant::tryFromHijri(1700, 1, 1));
+    }
+
+    public function testTryFromHijriAcceptsBoundaryDates(): void
+    {
+        // Table boundaries are inclusive
+        $this->assertNotNull(Instant::tryFromHijri(Table::MIN_YEAR, 1, 1));
+        $this->assertNotNull(Instant::tryFromHijri(Table::MAX_YEAR, 12, 29));
+    }
+
+    public function testTryFromHijriCivilReturnsInstantForValidDate(): void
+    {
+        $i = Instant::tryFromHijriCivil(1447, 10, 21);
+        $this->assertNotNull($i);
+    }
+
+    public function testTryFromHijriCivilReturnsNullForInvalidDate(): void
+    {
+        $this->assertNull(Instant::tryFromHijriCivil(1447, 13, 1));
+    }
+
+    // ─── isValid* ────────────────────────────────────────────────────
+
+    public function testIsValidGregorian(): void
+    {
+        $this->assertTrue(Instant::isValidGregorian(2026, 4, 8));
+        $this->assertTrue(Instant::isValidGregorian(2024, 2, 29)); // leap year
+        $this->assertFalse(Instant::isValidGregorian(2026, 2, 29));
+        $this->assertFalse(Instant::isValidGregorian(2026, 0, 1));
+    }
+
+    public function testIsValidJalali(): void
+    {
+        $this->assertTrue(Instant::isValidJalali(1405, 1, 19));
+        $this->assertTrue(Instant::isValidJalali(1403, 12, 30)); // leap year
+        $this->assertFalse(Instant::isValidJalali(1405, 12, 30));
+        $this->assertFalse(Instant::isValidJalali(1405, 13, 1));
+    }
+
+    public function testIsValidHijri(): void
+    {
+        $this->assertTrue(Instant::isValidHijri(1447, 10, 21));
+        $this->assertFalse(Instant::isValidHijri(1200, 1, 1)); // out of range
+        $this->assertFalse(Instant::isValidHijri(1447, 1, 31)); // no month has 31 days
+    }
+
+    public function testIsValidHijriCivil(): void
+    {
+        $this->assertTrue(Instant::isValidHijriCivil(1447, 10, 21));
+        $this->assertFalse(Instant::isValidHijriCivil(1447, 13, 1));
+    }
 }

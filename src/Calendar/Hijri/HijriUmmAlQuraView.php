@@ -22,6 +22,11 @@ final class HijriUmmAlQuraView extends AbstractCalendarView
         return HijriUmmAlQuraCalendar::instance();
     }
 
+    protected static function calendarInstance(): Calendar
+    {
+        return HijriUmmAlQuraCalendar::instance();
+    }
+
     protected function defaultFormat(): string
     {
         return 'Y/m/d';

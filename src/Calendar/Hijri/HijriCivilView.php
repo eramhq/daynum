@@ -22,6 +22,11 @@ final class HijriCivilView extends AbstractCalendarView
         return HijriCivilCalendar::instance();
     }
 
+    protected static function calendarInstance(): Calendar
+    {
+        return HijriCivilCalendar::instance();
+    }
+
     protected function defaultFormat(): string
     {
         return 'Y/m/d';

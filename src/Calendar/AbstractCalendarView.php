@@ -7,6 +7,7 @@ namespace Daynum\Calendar;
 use Daynum\Calendar;
 use Daynum\CalendarView;
 use Daynum\Exception\DaynumException;
+use Daynum\Exception\ParseException;
 use Daynum\Exception\WeekAtBoundaryException;
 use Daynum\Formatter\DateTokenFormatter;
 use Daynum\Formatter\DigitTransliterator;
@@ -43,6 +44,12 @@ abstract class AbstractCalendarView implements CalendarView
 
     abstract public function calendar(): Calendar;
 
+    /**
+     * Return the calendar singleton without constructing a view.
+     * Used by {@see parseExact()} which is static and has no instance.
+     */
+    abstract protected static function calendarInstance(): Calendar;
+
     /** Default format pattern used by `__toString()`. */
     abstract protected function defaultFormat(): string;
 
@@ -57,6 +64,320 @@ abstract class AbstractCalendarView implements CalendarView
             throw new \InvalidArgumentException("Unknown digit script '{$digitScript}'.");
         }
         return new static($instant, LocaleRegistry::get($locale ?? 'en'), $digitScript);
+    }
+
+    // ─── Parsing ──────────────────────────────────────────────────────
+
+    /**
+     * Tokens that can be parsed: each maps to a fixed extraction width.
+     *
+     * Only unambiguous, fixed-width numeric tokens are supported in v1.
+     * Variable-width tokens (n, j, G, g) and locale-dependent tokens
+     * (F, M, l, D) are excluded — use them for formatting only.
+     */
+    private const PARSE_TOKENS = [
+        'Y' => 'year',
+        'm' => 'month',
+        'd' => 'day',
+        'H' => 'hour',
+        'h' => 'hour12',
+        'i' => 'minute',
+        's' => 'second',
+        'a' => 'meridiem',
+        'A' => 'meridiem',
+    ];
+
+    /**
+     * Parse a date/time string in the given format, returning an Instant.
+     *
+     * Supported tokens (fixed-width, numeric only):
+     * `Y` (4+ digit year), `m` (2-digit month), `d` (2-digit day),
+     * `H` (2-digit hour 24h), `h` (2-digit hour 12h), `i` (2-digit minute),
+     * `s` (2-digit second), `a`/`A` (am/pm meridiem).
+     *
+     * Digits in any script (Persian U+06F0, Arabic-Indic U+0660) are
+     * normalized to ASCII before parsing.
+     *
+     * @throws ParseException on format mismatch, unsupported tokens, or invalid date
+     */
+    public static function parseExact(string $text, string $format, ?string $tzLabel = null): Instant
+    {
+        // Normalize non-Latin digits to ASCII
+        $text = DigitTransliterator::toLatin($text);
+
+        $parts = self::tokenizeFormat($format);
+        $pos = 0;
+        $fields = [];
+
+        $partCount = count($parts);
+        foreach ($parts as $idx => $part) {
+            if ($part['type'] === 'literal') {
+                $literal = $part['value'];
+                $len = strlen($literal);
+                if (substr($text, $pos, $len) !== $literal) {
+                    throw ParseException::forFormat(
+                        $text,
+                        $format,
+                        sprintf('expected literal "%s" at position %d', $literal, $pos),
+                    );
+                }
+                $pos += $len;
+                continue;
+            }
+
+            // Token extraction
+            $token = $part['value'];
+            $fieldName = self::PARSE_TOKENS[$token] ?? null;
+            if ($fieldName === null) {
+                throw ParseException::forFormat(
+                    $text,
+                    $format,
+                    sprintf('token "%s" is not supported for parsing (format-only)', $token),
+                );
+            }
+
+            if ($token === 'Y') {
+                // When the next part is another token (no literal separator),
+                // limit year to exactly 4 digits to avoid greedily consuming
+                // the next field's digits.
+                $nextIsToken = ($idx + 1 < $partCount && $parts[$idx + 1]['type'] === 'token');
+                $extracted = self::extractYear($text, $pos, $nextIsToken);
+                if ($extracted === null) {
+                    throw ParseException::forFormat($text, $format, "expected year at position {$pos}");
+                }
+                $fields['year'] = $extracted['value'];
+                $pos = $extracted['end'];
+            } elseif ($token === 'a' || $token === 'A') {
+                // Meridiem: 2-char (am/pm/AM/PM) or locale-specific
+                $extracted = self::extractMeridiem($text, $pos);
+                if ($extracted === null) {
+                    throw ParseException::forFormat($text, $format, "expected am/pm at position {$pos}");
+                }
+                $fields['meridiem'] = $extracted['value'];
+                $pos = $extracted['end'];
+            } else {
+                // Fixed 2-digit numeric token
+                if ($pos + 2 > strlen($text)) {
+                    throw ParseException::forFormat(
+                        $text,
+                        $format,
+                        sprintf('expected 2 digits for "%s" at position %d, but input is too short', $token, $pos),
+                    );
+                }
+                $digits = substr($text, $pos, 2);
+                if (!ctype_digit($digits)) {
+                    throw ParseException::forFormat(
+                        $text,
+                        $format,
+                        sprintf('expected 2 digits for "%s" at position %d, got "%s"', $token, $pos, $digits),
+                    );
+                }
+                $fields[$fieldName] = (int) $digits;
+                $pos += 2;
+            }
+        }
+
+        if ($pos !== strlen($text)) {
+            throw ParseException::forFormat(
+                $text,
+                $format,
+                sprintf('trailing input after position %d: "%s"', $pos, substr($text, $pos)),
+            );
+        }
+
+        // Resolve 12-hour to 24-hour
+        if (isset($fields['hour12'])) {
+            if (!isset($fields['meridiem'])) {
+                throw ParseException::forFormat(
+                    $text,
+                    $format,
+                    'h token (12h) requires a/A meridiem token to resolve ambiguity',
+                );
+            }
+            $h12 = $fields['hour12'];
+            if ($h12 < 1 || $h12 > 12) {
+                throw ParseException::forFormat($text, $format, "12-hour value {$h12} out of range 1-12");
+            }
+            $fields['hour'] = self::resolve12Hour($h12, $fields['meridiem']);
+            unset($fields['hour12']);
+        }
+        unset($fields['meridiem']);
+
+        // Defaults
+        $year = $fields['year'] ?? null;
+        $month = $fields['month'] ?? null;
+        $day = $fields['day'] ?? null;
+
+        if ($year === null || $month === null || $day === null) {
+            throw ParseException::forFormat(
+                $text,
+                $format,
+                'format must include at least Y, m, and d tokens',
+            );
+        }
+
+        $hour = $fields['hour'] ?? 0;
+        $minute = $fields['minute'] ?? 0;
+        $second = $fields['second'] ?? 0;
+
+        // Validate via the calendar's toJdn (reuses all existing validation)
+        $calendar = static::calendarInstance();
+
+        try {
+            $jdn = $calendar->toJdn($year, $month, $day);
+        } catch (DaynumException $e) {
+            throw ParseException::forFormat($text, $format, $e->getMessage());
+        }
+
+        try {
+            return new Instant($jdn, $hour * 3600 + $minute * 60 + $second, $tzLabel);
+        } catch (\Daynum\Exception\InvalidDateException $e) {
+            throw ParseException::forFormat($text, $format, $e->getMessage());
+        }
+    }
+
+    /**
+     * Break a format string into a sequence of literal and token parts.
+     *
+     * @return list<array{type: 'literal'|'token', value: string}>
+     */
+    private static function tokenizeFormat(string $format): array
+    {
+        $parts = [];
+        $len = strlen($format);
+        $literal = '';
+
+        for ($i = 0; $i < $len; $i++) {
+            $ch = $format[$i];
+
+            if ($ch === '\\') {
+                // Escaped character → literal
+                if ($i + 1 < $len) {
+                    $literal .= $format[$i + 1];
+                    $i++;
+                }
+                continue;
+            }
+
+            if (isset(self::PARSE_TOKENS[$ch]) || self::isFormatOnlyToken($ch)) {
+                if ($literal !== '') {
+                    $parts[] = ['type' => 'literal', 'value' => $literal];
+                    $literal = '';
+                }
+                $parts[] = ['type' => 'token', 'value' => $ch];
+            } else {
+                $literal .= $ch;
+            }
+        }
+
+        if ($literal !== '') {
+            $parts[] = ['type' => 'literal', 'value' => $literal];
+        }
+
+        return $parts;
+    }
+
+    /** Tokens recognized by the formatter but NOT supported for parsing. */
+    private const FORMAT_ONLY_TOKENS = [
+        'y' => true, 'n' => true, 'j' => true, 'z' => true,
+        'D' => true, 'l' => true, 'F' => true, 'M' => true,
+        'G' => true, 'g' => true, 'N' => true, 'w' => true,
+        'W' => true, 'o' => true, 't' => true, 'L' => true,
+        'T' => true, 'e' => true, 'S' => true,
+    ];
+
+    private static function isFormatOnlyToken(string $ch): bool
+    {
+        return isset(self::FORMAT_ONLY_TOKENS[$ch]);
+    }
+
+    /**
+     * Extract a year value (optional `-` prefix, then 4+ digits).
+     *
+     * When $fixedWidth is true (next part is a token with no separator),
+     * exactly 4 digits are consumed. Otherwise, all consecutive digits
+     * are consumed (to handle years > 9999 when delimited).
+     *
+     * @return array{value: int, end: int}|null
+     */
+    private static function extractYear(string $text, int $pos, bool $fixedWidth = false): ?array
+    {
+        $negative = false;
+        $p = $pos;
+
+        if ($p < strlen($text) && $text[$p] === '-') {
+            $negative = true;
+            $p++;
+        }
+
+        if ($fixedWidth) {
+            // Exactly 4 digits
+            if ($p + 4 > strlen($text)) {
+                return null;
+            }
+            $digits = substr($text, $p, 4);
+            if (!ctype_digit($digits)) {
+                return null;
+            }
+            $value = (int) $digits;
+            $p += 4;
+        } else {
+            $start = $p;
+            while ($p < strlen($text) && ctype_digit($text[$p])) {
+                $p++;
+            }
+            if ($p - $start < 4) {
+                return null;
+            }
+            $value = (int) substr($text, $start, $p - $start);
+        }
+
+        if ($negative) {
+            $value = -$value;
+        }
+
+        return ['value' => $value, 'end' => $p];
+    }
+
+    /**
+     * Extract meridiem indicator (am/pm/AM/PM or locale variants like ق.ظ/ب.ظ).
+     *
+     * @return array{value: bool, end: int}|null  value = true for PM
+     */
+    private static function extractMeridiem(string $text, int $pos): ?array
+    {
+        $remaining = substr($text, $pos);
+
+        // Standard am/pm (case-insensitive)
+        if (preg_match('/^(am|pm)/i', $remaining, $m)) {
+            return [
+                'value' => strtolower($m[1]) === 'pm',
+                'end' => $pos + strlen($m[1]),
+            ];
+        }
+
+        // Persian meridiem: ق.ظ (AM) / ب.ظ (PM)
+        $persianAm = 'ق.ظ';
+        $persianPm = 'ب.ظ';
+        if (str_starts_with($remaining, $persianPm)) {
+            return ['value' => true, 'end' => $pos + strlen($persianPm)];
+        }
+        if (str_starts_with($remaining, $persianAm)) {
+            return ['value' => false, 'end' => $pos + strlen($persianAm)];
+        }
+
+        return null;
+    }
+
+    /**
+     * Convert 12-hour + PM flag to 24-hour value.
+     */
+    private static function resolve12Hour(int $hour12, bool $isPm): int
+    {
+        if ($hour12 === 12) {
+            return $isPm ? 12 : 0;
+        }
+        return $isPm ? $hour12 + 12 : $hour12;
     }
 
     // ─── CalendarView interface ───────────────────────────────────────
@@ -206,6 +527,26 @@ abstract class AbstractCalendarView implements CalendarView
             $total += $calendar->daysInMonth($year, $m);
         }
         return $total;
+    }
+
+    // ─── Serialization ─────────────────────────────────────────────────
+
+    /**
+     * Calendar-specific array representation.
+     *
+     * @return array{year: int, month: int, day: int, hour: int, minute: int, second: int, tzLabel: ?string}
+     */
+    public function toArray(): array
+    {
+        return [
+            'year' => $this->year(),
+            'month' => $this->month(),
+            'day' => $this->day(),
+            'hour' => $this->hour(),
+            'minute' => $this->minute(),
+            'second' => $this->second(),
+            'tzLabel' => $this->instant->tzLabel,
+        ];
     }
 
     // ─── Formatting ───────────────────────────────────────────────────

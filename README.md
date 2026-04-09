@@ -15,6 +15,29 @@ fixture set.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for release notes.
 
+## What Daynum is (and isn't)
+
+**Daynum IS:**
+- Multi-calendar date conversion + formatting (Gregorian, Jalali, Hijri)
+- Immutable arithmetic (`addDays`, `addMonths`, `addYears`, `startOfMonth`, …)
+- Locale-aware formatting with PHP `date()` tokens
+- A zero-dependency, ICU-tested, drop-in replacement for `morilog/jalali`
+
+**Daynum is NOT:**
+- Timezone arithmetic — use `toDateTimeImmutable()` for DST transitions, UTC offsets, etc.
+- Relative date parsing — no "next Monday", "+2 weeks", or fuzzy input
+- A Carbon replacement — Carbon covers Gregorian + timezone; Daynum covers multi-calendar + correctness
+- A framework bridge — a separate `daynum/laravel` package may ship post-v1
+
+| Feature | Daynum | Carbon | morilog/jalali | ext-intl |
+|---------|--------|--------|----------------|----------|
+| Jalali | Birashk 33-year | No | Birashk (same) | Borkowski |
+| Hijri UAQ | Bundled table | No | No | Runtime ICU |
+| Hijri Civil | Yes | No | No | Yes |
+| Runtime deps | Zero | symfony/* | nesbot/carbon | ext-intl |
+| Immutable | Yes | Optional | No | N/A |
+| Testing | ICU differential | Unit tests | Unit tests | IS the oracle |
+
 ## Design decisions
 
 | | |
@@ -42,6 +65,9 @@ composer require daynum/daynum
 
 ```php
 use Daynum\Instant;
+use Daynum\Calendar\Gregorian\GregorianView;
+use Daynum\Calendar\Jalali\JalaliView;
+use Daynum\Calendar\Hijri\HijriUmmAlQuraView;
 
 // ─── Construction ────────────────────────────────────────
 $d = Instant::fromGregorian(2026, 4, 8);
@@ -50,7 +76,9 @@ $d = Instant::fromJalali(1405, 1, 19);
 $d = Instant::fromHijri(1447, 10, 21);            // Saudi Umm al-Qura
 $d = Instant::fromHijriCivil(1447, 10, 21);       // tabular, AH 1..9666
 $d = Instant::fromDateTime(new DateTimeImmutable('2026-04-08 14:30'));
-$d = Instant::today();
+$d = Instant::now();                                   // current date + time, resolves timezone
+$d = Instant::now('Asia/Tehran');                       // current date + time in Tehran
+$d = Instant::today();                                  // today at 00:00:00
 
 // ─── Views ───────────────────────────────────────────────
 $d->gregorian()->year();    // 2026
@@ -87,9 +115,65 @@ $a->lessThan($b);
 $a->diffInDays($b);        // signed integer
 $a->jalali()->diffInMonths($b); // calendar-aware
 
+// ─── Parsing ────────────────────────────────────────────
+$d = GregorianView::parseExact('2026-04-08', 'Y-m-d');
+$d = JalaliView::parseExact('1405/01/19', 'Y/m/d');
+$d = JalaliView::parseExact('۱۴۰۵/۰۱/۱۹', 'Y/m/d');  // Persian digits normalized
+$d = HijriUmmAlQuraView::parseExact('1447/10/21', 'Y/m/d');
+$d = GregorianView::parseExact('2026-04-08 02:30 PM', 'Y-m-d h:i A');
+
+// ─── Safe construction ──────────────────────────────────
+$d = Instant::tryFromJalali(1405, 13, 1);    // null (invalid month)
+$d = Instant::tryFromHijri(1200, 1, 1);      // null (out of UAQ table range)
+Instant::isValidJalali(1405, 1, 19);         // true
+Instant::isValidHijri(1447, 1, 31);          // false
+
+// ─── Serialization ──────────────────────────────────────
+json_encode($d);                    // {"jdn":2461139,"secondsOfDay":52200,"tzLabel":"Asia/Tehran"}
+Instant::fromArray($jsonDecoded);   // reconstruct from JSON round-trip
+$d->jalali()->toArray();            // ['year'=>1405,'month'=>1,'day'=>19,'hour'=>14,…]
+
 // ─── Escape hatch to native PHP ─────────────────────────
 $d->toDateTimeImmutable();  // hand off for real timezone math
 ```
+
+## Format tokens
+
+Daynum uses PHP `date()` syntax. All tokens work across all calendars.
+
+| Token | Output | Example (Jalali) |
+|-------|--------|------------------|
+| `Y` | Full year (4+ digits) | `1405` |
+| `y` | 2-digit year | `05` |
+| `m` | Month, zero-padded | `01` |
+| `n` | Month, no padding | `1` |
+| `d` | Day, zero-padded | `19` |
+| `j` | Day, no padding | `19` |
+| `F` | Month name, long (locale) | `Farvardin` / `فروردین` |
+| `M` | Month name, short (locale) | `Far` / `فروردین` |
+| `l` | Weekday name, long (locale) | `Wednesday` / `چهارشنبه` |
+| `D` | Weekday name, short (locale) | `Wed` / `چهارشنبه` |
+| `z` | Day of year, 0-indexed | `18` |
+| `W` | ISO week number, zero-padded | `16` |
+| `o` | ISO week-based year | `1405` |
+| `S` | Ordinal suffix (locale) | `th` |
+| `G` | Hour 24h, no padding | `14` |
+| `H` | Hour 24h, zero-padded | `14` |
+| `g` | Hour 12h, no padding | `2` |
+| `h` | Hour 12h, zero-padded | `02` |
+| `i` | Minute, zero-padded | `30` |
+| `s` | Second, zero-padded | `00` |
+| `a` | am/pm (locale) | `pm` / `ب.ظ` |
+| `A` | AM/PM (locale) | `PM` / `ب.ظ` |
+| `N` | ISO weekday (Mon=1..Sun=7) | `3` |
+| `w` | Weekday (Sun=0..Sat=6) | `3` |
+| `t` | Days in month | `31` |
+| `L` | Leap year (1/0) | `0` |
+| `T`/`e` | Timezone label | `Asia/Tehran` |
+
+Backslash escapes the next character: `\Y` produces a literal `Y`.
+
+> **`W` and `o` tokens at calendar boundaries:** `weekOfYear()` and `weekBasedYear()` can throw `WeekAtBoundaryException` when the ISO week's Thursday falls outside the calendar's supported year range. This affects roughly the first or last 3 days of MIN_YEAR / MAX_YEAR for each calendar. If you format dates near these extremes, catch the exception or avoid the `W` / `o` tokens.
 
 ## Opt-in global helpers
 
@@ -216,7 +300,9 @@ src/
 ├── Exception/
 │   ├── DaynumException.php         # marker interface
 │   ├── InvalidDateException.php
-│   └── UmmAlQuraOutOfRangeException.php  # thrown by Hijri UAQ when out of bundled range
+│   ├── ParseException.php          # thrown by parseExact() on bad input
+│   ├── UmmAlQuraOutOfRangeException.php  # thrown by Hijri UAQ when out of bundled range
+│   └── WeekAtBoundaryException.php # thrown by weekOfYear()/weekBasedYear() at range edges
 ├── Formatter/
 │   ├── DateTokenFormatter.php      # PHP date()-token engine
 │   ├── FormatContext.php
