@@ -181,6 +181,11 @@ final class HijriUmmAlQuraCalendar implements Calendar
         ];
     }
 
+    public function supportsYear(int $year): bool
+    {
+        return $year >= Table::MIN_YEAR && $year <= Table::MAX_YEAR;
+    }
+
     /**
      * Total days in a year, given its bit-packed month-length word.
      *

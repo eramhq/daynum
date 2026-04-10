@@ -69,31 +69,41 @@ abstract class AbstractCalendarView implements CalendarView
     // ─── Parsing ──────────────────────────────────────────────────────
 
     /**
-     * Tokens that can be parsed: each maps to a fixed extraction width.
+     * Tokens that can be parsed: each maps to a field name.
      *
-     * Only unambiguous, fixed-width numeric tokens are supported in v1.
-     * Variable-width tokens (n, j, G, g) and locale-dependent tokens
-     * (F, M, l, D) are excluded — use them for formatting only.
+     * Fixed-width tokens (m, d, H, h, i, s) consume exactly 2 digits.
+     * Variable-width tokens (n, j, G, g) consume 1-2 digits greedily.
+     * Locale-dependent tokens (F, M, l, D) are excluded — format only.
      */
     private const PARSE_TOKENS = [
         'Y' => 'year',
         'm' => 'month',
+        'n' => 'month',
         'd' => 'day',
+        'j' => 'day',
         'H' => 'hour',
+        'G' => 'hour',
         'h' => 'hour12',
+        'g' => 'hour12',
         'i' => 'minute',
         's' => 'second',
         'a' => 'meridiem',
         'A' => 'meridiem',
+        'P' => 'tzOffsetP',
+        'O' => 'tzOffsetO',
     ];
 
     /**
      * Parse a date/time string in the given format, returning an Instant.
      *
-     * Supported tokens (fixed-width, numeric only):
-     * `Y` (4+ digit year), `m` (2-digit month), `d` (2-digit day),
-     * `H` (2-digit hour 24h), `h` (2-digit hour 12h), `i` (2-digit minute),
-     * `s` (2-digit second), `a`/`A` (am/pm meridiem).
+     * Supported tokens:
+     * `Y` (4+ digit year), `m`/`n` (month), `d`/`j` (day),
+     * `H`/`G` (hour 24h), `h`/`g` (hour 12h), `i` (minute),
+     * `s` (second), `a`/`A` (am/pm meridiem).
+     *
+     * Variable-width tokens (`n`, `j`, `G`, `g`) consume 1-2 digits
+     * greedily and must be followed by a literal separator, not another
+     * token.
      *
      * Digits in any script (Persian U+06F0, Arabic-Indic U+0660) are
      * normalized to ASCII before parsing.
@@ -155,6 +165,37 @@ abstract class AbstractCalendarView implements CalendarView
                 }
                 $fields['meridiem'] = $extracted['value'];
                 $pos = $extracted['end'];
+            } elseif ($token === 'n' || $token === 'j' || $token === 'G' || $token === 'g') {
+                // Variable-width (1-2 digit) tokens
+                $nextPart = $parts[$idx + 1] ?? null;
+                $nextIsToken = $nextPart !== null && $nextPart['type'] === 'token';
+                if ($nextIsToken) {
+                    throw ParseException::forFormat($text, $format,
+                        sprintf('variable-width token "%s" cannot be followed directly by another token without a literal separator', $token));
+                }
+                $extracted = self::extractVariableWidth($text, $pos);
+                if ($extracted === null) {
+                    throw ParseException::forFormat($text, $format,
+                        sprintf('expected 1-2 digits for "%s" at position %d', $token, $pos));
+                }
+                $fields[$fieldName] = $extracted['value'];
+                $pos = $extracted['end'];
+            } elseif ($token === 'P') {
+                $extracted = self::extractTzOffset($text, $pos, '/^([+-]\d{2}:\d{2})/', allowZ: true);
+                if ($extracted === null) {
+                    throw ParseException::forFormat($text, $format,
+                        sprintf('expected timezone offset (+HH:MM or Z) for "P" at position %d', $pos));
+                }
+                $fields['tzOffsetP'] = $extracted['value'];
+                $pos = $extracted['end'];
+            } elseif ($token === 'O') {
+                $extracted = self::extractTzOffset($text, $pos, '/^([+-]\d{4})/');
+                if ($extracted === null) {
+                    throw ParseException::forFormat($text, $format,
+                        sprintf('expected timezone offset (+HHMM) for "O" at position %d', $pos));
+                }
+                $fields['tzOffsetO'] = $extracted['value'];
+                $pos = $extracted['end'];
             } else {
                 // Fixed 2-digit numeric token
                 if ($pos + 2 > strlen($text)) {
@@ -212,13 +253,22 @@ abstract class AbstractCalendarView implements CalendarView
             throw ParseException::forFormat(
                 $text,
                 $format,
-                'format must include at least Y, m, and d tokens',
+                'format must include at least Y, m/n, and d/j tokens',
             );
         }
 
         $hour = $fields['hour'] ?? 0;
         $minute = $fields['minute'] ?? 0;
         $second = $fields['second'] ?? 0;
+
+        // Resolve parsed timezone offset — overrides the $tzLabel parameter
+        $parsedTz = $tzLabel;
+        if (isset($fields['tzOffsetP'])) {
+            $parsedTz = $fields['tzOffsetP'];
+        } elseif (isset($fields['tzOffsetO'])) {
+            $o = $fields['tzOffsetO'];
+            $parsedTz = substr($o, 0, 3) . ':' . substr($o, 3, 2);
+        }
 
         // Validate via the calendar's toJdn (reuses all existing validation)
         $calendar = static::calendarInstance();
@@ -230,7 +280,7 @@ abstract class AbstractCalendarView implements CalendarView
         }
 
         try {
-            return new Instant($jdn, $hour * 3600 + $minute * 60 + $second, $tzLabel);
+            return new Instant($jdn, $hour * 3600 + $minute * 60 + $second, $parsedTz);
         } catch (\Daynum\Exception\InvalidDateException $e) {
             throw ParseException::forFormat($text, $format, $e->getMessage());
         }
@@ -259,6 +309,28 @@ abstract class AbstractCalendarView implements CalendarView
                 continue;
             }
 
+            // Composite token expansion: `c` → `Y-m-d\TH:i:sP`
+            if ($ch === 'c') {
+                if ($literal !== '') {
+                    $parts[] = ['type' => 'literal', 'value' => $literal];
+                    $literal = '';
+                }
+                // Expand inline — the `\T` becomes a literal "T" separator
+                $parts[] = ['type' => 'token', 'value' => 'Y'];
+                $parts[] = ['type' => 'literal', 'value' => '-'];
+                $parts[] = ['type' => 'token', 'value' => 'm'];
+                $parts[] = ['type' => 'literal', 'value' => '-'];
+                $parts[] = ['type' => 'token', 'value' => 'd'];
+                $parts[] = ['type' => 'literal', 'value' => 'T'];
+                $parts[] = ['type' => 'token', 'value' => 'H'];
+                $parts[] = ['type' => 'literal', 'value' => ':'];
+                $parts[] = ['type' => 'token', 'value' => 'i'];
+                $parts[] = ['type' => 'literal', 'value' => ':'];
+                $parts[] = ['type' => 'token', 'value' => 's'];
+                $parts[] = ['type' => 'token', 'value' => 'P'];
+                continue;
+            }
+
             if (isset(self::PARSE_TOKENS[$ch]) || self::isFormatOnlyToken($ch)) {
                 if ($literal !== '') {
                     $parts[] = ['type' => 'literal', 'value' => $literal];
@@ -279,11 +351,14 @@ abstract class AbstractCalendarView implements CalendarView
 
     /** Tokens recognized by the formatter but NOT supported for parsing. */
     private const FORMAT_ONLY_TOKENS = [
-        'y' => true, 'n' => true, 'j' => true, 'z' => true,
+        'y' => true, 'z' => true,
         'D' => true, 'l' => true, 'F' => true, 'M' => true,
-        'G' => true, 'g' => true, 'N' => true, 'w' => true,
+        'N' => true, 'w' => true,
         'W' => true, 'o' => true, 't' => true, 'L' => true,
         'T' => true, 'e' => true, 'S' => true,
+        'u' => true, 'v' => true,
+        'U' => true,
+        'Z' => true, 'I' => true, 'c' => true, 'r' => true,
     ];
 
     private static function isFormatOnlyToken(string $ch): bool
@@ -374,6 +449,39 @@ abstract class AbstractCalendarView implements CalendarView
             return ['value' => false, 'end' => $pos + strlen('ص')];
         }
 
+        return null;
+    }
+
+    /**
+     * Extract a 1-or-2 digit value for variable-width tokens (n, j, G, g).
+     *
+     * @return array{value: int, end: int}|null
+     */
+    private static function extractVariableWidth(string $text, int $pos): ?array
+    {
+        if ($pos >= strlen($text) || !ctype_digit($text[$pos])) {
+            return null;
+        }
+        // Greedy: take 2 digits if available
+        if ($pos + 1 < strlen($text) && ctype_digit($text[$pos + 1])) {
+            return ['value' => (int) substr($text, $pos, 2), 'end' => $pos + 2];
+        }
+        return ['value' => (int) $text[$pos], 'end' => $pos + 1];
+    }
+
+    /**
+     * Extract a timezone offset matching `$regex`, with optional `Z` support.
+     *
+     * @return array{value: string, end: int}|null
+     */
+    private static function extractTzOffset(string $text, int $pos, string $regex, bool $allowZ = false): ?array
+    {
+        if ($allowZ && $pos < strlen($text) && $text[$pos] === 'Z') {
+            return ['value' => '+00:00', 'end' => $pos + 1];
+        }
+        if (preg_match($regex, substr($text, $pos), $m)) {
+            return ['value' => $m[1], 'end' => $pos + strlen($m[1])];
+        }
         return null;
     }
 
@@ -590,6 +698,19 @@ abstract class AbstractCalendarView implements CalendarView
         $dayOfYear     = str_contains($pattern, 'z') && self::patternContainsUnescaped($pattern, 'z') ? $this->dayOfYear()     : 0;
         $weekOfYear    = str_contains($pattern, 'W') && self::patternContainsUnescaped($pattern, 'W') ? $this->weekOfYear()    : 0;
         $weekBasedYear = str_contains($pattern, 'o') && self::patternContainsUnescaped($pattern, 'o') ? $this->weekBasedYear() : 0;
+
+        // Lazily construct DateTimeImmutable only when timezone-dependent
+        // tokens are present. The DTI is passed through FormatContext so the
+        // formatter can delegate timezone math to PHP.
+        $tzTokens = ['U','O','P','Z','I','c','r','T'];
+        $dti = null;
+        foreach ($tzTokens as $t) {
+            if (str_contains($pattern, $t) && self::patternContainsUnescaped($pattern, $t)) {
+                $dti = $this->instant->toDateTimeImmutable();
+                break;
+            }
+        }
+
         $ctx = new FormatContext(
             locale: $this->locale,
             calendarName: $calendar->localeFamily(),
@@ -608,6 +729,7 @@ abstract class AbstractCalendarView implements CalendarView
             isLeapYear: $c['isLeapYear'],
             tzLabel: $this->instant->tzLabel,
             digitScript: $this->digitScript,
+            dateTimeImmutable: $dti,
         );
         return DateTokenFormatter::format($pattern, $ctx);
     }
@@ -748,6 +870,28 @@ abstract class AbstractCalendarView implements CalendarView
         return $this->instant->withJdn($this->calendar()->toJdn($c['year'], $lastMonth, $lastDay));
     }
 
+    public function startOfWeek(int $weekStart = 1): Instant
+    {
+        if ($weekStart < 1 || $weekStart > 7) {
+            throw new \InvalidArgumentException("weekStart must be in [1, 7]; got {$weekStart}.");
+        }
+        $isoDow = $this->dayOfWeekIso(); // Mon=1..Sun=7
+        $offset = ($isoDow - $weekStart + 7) % 7;
+        return $this->instant->withJdn($this->instant->jdn - $offset);
+    }
+
+    public function endOfWeek(int $weekStart = 1): Instant
+    {
+        $startJdn = $this->startOfWeek($weekStart)->jdn;
+        return $this->instant->withJdn($startJdn + 6);
+    }
+
+    public function isInSupportedRange(): bool
+    {
+        [$min, $max] = $this->calendar()->supportedRange();
+        return $this->instant->jdn >= $min && $this->instant->jdn <= $max;
+    }
+
     public function diffInMonths(Instant $other): int
     {
         $calendar = $this->calendar();
@@ -764,6 +908,27 @@ abstract class AbstractCalendarView implements CalendarView
             $months++;
         }
         return $months;
+    }
+
+    public function diffInYears(Instant $other): int
+    {
+        $calendar = $this->calendar();
+        [$y1, $m1, $d1] = $calendar->fromJdn($this->instant->jdn);
+        [$y2, $m2, $d2] = $calendar->fromJdn($other->jdn);
+
+        $years = $y1 - $y2;
+
+        if ($years > 0) {
+            if ($m1 < $m2 || ($m1 === $m2 && $d1 < $d2)) {
+                $years--;
+            }
+        } elseif ($years < 0) {
+            if ($m1 > $m2 || ($m1 === $m2 && $d1 > $d2)) {
+                $years++;
+            }
+        }
+
+        return $years;
     }
 
     // ─── Internals ────────────────────────────────────────────────────

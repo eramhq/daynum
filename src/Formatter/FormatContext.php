@@ -34,6 +34,7 @@ final class FormatContext
         public readonly bool $isLeapYear,
         public readonly ?string $tzLabel,
         public readonly string $digitScript,
+        public readonly ?\DateTimeImmutable $dateTimeImmutable = null,
     ) {
     }
 }

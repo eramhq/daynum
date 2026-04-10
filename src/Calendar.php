@@ -77,4 +77,9 @@ interface Calendar
      * @return array{0: int, 1: int}
      */
     public function supportedRange(): array;
+
+    /**
+     * Whether the given year falls within this calendar's supported range.
+     */
+    public function supportsYear(int $year): bool;
 }

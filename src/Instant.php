@@ -31,6 +31,15 @@ use JsonSerializable;
  *
  * `secondsOfDay` and `tzLabel` are pass-through metadata. Calendar conversions
  * never touch them; formatting uses them for time/zone tokens only.
+ *
+ * ## Naming note
+ *
+ * Daynum's Instant is NOT a UTC timeline instant (unlike java.time.Instant).
+ * It is a calendar-neutral civil datetime: (JDN, time-of-day, timezone label).
+ * Two Instants with the same JDN and time but different tzLabels represent
+ * different physical moments. Comparison methods (equals, lessThan, etc.)
+ * compare wall-clock readings, not physical instants. For timeline-order
+ * comparison across timezones, convert to DateTimeImmutable first.
  */
 final class Instant implements JsonSerializable
 {

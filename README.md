@@ -38,6 +38,17 @@ See [`CHANGELOG.md`](CHANGELOG.md) for release notes.
 | Immutable | Yes | Optional | No | N/A |
 | Testing | ICU differential | Unit tests | Unit tests | IS the oracle |
 
+## Naming caveat: Instant is not a UTC instant
+
+Daynum's `Instant` is **not** a UTC timeline instant (unlike `java.time.Instant`).
+It is a calendar-neutral **civil datetime**: `(JDN, time-of-day, timezone label)`.
+Two `Instant` objects with the same JDN and time but different `tzLabel` values
+represent different physical moments. Comparison methods (`equals`, `lessThan`,
+etc.) compare wall-clock readings, not physical instants.
+
+For timeline-order comparison across timezones, convert to `DateTimeImmutable`
+first via `$instant->toDateTimeImmutable()`.
+
 ## Design decisions
 
 | | |

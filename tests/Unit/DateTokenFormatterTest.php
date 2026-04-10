@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Daynum\Tests\Unit;
 
+use Daynum\Exception\MissingTimezoneException;
 use Daynum\Formatter\DateTokenFormatter;
 use Daynum\Formatter\DigitTransliterator;
 use Daynum\Formatter\FormatContext;
@@ -38,6 +39,7 @@ final class DateTokenFormatterTest extends TestCase
             'isLeapYear' => false,
             'tzLabel' => 'UTC',
             'digitScript' => DigitTransliterator::LATN,
+            'dateTimeImmutable' => new \DateTimeImmutable('2026-04-08 14:30:45', new \DateTimeZone('UTC')),
         ];
         return new FormatContext(...[...$defaults, ...$overrides]);
     }
@@ -58,6 +60,7 @@ final class DateTokenFormatterTest extends TestCase
             'weekOfYear' => 3,
             'tzLabel' => 'Asia/Tehran',
             'digitScript' => DigitTransliterator::PERSIAN,
+            'dateTimeImmutable' => new \DateTimeImmutable('2026-04-08 14:30:00', new \DateTimeZone('Asia/Tehran')),
             ...$overrides,
         ]);
     }
@@ -412,5 +415,162 @@ final class DateTokenFormatterTest extends TestCase
         );
         $this->assertSame('۱۴۰۵/۰۱/۱۹', DateTokenFormatter::format('Y/m/d', $ctx));
         $this->assertSame('چهارشنبه ۱۹ فروردین ۱۴۰۵', DateTokenFormatter::format('l j F Y', $ctx));
+    }
+
+    // ─── Sub-second tokens (u, v) ─────────────────────────────────────
+
+    public function testUTokenReturnsZeroPaddedMicroseconds(): void
+    {
+        $this->assertSame('000000', DateTokenFormatter::format('u', $this->sampleContext()));
+    }
+
+    public function testVTokenReturnsZeroPaddedMilliseconds(): void
+    {
+        $this->assertSame('000', DateTokenFormatter::format('v', $this->sampleContext()));
+    }
+
+    public function testUTokenWithPersianDigits(): void
+    {
+        $this->assertSame('۰۰۰۰۰۰', DateTokenFormatter::format('u', $this->jalaliPersianContext()));
+    }
+
+    public function testVTokenWithPersianDigits(): void
+    {
+        $this->assertSame('۰۰۰', DateTokenFormatter::format('v', $this->jalaliPersianContext()));
+    }
+
+    public function testUTokenBackslashEscape(): void
+    {
+        $this->assertSame('u', DateTokenFormatter::format('\u', $this->sampleContext()));
+    }
+
+    public function testVTokenBackslashEscape(): void
+    {
+        $this->assertSame('v', DateTokenFormatter::format('\v', $this->sampleContext()));
+    }
+
+    // ─── Timezone-dependent tokens ────────────────────────────────────
+
+    /**
+     * Build a context with a real DateTimeImmutable for timezone token tests.
+     */
+    private function sampleContextWithDti(string $tz = 'UTC', array $overrides = []): FormatContext
+    {
+        $dti = new \DateTimeImmutable('2026-04-08 14:30:45', new \DateTimeZone($tz));
+        return $this->sampleContext([
+            'tzLabel' => $tz,
+            'dateTimeImmutable' => $dti,
+            ...$overrides,
+        ]);
+    }
+
+    public function testTTokenReturnsTzAbbreviation(): void
+    {
+        $ctx = $this->sampleContextWithDti('UTC');
+        $this->assertSame('UTC', DateTokenFormatter::format('T', $ctx));
+    }
+
+    public function testETokenReturnsTzIdentifier(): void
+    {
+        $ctx = $this->sampleContext(['tzLabel' => 'Asia/Tehran']);
+        $this->assertSame('Asia/Tehran', DateTokenFormatter::format('e', $ctx));
+    }
+
+    public function testETokenWithNullTzReturnsEmpty(): void
+    {
+        $ctx = $this->sampleContext(['tzLabel' => null, 'dateTimeImmutable' => null]);
+        $this->assertSame('', DateTokenFormatter::format('e', $ctx));
+    }
+
+    public function testUTokenUnixTimestamp(): void
+    {
+        $ctx = $this->sampleContextWithDti('UTC');
+        $dti = $ctx->dateTimeImmutable;
+        $this->assertSame($dti->format('U'), DateTokenFormatter::format('U', $ctx));
+    }
+
+    public function testOTokenOffsetWithoutColon(): void
+    {
+        $ctx = $this->sampleContextWithDti('UTC');
+        $this->assertSame('+0000', DateTokenFormatter::format('O', $ctx));
+    }
+
+    public function testPTokenOffsetWithColon(): void
+    {
+        $ctx = $this->sampleContextWithDti('UTC');
+        $this->assertSame('+00:00', DateTokenFormatter::format('P', $ctx));
+    }
+
+    public function testZTokenOffsetSeconds(): void
+    {
+        $ctx = $this->sampleContextWithDti('UTC');
+        $this->assertSame('0', DateTokenFormatter::format('Z', $ctx));
+    }
+
+    public function testITokenDstFlag(): void
+    {
+        $ctx = $this->sampleContextWithDti('UTC');
+        $this->assertSame('0', DateTokenFormatter::format('I', $ctx));
+    }
+
+    public function testCTokenIso8601(): void
+    {
+        $ctx = $this->sampleContextWithDti('UTC');
+        $dti = $ctx->dateTimeImmutable;
+        $this->assertSame($dti->format('c'), DateTokenFormatter::format('c', $ctx));
+    }
+
+    public function testRTokenRfc2822(): void
+    {
+        $ctx = $this->sampleContextWithDti('UTC');
+        $dti = $ctx->dateTimeImmutable;
+        $this->assertSame($dti->format('r'), DateTokenFormatter::format('r', $ctx));
+    }
+
+    public function testTehranOffset(): void
+    {
+        $ctx = $this->sampleContextWithDti('Asia/Tehran');
+        $this->assertSame('+0330', DateTokenFormatter::format('O', $ctx));
+        $this->assertSame('+03:30', DateTokenFormatter::format('P', $ctx));
+    }
+
+    public function testTimezoneTokensThrowWithoutTz(): void
+    {
+        $ctx = $this->sampleContext(['tzLabel' => null, 'dateTimeImmutable' => null]);
+        foreach (['T', 'U', 'O', 'P', 'Z', 'I', 'c', 'r'] as $token) {
+            try {
+                DateTokenFormatter::format($token, $ctx);
+                $this->fail("Expected MissingTimezoneException for token '{$token}'");
+            } catch (MissingTimezoneException) {
+                $this->assertTrue(true);
+            }
+        }
+    }
+
+    public function testTimezoneTokensNotTransliteratedWithPersianDigits(): void
+    {
+        $dti = new \DateTimeImmutable('2026-04-08 14:30:00', new \DateTimeZone('Asia/Tehran'));
+        $ctx = $this->jalaliPersianContext([
+            'dateTimeImmutable' => $dti,
+        ]);
+        // Offset digits should NOT be transliterated to Persian
+        $this->assertSame('+03:30', DateTokenFormatter::format('P', $ctx));
+        $this->assertSame('+0330', DateTokenFormatter::format('O', $ctx));
+    }
+
+    public function testUvTokensAreTransliteratedWithPersianDigits(): void
+    {
+        $ctx = $this->jalaliPersianContext();
+        // u and v ARE transliterated (they are display-text zeros)
+        $this->assertSame('۰۰۰۰۰۰', DateTokenFormatter::format('u', $ctx));
+        $this->assertSame('۰۰۰', DateTokenFormatter::format('v', $ctx));
+    }
+
+    public function testTimezoneTokenBackslashEscapesNoThrow(): void
+    {
+        // Escaped timezone tokens produce literals, never throw
+        $ctx = $this->sampleContext(['tzLabel' => null, 'dateTimeImmutable' => null]);
+        $this->assertSame('UOPZIT', DateTokenFormatter::format('\U\O\P\Z\I\T', $ctx));
+        $this->assertSame('cr', DateTokenFormatter::format('\c\r', $ctx));
     }
 }

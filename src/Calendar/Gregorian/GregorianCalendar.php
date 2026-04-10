@@ -126,4 +126,8 @@ final class GregorianCalendar implements Calendar
         ];
     }
 
+    public function supportsYear(int $year): bool
+    {
+        return $year >= self::MIN_YEAR && $year <= self::MAX_YEAR;
+    }
 }

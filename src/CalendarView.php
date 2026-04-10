@@ -97,7 +97,35 @@ interface CalendarView
 
     public function endOfYear(): Instant;
 
+    /**
+     * First day of the week containing this date.
+     *
+     * @param int $weekStart ISO day-of-week of the first day of the week
+     *                       (1=Monday, 6=Saturday, 7=Sunday). Defaults to Monday.
+     */
+    public function startOfWeek(int $weekStart = 1): Instant;
+
+    /**
+     * Last day of the week containing this date.
+     *
+     * @param int $weekStart ISO day-of-week of the first day of the week
+     *                       (1=Monday, 6=Saturday, 7=Sunday). Defaults to Monday.
+     */
+    public function endOfWeek(int $weekStart = 1): Instant;
+
     public function diffInMonths(Instant $other): int;
+
+    /**
+     * Signed difference in whole calendar years between this date and another.
+     *
+     * A year is not counted until the same day-of-month is reached.
+     */
+    public function diffInYears(Instant $other): int;
+
+    /**
+     * Whether this instant's JDN falls within the calendar's supported range.
+     */
+    public function isInSupportedRange(): bool;
 
     /**
      * Try to parse the given text; return null instead of throwing.

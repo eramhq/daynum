@@ -185,6 +185,11 @@ final class JalaliCalendar implements Calendar
         ];
     }
 
+    public function supportsYear(int $year): bool
+    {
+        return $year >= self::MIN_YEAR && $year <= self::MAX_YEAR;
+    }
+
     /**
      * Determine, for a given Jalali year, the Gregorian year + day-of-March
      * on which Farvardin 1 falls, and a leap-year indicator.

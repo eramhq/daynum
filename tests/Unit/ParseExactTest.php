@@ -222,7 +222,8 @@ final class ParseExactTest extends TestCase
 
     public function testTryParseExactReturnsNullForUnsupportedToken(): void
     {
-        $this->assertNull(GregorianView::tryParseExact('2026-4-8', 'Y-n-j'));
+        // `y` is format-only, so this should return null
+        $this->assertNull(GregorianView::tryParseExact('26-04-08', 'y-m-d'));
     }
 
     public function testTryParseExactPassesThroughTimezone(): void
@@ -275,7 +276,8 @@ final class ParseExactTest extends TestCase
     {
         $this->expectException(ParseException::class);
         $this->expectExceptionMessage('not supported for parsing');
-        GregorianView::parseExact('2026-4-8', 'Y-n-j');
+        // `y` is format-only (2-digit year is ambiguous for parsing)
+        GregorianView::parseExact('26-04-08', 'y-m-d');
     }
 
     public function testRejects12hWithoutMeridiem(): void
@@ -288,7 +290,7 @@ final class ParseExactTest extends TestCase
     public function testRejectsMissingYear(): void
     {
         $this->expectException(ParseException::class);
-        $this->expectExceptionMessage('must include at least Y, m, and d');
+        $this->expectExceptionMessage('must include at least Y');
         GregorianView::parseExact('04-08', 'm-d');
     }
 
@@ -349,5 +351,125 @@ final class ParseExactTest extends TestCase
 
         $this->assertSame(14, $parsed->gregorian()->hour());
         $this->assertSame(30, $parsed->gregorian()->minute());
+    }
+
+    // ─── Variable-width tokens (n, j, G, g) ─────────────────────────
+
+    public function testVariableWidthSingleDigitMonthDay(): void
+    {
+        $i = GregorianView::parseExact('2026/4/8', 'Y/n/j');
+        $g = $i->gregorian();
+        $this->assertSame(2026, $g->year());
+        $this->assertSame(4, $g->month());
+        $this->assertSame(8, $g->day());
+    }
+
+    public function testVariableWidthTwoDigitMonth(): void
+    {
+        $i = GregorianView::parseExact('2026-12-08', 'Y-n-d');
+        $g = $i->gregorian();
+        $this->assertSame(12, $g->month());
+        $this->assertSame(8, $g->day());
+    }
+
+    public function testVariableWidthHour24(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08 9:05:30', 'Y-m-d G:i:s');
+        $g = $i->gregorian();
+        $this->assertSame(9, $g->hour());
+        $this->assertSame(5, $g->minute());
+        $this->assertSame(30, $g->second());
+    }
+
+    public function testVariableWidthHour12(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08 2:30 pm', 'Y-m-d g:i a');
+        $this->assertSame(14, $i->gregorian()->hour());
+    }
+
+    public function testVariableWidthRoundTrip(): void
+    {
+        $original = \Daynum\Instant::fromGregorian(2026, 4, 8);
+        $formatted = $original->gregorian()->format('Y/n/j');
+        $this->assertSame('2026/4/8', $formatted);
+        $parsed = GregorianView::parseExact($formatted, 'Y/n/j');
+        $this->assertTrue($original->equals($parsed));
+    }
+
+    public function testVariableWidthAmbiguousThrows(): void
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('variable-width token');
+        GregorianView::parseExact('2026048', 'Ynj');
+    }
+
+    public function testVariableWidthPersianDigits(): void
+    {
+        $i = JalaliView::parseExact('۱۴۰۵/۱/۱۹', 'Y/n/j');
+        $j = $i->jalali();
+        $this->assertSame(1405, $j->year());
+        $this->assertSame(1, $j->month());
+        $this->assertSame(19, $j->day());
+    }
+
+    public function testTryParseExactVariableWidthReturnsInstant(): void
+    {
+        $i = GregorianView::tryParseExact('2026/4/8', 'Y/n/j');
+        $this->assertNotNull($i);
+        $this->assertSame(4, $i->gregorian()->month());
+    }
+
+    // ─── Timezone offset parsing (P, O, c) ──────────────────────────
+
+    public function testParsePTokenWithOffset(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08 14:30:45+03:30', 'Y-m-d H:i:sP');
+        $this->assertSame('+03:30', $i->tzLabel);
+        $this->assertSame(14, $i->gregorian()->hour());
+    }
+
+    public function testParseOTokenWithOffset(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08 14:30:45 +0330', 'Y-m-d H:i:s O');
+        $this->assertSame('+03:30', $i->tzLabel);
+    }
+
+    public function testParsePTokenWithZ(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08 14:30:45Z', 'Y-m-d H:i:sP');
+        $this->assertSame('+00:00', $i->tzLabel);
+    }
+
+    public function testParseCFormatRoundTrip(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08T14:30:45+03:30', 'c');
+        $g = $i->gregorian();
+        $this->assertSame(2026, $g->year());
+        $this->assertSame(4, $g->month());
+        $this->assertSame(8, $g->day());
+        $this->assertSame(14, $g->hour());
+        $this->assertSame(30, $g->minute());
+        $this->assertSame(45, $g->second());
+        $this->assertSame('+03:30', $i->tzLabel);
+    }
+
+    public function testParseCFormatUTC(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08T00:00:00+00:00', 'c');
+        $this->assertSame('+00:00', $i->tzLabel);
+    }
+
+    public function testParsedTzOverridesParameter(): void
+    {
+        // $tzLabel parameter is 'UTC' but text contains +03:30
+        $i = GregorianView::parseExact('2026-04-08 14:30:45+03:30', 'Y-m-d H:i:sP', 'UTC');
+        $this->assertSame('+03:30', $i->tzLabel);
+    }
+
+    public function testParsedTzFallsBackToParameter(): void
+    {
+        // No tz token in format — $tzLabel parameter used
+        $i = GregorianView::parseExact('2026-04-08', 'Y-m-d', 'UTC');
+        $this->assertSame('UTC', $i->tzLabel);
     }
 }

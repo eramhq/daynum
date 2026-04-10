@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Daynum\Tests\Unit;
 
+use Daynum\Calendar\Gregorian\GregorianCalendar;
 use Daynum\Calendar\Hijri\HijriCivilCalendar;
 use Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
 use Daynum\Calendar\Hijri\Table;
 use Daynum\Calendar\Jalali\JalaliCalendar;
 use Daynum\Exception\InvalidDateException;
+use Daynum\Exception\MissingTimezoneException;
 use Daynum\Exception\WeekAtBoundaryException;
 use Daynum\Instant;
 use DateTimeImmutable;
@@ -795,5 +797,258 @@ final class InstantTest extends TestCase
     {
         $this->assertTrue(Instant::isValidHijriCivil(1447, 10, 21));
         $this->assertFalse(Instant::isValidHijriCivil(1447, 13, 1));
+    }
+
+    // ─── supportsYear() ─────────────────────────────────────────────
+
+    public function testGregorianSupportsYear(): void
+    {
+        $cal = GregorianCalendar::instance();
+        $this->assertTrue($cal->supportsYear(0));         // year 0 exists in proleptic Gregorian
+        $this->assertTrue($cal->supportsYear(-9999));
+        $this->assertTrue($cal->supportsYear(9999));
+        $this->assertFalse($cal->supportsYear(-10000));
+        $this->assertFalse($cal->supportsYear(10000));
+    }
+
+    public function testJalaliSupportsYear(): void
+    {
+        $cal = JalaliCalendar::instance();
+        $this->assertTrue($cal->supportsYear(1));
+        $this->assertTrue($cal->supportsYear(3177));
+        $this->assertFalse($cal->supportsYear(0));
+        $this->assertFalse($cal->supportsYear(3178));
+    }
+
+    public function testHijriCivilSupportsYear(): void
+    {
+        $cal = HijriCivilCalendar::instance();
+        $this->assertTrue($cal->supportsYear(1));
+        $this->assertTrue($cal->supportsYear(9666));
+        $this->assertFalse($cal->supportsYear(0));
+        $this->assertFalse($cal->supportsYear(9667));
+    }
+
+    public function testHijriUaqSupportsYear(): void
+    {
+        $cal = HijriUmmAlQuraCalendar::instance();
+        $this->assertTrue($cal->supportsYear(1300));
+        $this->assertTrue($cal->supportsYear(1600));
+        $this->assertFalse($cal->supportsYear(1299));
+        $this->assertFalse($cal->supportsYear(1601));
+    }
+
+    // ─── isInSupportedRange() ───────────────────────────────────────
+
+    public function testIsInSupportedRangeNormalDates(): void
+    {
+        $this->assertTrue(Instant::fromGregorian(2026, 4, 8)->gregorian()->isInSupportedRange());
+        $this->assertTrue(Instant::fromJalali(1405, 1, 19)->jalali()->isInSupportedRange());
+        $this->assertTrue(Instant::fromHijri(1447, 10, 21)->hijri()->isInSupportedRange());
+    }
+
+    public function testIsInSupportedRangeOutOfRangeUaq(): void
+    {
+        // A JDN before the UAQ table's first year
+        $uaqMinJdn = Table::YEAR_STARTS[Table::MIN_YEAR];
+        $i = new Instant($uaqMinJdn - 1);
+        $this->assertFalse($i->hijri()->isInSupportedRange());
+    }
+
+    // ─── startOfWeek() / endOfWeek() ────────────────────────────────
+
+    public function testStartOfWeekMondayStart(): void
+    {
+        // 2026-04-08 is Wednesday → Monday start = Apr 6
+        $i = Instant::fromGregorian(2026, 4, 8, 14, 30);
+        $start = $i->gregorian()->startOfWeek(1);
+        $g = $start->gregorian();
+        $this->assertSame(2026, $g->year());
+        $this->assertSame(4, $g->month());
+        $this->assertSame(6, $g->day());
+        // Preserves time
+        $this->assertSame(14, $g->hour());
+        $this->assertSame(30, $g->minute());
+    }
+
+    public function testEndOfWeekMondayStart(): void
+    {
+        // 2026-04-08 is Wednesday → Sunday end = Apr 12
+        $i = Instant::fromGregorian(2026, 4, 8, 14, 30);
+        $end = $i->gregorian()->endOfWeek(1);
+        $g = $end->gregorian();
+        $this->assertSame(2026, $g->year());
+        $this->assertSame(4, $g->month());
+        $this->assertSame(12, $g->day());
+        // Preserves time
+        $this->assertSame(14, $g->hour());
+    }
+
+    public function testStartOfWeekSaturdayStart(): void
+    {
+        // 2026-04-08 is Wednesday, Saturday start → Saturday Apr 4
+        $i = Instant::fromGregorian(2026, 4, 8);
+        $start = $i->gregorian()->startOfWeek(6);
+        $g = $start->gregorian();
+        $this->assertSame(4, $g->month());
+        $this->assertSame(4, $g->day());
+    }
+
+    public function testEndOfWeekSundayStart(): void
+    {
+        // 2026-04-08 is Wednesday, Sunday start → end is Saturday Apr 11
+        $i = Instant::fromGregorian(2026, 4, 8);
+        $end = $i->gregorian()->endOfWeek(7);
+        $g = $end->gregorian();
+        $this->assertSame(4, $g->month());
+        $this->assertSame(11, $g->day());
+    }
+
+    public function testStartOfWeekOnStartDay(): void
+    {
+        // 2026-04-06 is Monday, weekStart=1 → same JDN
+        $i = Instant::fromGregorian(2026, 4, 6);
+        $start = $i->gregorian()->startOfWeek(1);
+        $this->assertSame($i->jdn, $start->jdn);
+    }
+
+    public function testStartOfWeekPreservesTzLabel(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
+        $start = $i->gregorian()->startOfWeek(1);
+        $this->assertSame('Asia/Tehran', $start->tzLabel);
+    }
+
+    public function testStartOfWeekInvalidWeekStartThrows(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Instant::fromGregorian(2026, 4, 8)->gregorian()->startOfWeek(0);
+    }
+
+    public function testEndOfWeekInvalidWeekStartThrows(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Instant::fromGregorian(2026, 4, 8)->gregorian()->endOfWeek(8);
+    }
+
+    public function testJalaliStartOfWeekSaturdayStart(): void
+    {
+        // Iranian convention: Saturday start
+        $i = Instant::fromJalali(1405, 1, 19); // = 2026-04-08 Wednesday
+        $start = $i->jalali()->startOfWeek(6);
+        $j = $start->jalali();
+        // Saturday start from Wednesday: goes back to Jalali 1405/01/16
+        $this->assertSame(1405, $j->year());
+        $this->assertSame(1, $j->month());
+        $this->assertSame(15, $j->day());
+    }
+
+    // ─── diffInYears() ──────────────────────────────────────────────
+
+    public function testDiffInYearsSameDateDifferentYear(): void
+    {
+        $a = Instant::fromGregorian(2026, 4, 8);
+        $b = Instant::fromGregorian(2025, 4, 8);
+        $this->assertSame(1, $a->gregorian()->diffInYears($b));
+    }
+
+    public function testDiffInYearsDayNotReached(): void
+    {
+        $a = Instant::fromGregorian(2025, 2, 28);
+        $b = Instant::fromGregorian(2024, 2, 29);
+        // Feb 28 hasn't reached Feb 29 yet → 0
+        $this->assertSame(0, $a->gregorian()->diffInYears($b));
+    }
+
+    public function testDiffInYearsLeapDayToMarch1(): void
+    {
+        $a = Instant::fromGregorian(2025, 3, 1);
+        $b = Instant::fromGregorian(2024, 2, 29);
+        // Month has passed → 1
+        $this->assertSame(1, $a->gregorian()->diffInYears($b));
+    }
+
+    public function testDiffInYearsNegative(): void
+    {
+        $a = Instant::fromGregorian(2024, 4, 8);
+        $b = Instant::fromGregorian(2026, 4, 8);
+        $this->assertSame(-2, $a->gregorian()->diffInYears($b));
+    }
+
+    public function testDiffInYearsSymmetry(): void
+    {
+        $a = Instant::fromGregorian(2026, 4, 8);
+        $b = Instant::fromGregorian(2016, 4, 8);
+        $this->assertSame(10, $a->gregorian()->diffInYears($b));
+        $this->assertSame(-10, $b->gregorian()->diffInYears($a));
+    }
+
+    public function testDiffInYearsSameDate(): void
+    {
+        $a = Instant::fromGregorian(2026, 4, 8);
+        $this->assertSame(0, $a->gregorian()->diffInYears($a));
+    }
+
+    public function testDiffInYearsJalaliLeapEdge(): void
+    {
+        // 1403 is a Jalali leap year: Esfand 30 → 1404 Esfand 29
+        $a = Instant::fromJalali(1404, 12, 29);
+        $b = Instant::fromJalali(1403, 12, 30);
+        // Day not reached (29 < 30) → 0
+        $this->assertSame(0, $a->jalali()->diffInYears($b));
+    }
+
+    // ─── Timezone format tokens (integration) ───────────────────────
+
+    public function testFormatPTokenWithTimezone(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'UTC');
+        $this->assertSame('+00:00', $i->gregorian()->format('P'));
+    }
+
+    public function testFormatOTokenWithTimezone(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'UTC');
+        $this->assertSame('+0000', $i->gregorian()->format('O'));
+    }
+
+    public function testFormatCTokenOnJalaliReturnsGregorian(): void
+    {
+        // ISO 8601 output should be Gregorian regardless of the view
+        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
+        $jalaliC = $i->jalali()->format('c');
+        $gregorianC = $i->gregorian()->format('c');
+        // Both produce the same ISO 8601 string since c delegates to DTI
+        $this->assertSame($gregorianC, $jalaliC);
+    }
+
+    public function testFormatRTokenOutputsRfc2822(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
+        $r = $i->gregorian()->format('r');
+        $dti = $i->toDateTimeImmutable();
+        $this->assertSame($dti->format('r'), $r);
+    }
+
+    public function testTimezoneTokenThrowsWithoutTzLabel(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8);
+        $this->expectException(MissingTimezoneException::class);
+        $i->gregorian()->format('P');
+    }
+
+    public function testTimezoneTokensNotTransliteratedInFullPattern(): void
+    {
+        $i = Instant::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
+        $view = $i->jalali()->withLocale('fa')->withDigits('persian');
+        // P token should not have Persian digits
+        $this->assertSame('+03:30', $view->format('P'));
+    }
+
+    public function testTimezoneTokenEscapedDoesNotThrowWithoutTz(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8);
+        // Escaped \P, \O, etc. should not trigger DTI construction or throw
+        $this->assertSame('P+O', $i->gregorian()->format('\P+\O'));
     }
 }

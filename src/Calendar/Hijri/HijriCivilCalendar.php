@@ -171,4 +171,9 @@ final class HijriCivilCalendar implements Calendar
             $this->toJdn(self::MAX_YEAR, 12, $this->daysInMonth(self::MAX_YEAR, 12)),
         ];
     }
+
+    public function supportsYear(int $year): bool
+    {
+        return $year >= self::MIN_YEAR && $year <= self::MAX_YEAR;
+    }
 }
