@@ -25,7 +25,7 @@ jobs:
           # Deliberately NO ext-intl: the committed fixtures let us run every
           # conformance test on a pure PHP install, proving the zero-runtime-dep
           # promise holds.
-          extensions: mbstring, dom, xml, zlib
+          extensions: mbstring, dom, xml, zlib, :intl
           coverage: none
           tools: composer:v2
 

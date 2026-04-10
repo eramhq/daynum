@@ -9,11 +9,15 @@ on:
   push:
     branches: [main]
     paths:
-      - 'tools/**'
+      - 'tools/generate-*.php'
+      - 'tools/generate-*.mjs'
+      - 'tools/verify-oracles-agree.php'
       - '.github/workflows/oracle.yml'
   pull_request:
     paths:
-      - 'tools/**'
+      - 'tools/generate-*.php'
+      - 'tools/generate-*.mjs'
+      - 'tools/verify-oracles-agree.php'
       - 'tests/fixtures/**'
       - '.github/workflows/oracle.yml'
   workflow_dispatch:
