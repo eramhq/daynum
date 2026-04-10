@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Daynum\Locale;
 
-use InvalidArgumentException;
+use Daynum\Exception\InvalidArgumentException;
 
 /**
  * Resolves BCP 47 language tags to locale implementations.

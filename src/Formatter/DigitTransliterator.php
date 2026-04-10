@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Daynum\Formatter;
 
-use InvalidArgumentException;
+use Daynum\Exception\InvalidArgumentException;
 
 /**
  * Bidirectional digit transliteration between three Unicode script families.
@@ -31,7 +31,7 @@ final class DigitTransliterator
         self::ARAB    => ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'],
     ];
 
-    /** @var array<string, array<string, string>> */
+    /** @var array<string, array<int|string, string>> */
     private static array $toScriptMap = [];
 
     /**
@@ -52,12 +52,11 @@ final class DigitTransliterator
                     "Unknown digit script '{$script}'. Expected one of: latn, persian, arab."
                 );
             }
-            $d = self::DIGITS[$script];
-            self::$toScriptMap[$script] = [
-                '0' => $d[0], '1' => $d[1], '2' => $d[2], '3' => $d[3],
-                '4' => $d[4], '5' => $d[5], '6' => $d[6], '7' => $d[7],
-                '8' => $d[8], '9' => $d[9],
-            ];
+            $map = [];
+            foreach (self::DIGITS[$script] as $i => $glyph) {
+                $map[(string) $i] = $glyph;
+            }
+            self::$toScriptMap[$script] = $map;
         }
         return strtr($text, self::$toScriptMap[$script]);
     }

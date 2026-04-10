@@ -95,6 +95,7 @@ final class Instant implements JsonSerializable
      * far-future dates.
      *
      * @throws \Daynum\Exception\UmmAlQuraOutOfRangeException
+     * @throws \Daynum\Exception\InvalidDateException
      */
     public static function fromHijri(
         int $year,
@@ -143,8 +144,7 @@ final class Instant implements JsonSerializable
         $hour = (int) $dt->format('G');
         $minute = (int) $dt->format('i');
         $second = (int) $dt->format('s');
-        $tz = $dt->getTimezone();
-        $tzName = $tz !== false ? $tz->getName() : null;
+        $tzName = $dt->getTimezone()->getName();
 
         return self::fromGregorian($year, $month, $day, $hour, $minute, $second, $tzName);
     }
@@ -339,12 +339,12 @@ final class Instant implements JsonSerializable
     /**
      * Reconstruct an Instant from a serialized array (inverse of {@see jsonSerialize}).
      *
-     * @param array{jdn: int, secondsOfDay?: int, tzLabel?: ?string} $data
+     * @param array<string, mixed> $data
      */
     public static function fromArray(array $data): self
     {
         if (!isset($data['jdn']) || !is_int($data['jdn'])) {
-            throw new \InvalidArgumentException('Instant::fromArray() requires an integer "jdn" key.');
+            throw new Exception\InvalidArgumentException('Instant::fromArray() requires an integer "jdn" key.');
         }
 
         return new self(

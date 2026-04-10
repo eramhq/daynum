@@ -587,5 +587,14 @@ final class ParseExactTest extends TestCase
         yield '+14:30' => ['+14:30'];
         yield '+14:59' => ['+14:59'];
         yield '-14:01' => ['-14:01'];
+        yield '-14:00' => ['-14:00'];
+        yield '-13:00' => ['-13:00'];
+        yield '-12:01' => ['-12:01'];
+    }
+
+    public function testAcceptsMaxValidNegativeOffset(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08 14:30:45-12:00', 'Y-m-d H:i:sP');
+        $this->assertSame('-12:00', $i->tzLabel);
     }
 }

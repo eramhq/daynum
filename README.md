@@ -116,7 +116,8 @@ $d->hijri()->withLocale('ar')->format('j F Y');                        // "21 ش
 $d->hijri()->withLocale('ar')->withDigits('arab')->format('j F Y');    // "٢١ شوال ١٤٤٧"
 
 // ─── Arithmetic (immutable; returns new Instant) ────────
-$d->jalali()->addDays(7);
+$next = $d->jalali()->addDays(7);           // returns Instant
+$next->jalali()->format('Y/m/d');           // re-enter view to format
 $d->jalali()->subMonths(1);
 $d->jalali()->addYears(1);
 $d->jalali()->startOfMonth();
@@ -195,6 +196,31 @@ Backslash escapes the next character: `\Y` produces a literal `Y`.
 > **`W` and `o` tokens at calendar boundaries:** `weekOfYear()` and `weekBasedYear()` can throw `WeekAtBoundaryException` when the ISO week's Thursday falls outside the calendar's supported year range. This affects roughly the first or last 3 days of MIN_YEAR / MAX_YEAR for each calendar. If you format dates near these extremes, catch the exception or avoid the `W` / `o` tokens.
 
 > **Parsing support:** `parseExact()` accepts: fixed-width `Y`, `m`, `d`, `H`, `h`, `i`, `s`; variable-width `n`, `j`, `G`, `g`; meridiem `a`/`A`; timezone offsets `P`, `p`, `O`; and the composite `c` token (`Y-m-d\TH:i:sP`). Locale-dependent tokens (`F`, `M`, `l`, `D`) are format-only. Variable-width tokens must be followed by a literal separator, not another token. Using `h` (12-hour) requires a companion `a`/`A` token. Digits in any script (Persian U+06F0, Arabic-Indic U+0660) are normalized automatically. The `a`/`A` tokens accept English (`am`/`pm`), Persian (`ق.ظ`/`ب.ظ`), and Arabic (`ص`/`م`) meridiem indicators.
+
+## Arithmetic notes
+
+**Arithmetic returns `Instant`, not the view.** Since `Instant` is calendar-neutral, arithmetic methods always return a new `Instant`. To format or inspect the result, re-enter a calendar view:
+
+```php
+$next = $d->jalali()->addMonths(1);   // Instant
+$next->jalali()->format('Y/m/d');     // re-enter Jalali view
+```
+
+**Month arithmetic clamps the day to the target month's last day.** This matches the behavior of Carbon, `java.time`, and most date libraries:
+
+```php
+Instant::fromGregorian(2026, 1, 31)->gregorian()->addMonths(1);
+// → Feb 28, 2026 (not Feb 31, not an error)
+```
+
+**UAQ boundary crossing via arithmetic.** Arithmetic results are calendar-neutral. Viewing the result in Hijri Umm al-Qura may throw if the new date is outside the table range (AH 1300–1600). Use `hijriCivil()` as a fallback:
+
+```php
+$d = Instant::fromHijri(1600, 12, 29);     // near table edge
+$result = $d->hijri()->addDays(100);        // returns Instant (no error)
+$result->hijriCivil()->year();              // works — civil has no range limit
+$result->hijri()->year();                   // throws UmmAlQuraOutOfRangeException
+```
 
 ## Opt-in global helpers
 
@@ -320,7 +346,10 @@ src/
 ├── helpers.php                     # opt-in jdate/gdate/hdate globals
 ├── Exception/
 │   ├── DaynumException.php         # marker interface
+│   ├── InvalidArgumentException.php
 │   ├── InvalidDateException.php
+│   ├── InvalidTimezoneException.php
+│   ├── MissingTimezoneException.php
 │   ├── ParseException.php          # thrown by parseExact() on bad input
 │   ├── UmmAlQuraOutOfRangeException.php  # thrown by Hijri UAQ when out of bundled range
 │   └── WeekAtBoundaryException.php # thrown by weekOfYear()/weekBasedYear() at range edges

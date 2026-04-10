@@ -7,6 +7,7 @@ namespace Daynum\Calendar;
 use Daynum\Calendar;
 use Daynum\CalendarView;
 use Daynum\Exception\DaynumException;
+use Daynum\Exception\InvalidArgumentException;
 use Daynum\Exception\ParseException;
 use Daynum\Exception\WeekAtBoundaryException;
 use Daynum\Formatter\DateTokenFormatter;
@@ -62,7 +63,7 @@ abstract class AbstractCalendarView implements CalendarView
     public static function of(Instant $instant, ?string $locale = null, string $digitScript = DigitTransliterator::LATN): static
     {
         if (!DigitTransliterator::isSupported($digitScript)) {
-            throw new \InvalidArgumentException("Unknown digit script '{$digitScript}'.");
+            throw new InvalidArgumentException("Unknown digit script '{$digitScript}'.");
         }
         return new static($instant, LocaleRegistry::get($locale ?? 'en'), $digitScript);
     }
@@ -243,7 +244,7 @@ abstract class AbstractCalendarView implements CalendarView
             if ($h12 < 1 || $h12 > 12) {
                 throw ParseException::forFormat($text, $format, "12-hour value {$h12} out of range 1-12");
             }
-            $fields['hour'] = self::resolve12Hour($h12, $fields['meridiem']);
+            $fields['hour'] = self::resolve12Hour((int) $h12, (bool) $fields['meridiem']);
             unset($fields['hour12']);
         }
         unset($fields['meridiem']);
@@ -261,9 +262,9 @@ abstract class AbstractCalendarView implements CalendarView
             );
         }
 
-        $hour = $fields['hour'] ?? 0;
-        $minute = $fields['minute'] ?? 0;
-        $second = $fields['second'] ?? 0;
+        $hour = (int) ($fields['hour'] ?? 0);
+        $minute = (int) ($fields['minute'] ?? 0);
+        $second = (int) ($fields['second'] ?? 0);
 
         if ($hour > 23 || $minute > 59 || $second > 59) {
             throw ParseException::forFormat($text, $format, sprintf(
@@ -275,9 +276,9 @@ abstract class AbstractCalendarView implements CalendarView
         // Resolve parsed timezone offset — overrides the $tzLabel parameter
         $parsedTz = $tzLabel;
         if (isset($fields['tzOffsetP'])) {
-            $parsedTz = $fields['tzOffsetP'];
+            $parsedTz = (string) $fields['tzOffsetP'];
         } elseif (isset($fields['tzOffsetO'])) {
-            $o = $fields['tzOffsetO'];
+            $o = (string) $fields['tzOffsetO'];
             $parsedTz = substr($o, 0, 3) . ':' . substr($o, 3, 2);
         }
 
@@ -285,7 +286,7 @@ abstract class AbstractCalendarView implements CalendarView
         $calendar = static::calendarInstance();
 
         try {
-            $jdn = $calendar->toJdn($year, $month, $day);
+            $jdn = $calendar->toJdn((int) $year, (int) $month, (int) $day);
         } catch (DaynumException $e) {
             throw ParseException::forFormat($text, $format, $e->getMessage());
         }
@@ -492,10 +493,12 @@ abstract class AbstractCalendarView implements CalendarView
         }
         if (preg_match($regex, substr($text, $pos), $m)) {
             $raw = $m[1];
-            // UTC+14:00 (Kiribati Line Islands) is the real-world maximum
+            // Real-world IANA range: -12:00 (Baker Island) to +14:00 (Kiribati)
+            $sign = $raw[0];
             $h = (int) substr($raw, 1, 2);
             $min = (int) substr($raw, strlen($raw) === 6 && $raw[3] === ':' ? 4 : 3, 2);
-            if ($h > 14 || $min > 59 || ($h === 14 && $min > 0)) {
+            $maxH = $sign === '-' ? 12 : 14;
+            if ($h > $maxH || $min > 59 || ($h === $maxH && $min > 0)) {
                 return null;
             }
             return ['value' => $raw, 'end' => $pos + strlen($raw)];
@@ -785,7 +788,7 @@ abstract class AbstractCalendarView implements CalendarView
     public function withDigits(string $script): static
     {
         if (!DigitTransliterator::isSupported($script)) {
-            throw new \InvalidArgumentException("Unknown digit script '{$script}'.");
+            throw new InvalidArgumentException("Unknown digit script '{$script}'.");
         }
         return new static($this->instant, $this->locale, $script);
     }
@@ -892,7 +895,7 @@ abstract class AbstractCalendarView implements CalendarView
     {
         $weekStart = $weekStart instanceof WeekDay ? $weekStart->value : $weekStart;
         if ($weekStart < 1 || $weekStart > 7) {
-            throw new \InvalidArgumentException("weekStart must be in [1, 7]; got {$weekStart}.");
+            throw new InvalidArgumentException("weekStart must be in [1, 7]; got {$weekStart}.");
         }
         $isoDow = $this->dayOfWeekIso(); // Mon=1..Sun=7
         $offset = ($isoDow - $weekStart + 7) % 7;

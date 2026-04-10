@@ -61,3 +61,6 @@ jobs:
 
       - name: Run ICU conformance tests (pre-committed fixtures, no ext-intl)
         run: vendor/bin/phpunit --testsuite=conformance
+
+      - name: Run PHPStan static analysis
+        run: vendor/bin/phpstan analyse --no-progress

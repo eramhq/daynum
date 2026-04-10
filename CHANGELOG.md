@@ -5,12 +5,19 @@ All notable changes to Daynum are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Version numbers below establish the scheme; git tags have not yet been
-applied. Tagging is a separate release decision.
-
 ## [Unreleased]
 
 ### Added
+- `Daynum\Exception\InvalidArgumentException` — library-owned exception
+  extending `\InvalidArgumentException` and implementing `DaynumException`.
+  All bare `\InvalidArgumentException` throws in library code (`Instant::fromArray`,
+  `CalendarView::of`, `CalendarView::withDigits`, `CalendarView::startOfWeek`,
+  `LocaleRegistry::get`) now throw this class, sealing the `DaynumException`
+  marker-interface contract: `catch (DaynumException)` catches every exception
+  the library throws.
+- PHPStan level 8 static analysis in CI. `phpstan.neon` ships with the library;
+  `composer phpstan` runs the analysis locally.
+
 - `WeekDay` backed enum (ISO Mon=1..Sun=7) for self-documenting
   `startOfWeek(WeekDay::Saturday)` / `endOfWeek(WeekDay::Sunday)` calls.
   `startOfWeek` / `endOfWeek` now accept `WeekDay|int`; existing `int`
@@ -20,15 +27,20 @@ applied. Tagging is a separate release decision.
   unknown. Replaces the raw PHP `DateInvalidTimeZoneException` /
   `\Exception` that previously leaked.
 
-### Fixed (pre-v1)
+### Fixed
+- `parseExact()` negative UTC offset validation now correctly rejects
+  offsets below `-12:00` (Baker Island). Previously the validation was
+  symmetric, allowing `-14:00` which has no real-world IANA timezone.
+  The valid parsed range is now `-12:00` to `+14:00`.
 - `e` format token now wraps its output in null-byte sentinels, matching
   all other timezone tokens (`P`, `O`, `T`, etc.). Previously, formatting
   `e` with a numeric offset like `+03:30` under Persian digits produced
   `+۰۳:۳۰` instead of the correct `+03:30`.
 - `parseExact()` now range-validates parsed UTC offsets: hours must be
-  0–14, minutes 0–59. Previously, offsets like `+99:99` passed the regex
-  match and were stored verbatim, producing a deferred PHP exception when
-  `toDateTimeImmutable()` was eventually called.
+  0–14 (positive) or 0–12 (negative), minutes 0–59. Previously, offsets
+  like `+99:99` passed the regex match and were stored verbatim,
+  producing a deferred PHP exception when `toDateTimeImmutable()` was
+  eventually called.
 - `Instant::now()`, `today()`, and `toDateTimeImmutable()` now catch
   PHP's timezone exception and rethrow as `InvalidTimezoneException`,
   ensuring all exceptions from the library implement `DaynumException`.
