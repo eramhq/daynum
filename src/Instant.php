@@ -175,6 +175,30 @@ final class Instant implements JsonSerializable
         return self::fromDateTime($now);
     }
 
+    /**
+     * Tomorrow at 00:00:00.
+     *
+     * @param ?string $tzLabel Timezone identifier (e.g. 'Asia/Tehran', 'UTC').
+     *                        When null, resolves from `date_default_timezone_get()`.
+     */
+    public static function tomorrow(?string $tzLabel = null): self
+    {
+        $today = self::today($tzLabel);
+        return $today->withJdn($today->jdn + 1);
+    }
+
+    /**
+     * Yesterday at 00:00:00.
+     *
+     * @param ?string $tzLabel Timezone identifier (e.g. 'Asia/Tehran', 'UTC').
+     *                        When null, resolves from `date_default_timezone_get()`.
+     */
+    public static function yesterday(?string $tzLabel = null): self
+    {
+        $today = self::today($tzLabel);
+        return $today->withJdn($today->jdn - 1);
+    }
+
     // ─── Safe construction ────────────────────────────────────────
 
     /**

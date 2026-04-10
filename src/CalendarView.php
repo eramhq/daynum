@@ -98,4 +98,11 @@ interface CalendarView
     public function endOfYear(): Instant;
 
     public function diffInMonths(Instant $other): int;
+
+    /**
+     * Try to parse the given text; return null instead of throwing.
+     *
+     * @see \Daynum\Calendar\AbstractCalendarView::parseExact()
+     */
+    public static function tryParseExact(string $text, string $format, ?string $tzLabel = null): ?Instant;
 }

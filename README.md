@@ -79,6 +79,8 @@ $d = Instant::fromDateTime(new DateTimeImmutable('2026-04-08 14:30'));
 $d = Instant::now();                                   // current date + time, resolves timezone
 $d = Instant::now('Asia/Tehran');                       // current date + time in Tehran
 $d = Instant::today();                                  // today at 00:00:00
+$d = Instant::tomorrow();                               // tomorrow at 00:00:00
+$d = Instant::yesterday('Asia/Tehran');                 // yesterday at 00:00:00 in Tehran
 
 // ─── Views ───────────────────────────────────────────────
 $d->gregorian()->year();    // 2026
@@ -121,6 +123,10 @@ $d = JalaliView::parseExact('1405/01/19', 'Y/m/d');
 $d = JalaliView::parseExact('۱۴۰۵/۰۱/۱۹', 'Y/m/d');  // Persian digits normalized
 $d = HijriUmmAlQuraView::parseExact('1447/10/21', 'Y/m/d');
 $d = GregorianView::parseExact('2026-04-08 02:30 PM', 'Y-m-d h:i A');
+
+// ─── Safe parsing ───────────────────────────────────────
+$d = GregorianView::tryParseExact('2026-04-10', 'Y-m-d');   // Instant or null
+$d = JalaliView::tryParseExact('not-a-date', 'Y/m/d');      // null
 
 // ─── Safe construction ──────────────────────────────────
 $d = Instant::tryFromJalali(1405, 13, 1);    // null (invalid month)

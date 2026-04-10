@@ -201,6 +201,44 @@ final class ParseExactTest extends TestCase
         $this->assertTrue($original->equals($parsed));
     }
 
+    // ─── tryParseExact ─────────────────────────────────────────────────
+
+    public function testTryParseExactReturnsInstantForValidInput(): void
+    {
+        $i = GregorianView::tryParseExact('2026-04-10', 'Y-m-d');
+        $this->assertNotNull($i);
+        $this->assertSame(2026, $i->gregorian()->year());
+    }
+
+    public function testTryParseExactReturnsNullForInvalidFormat(): void
+    {
+        $this->assertNull(GregorianView::tryParseExact('not-a-date', 'Y-m-d'));
+    }
+
+    public function testTryParseExactReturnsNullForInvalidDate(): void
+    {
+        $this->assertNull(GregorianView::tryParseExact('2026-02-30', 'Y-m-d'));
+    }
+
+    public function testTryParseExactReturnsNullForUnsupportedToken(): void
+    {
+        $this->assertNull(GregorianView::tryParseExact('2026-4-8', 'Y-n-j'));
+    }
+
+    public function testTryParseExactPassesThroughTimezone(): void
+    {
+        $i = GregorianView::tryParseExact('2026-04-10', 'Y-m-d', 'UTC');
+        $this->assertNotNull($i);
+        $this->assertSame('UTC', $i->tzLabel);
+    }
+
+    public function testTryParseExactWorksAcrossCalendars(): void
+    {
+        $i = JalaliView::tryParseExact('1405/01/21', 'Y/m/d');
+        $this->assertNotNull($i);
+        $this->assertSame(1405, $i->jalali()->year());
+    }
+
     // ─── Error cases ─────────────────────────────────────────────────
 
     public function testRejectsInvalidGregorianDate(): void

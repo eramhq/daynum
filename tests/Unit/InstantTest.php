@@ -537,6 +537,50 @@ final class InstantTest extends TestCase
         $this->assertSame(0, $instant->secondsOfDay);
     }
 
+    // ─── tomorrow() / yesterday() ──────────────────────────────────
+
+    public function testTomorrowIsOneDayAfterToday(): void
+    {
+        $this->assertSame(
+            Instant::today('UTC')->jdn + 1,
+            Instant::tomorrow('UTC')->jdn,
+        );
+    }
+
+    public function testYesterdayIsOneDayBeforeToday(): void
+    {
+        $this->assertSame(
+            Instant::today('UTC')->jdn - 1,
+            Instant::yesterday('UTC')->jdn,
+        );
+    }
+
+    public function testTomorrowIsMidnight(): void
+    {
+        $this->assertSame(0, Instant::tomorrow()->secondsOfDay);
+    }
+
+    public function testYesterdayIsMidnight(): void
+    {
+        $this->assertSame(0, Instant::yesterday()->secondsOfDay);
+    }
+
+    public function testTomorrowResolvesTimezone(): void
+    {
+        $this->assertSame('Asia/Tehran', Instant::tomorrow('Asia/Tehran')->tzLabel);
+    }
+
+    public function testYesterdayResolvesDefaultTimezone(): void
+    {
+        $oldTz = date_default_timezone_get();
+        date_default_timezone_set('America/New_York');
+        try {
+            $this->assertSame('America/New_York', Instant::yesterday()->tzLabel);
+        } finally {
+            date_default_timezone_set($oldTz);
+        }
+    }
+
     // ─── JsonSerializable + fromArray ────────────────────────────────
 
     public function testJsonSerializeProducesCalendarNeutralArray(): void

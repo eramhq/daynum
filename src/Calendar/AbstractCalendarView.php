@@ -388,6 +388,22 @@ abstract class AbstractCalendarView implements CalendarView
         return $isPm ? $hour12 + 12 : $hour12;
     }
 
+    /**
+     * Try to parse the given text; return null instead of throwing.
+     *
+     * Catches {@see ParseException} only — this covers all failure modes
+     * because {@see parseExact()} already wraps calendar-level exceptions
+     * (InvalidDateException, UmmAlQuraOutOfRangeException) in ParseException.
+     */
+    public static function tryParseExact(string $text, string $format, ?string $tzLabel = null): ?Instant
+    {
+        try {
+            return static::parseExact($text, $format, $tzLabel);
+        } catch (ParseException) {
+            return null;
+        }
+    }
+
     // ─── CalendarView interface ───────────────────────────────────────
 
     public function instant(): Instant
