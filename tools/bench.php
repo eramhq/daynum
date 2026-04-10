@@ -23,6 +23,8 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 use Daynum\Instant;
+use Daynum\Calendar\Jalali\JalaliView;
+use Daynum\Calendar\Gregorian\GregorianView;
 
 $opts = getopt('', ['filter::', 'iterations::']);
 $filter = isset($opts['filter']) && $opts['filter'] !== false ? (string) $opts['filter'] : null;
@@ -37,6 +39,8 @@ $instant = Instant::fromJalali(1405, 1, 19);
 $instantGreg = Instant::fromGregorian(2026, 4, 8);
 $instantHijri = Instant::fromHijri(1447, 10, 21);
 $instantHijriCivil = Instant::fromHijriCivil(1447, 10, 21);
+$instantJalali2 = Instant::fromJalali(1405, 6, 15); // for diffInMonths (~5 months from $instant)
+$instantSha31 = Instant::fromJalali(1405, 6, 31);   // Shahrivar 31, for day-clamp test
 
 /** @var array<string, callable> */
 $benchmarks = [
@@ -78,6 +82,27 @@ $benchmarks = [
     },
     'hijri.format.numeric' => static function () use ($instantHijri) {
         $instantHijri->hijri()->format('Y-m-d');
+    },
+    'jalali.parseExact.numeric' => static function () {
+        JalaliView::parseExact('1405/01/19', 'Y/m/d');
+    },
+    'jalali.parseExact.persianDigits' => static function () {
+        JalaliView::parseExact('۱۴۰۵/۰۱/۱۹', 'Y/m/d');
+    },
+    'gregorian.parseExact.numeric' => static function () {
+        GregorianView::parseExact('2026-04-08', 'Y-m-d');
+    },
+    'jalali.addMonths' => static function () use ($instant) {
+        $instant->jalali()->addMonths(1);
+    },
+    'jalali.addMonths.clamp' => static function () use ($instantSha31) {
+        $instantSha31->jalali()->addMonths(1);
+    },
+    'jalali.startOfMonth' => static function () use ($instant) {
+        $instant->jalali()->startOfMonth();
+    },
+    'jalali.diffInMonths' => static function () use ($instant, $instantJalali2) {
+        $instant->jalali()->diffInMonths($instantJalali2);
     },
 ];
 
