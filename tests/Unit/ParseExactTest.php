@@ -485,4 +485,42 @@ final class ParseExactTest extends TestCase
         $i = GregorianView::parseExact('2026-04-08', 'Y-m-d', 'UTC');
         $this->assertSame('UTC', $i->tzLabel);
     }
+
+    // ─── Timezone offset validation ─────────────────────────────────
+
+    public function testRejectsInvalidOffsetRange(): void
+    {
+        $this->expectException(ParseException::class);
+        GregorianView::parseExact('2026-04-08 14:30:45+99:99', 'Y-m-d H:i:sP');
+    }
+
+    public function testRejectsOffsetHoursTooHigh(): void
+    {
+        $this->expectException(ParseException::class);
+        GregorianView::parseExact('2026-04-08 14:30:45+15:00', 'Y-m-d H:i:sP');
+    }
+
+    public function testRejectsOffsetMinutesTooHigh(): void
+    {
+        $this->expectException(ParseException::class);
+        GregorianView::parseExact('2026-04-08 14:30:45+00:60', 'Y-m-d H:i:sP');
+    }
+
+    public function testAcceptsMaxValidOffset(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08 14:30:45+14:00', 'Y-m-d H:i:sP');
+        $this->assertSame('+14:00', $i->tzLabel);
+    }
+
+    public function testAcceptsChathamIslandsOffset(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08 14:30:45+13:45', 'Y-m-d H:i:sP');
+        $this->assertSame('+13:45', $i->tzLabel);
+    }
+
+    public function testRejectsInvalidOFormatOffset(): void
+    {
+        $this->expectException(ParseException::class);
+        GregorianView::parseExact('2026-04-08 14:30:45 +9999', 'Y-m-d H:i:s O');
+    }
 }

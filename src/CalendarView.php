@@ -100,18 +100,18 @@ interface CalendarView
     /**
      * First day of the week containing this date.
      *
-     * @param int $weekStart ISO day-of-week of the first day of the week
-     *                       (1=Monday, 6=Saturday, 7=Sunday). Defaults to Monday.
+     * @param WeekDay|int $weekStart ISO day-of-week of the first day of the week
+     *                               (1=Monday, 6=Saturday, 7=Sunday). Defaults to Monday.
      */
-    public function startOfWeek(int $weekStart = 1): Instant;
+    public function startOfWeek(WeekDay|int $weekStart = WeekDay::Monday): Instant;
 
     /**
      * Last day of the week containing this date.
      *
-     * @param int $weekStart ISO day-of-week of the first day of the week
-     *                       (1=Monday, 6=Saturday, 7=Sunday). Defaults to Monday.
+     * @param WeekDay|int $weekStart ISO day-of-week of the first day of the week
+     *                               (1=Monday, 6=Saturday, 7=Sunday). Defaults to Monday.
      */
-    public function endOfWeek(int $weekStart = 1): Instant;
+    public function endOfWeek(WeekDay|int $weekStart = WeekDay::Monday): Instant;
 
     /**
      * Signed difference in whole calendar months between this date and another.

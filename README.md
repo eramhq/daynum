@@ -186,13 +186,15 @@ Daynum uses PHP `date()` syntax. All tokens work across all calendars.
 | `w` | Weekday (Sun=0..Sat=6) | `3` |
 | `t` | Days in month | `31` |
 | `L` | Leap year (1/0) | `0` |
+| `P` | UTC offset `+03:30` | `+03:30` |
+| `p` | UTC offset `+03:30` or `Z` for UTC | `Z` |
 | `T`/`e` | Timezone label | `Asia/Tehran` |
 
 Backslash escapes the next character: `\Y` produces a literal `Y`.
 
 > **`W` and `o` tokens at calendar boundaries:** `weekOfYear()` and `weekBasedYear()` can throw `WeekAtBoundaryException` when the ISO week's Thursday falls outside the calendar's supported year range. This affects roughly the first or last 3 days of MIN_YEAR / MAX_YEAR for each calendar. If you format dates near these extremes, catch the exception or avoid the `W` / `o` tokens.
 
-> **Parsing support:** `parseExact()` accepts fixed-width numeric tokens only: `Y`, `m`, `d`, `H`, `h`, `i`, `s`, `a`/`A`. Variable-width tokens (`n`, `j`, `G`, `g`) and locale-dependent tokens (`F`, `M`, `l`, `D`) are format-only. Using `h` (12-hour) requires a companion `a`/`A` token. Digits in any script (Persian U+06F0, Arabic-Indic U+0660) are normalized automatically. The `a`/`A` tokens accept English (`am`/`pm`), Persian (`ق.ظ`/`ب.ظ`), and Arabic (`ص`/`م`) meridiem indicators.
+> **Parsing support:** `parseExact()` accepts: fixed-width `Y`, `m`, `d`, `H`, `h`, `i`, `s`; variable-width `n`, `j`, `G`, `g`; meridiem `a`/`A`; timezone offsets `P`, `p`, `O`; and the composite `c` token (`Y-m-d\TH:i:sP`). Locale-dependent tokens (`F`, `M`, `l`, `D`) are format-only. Variable-width tokens must be followed by a literal separator, not another token. Using `h` (12-hour) requires a companion `a`/`A` token. Digits in any script (Persian U+06F0, Arabic-Indic U+0660) are normalized automatically. The `a`/`A` tokens accept English (`am`/`pm`), Persian (`ق.ظ`/`ب.ظ`), and Arabic (`ص`/`م`) meridiem indicators.
 
 ## Opt-in global helpers
 

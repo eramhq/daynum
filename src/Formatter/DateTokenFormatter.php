@@ -126,7 +126,9 @@ final class DateTokenFormatter
             'o' => self::yearFull($ctx->weekBasedYear),
             't' => (string) $ctx->daysInMonth,
             'L' => $ctx->isLeapYear ? '1' : '0',
-            'e' => $ctx->tzLabel ?? throw MissingTimezoneException::forToken('e'),
+            'e' => $ctx->tzLabel !== null
+                ? "\x00" . $ctx->tzLabel . "\x00"
+                : throw MissingTimezoneException::forToken('e'),
             'T' => self::requireTzRaw($ctx, 'T'),
             'U' => self::requireTzRaw($ctx, 'U'),
             'O' => self::requireTzRaw($ctx, 'O'),

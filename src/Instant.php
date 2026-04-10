@@ -13,6 +13,7 @@ use Daynum\Calendar\Hijri\HijriUmmAlQuraView;
 use Daynum\Calendar\Jalali\JalaliCalendar;
 use Daynum\Calendar\Jalali\JalaliView;
 use Daynum\Exception\InvalidDateException;
+use Daynum\Exception\InvalidTimezoneException;
 use Daynum\Exception\UmmAlQuraOutOfRangeException;
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -160,8 +161,7 @@ final class Instant implements JsonSerializable
      */
     public static function now(?string $tzLabel = null): self
     {
-        $zone = $tzLabel !== null ? new DateTimeZone($tzLabel) : null;
-        $now = new DateTimeImmutable('now', $zone);
+        $now = new DateTimeImmutable('now', self::resolveZone($tzLabel));
 
         return self::fromDateTime($now);
     }
@@ -178,8 +178,7 @@ final class Instant implements JsonSerializable
      */
     public static function today(?string $tzLabel = null): self
     {
-        $zone = $tzLabel !== null ? new DateTimeZone($tzLabel) : null;
-        $now = new DateTimeImmutable('today', $zone);
+        $now = new DateTimeImmutable('today', self::resolveZone($tzLabel));
 
         return self::fromDateTime($now);
     }
@@ -464,8 +463,7 @@ final class Instant implements JsonSerializable
         $minute = intdiv($this->secondsOfDay % 3600, 60);
         $second = $this->secondsOfDay % 60;
 
-        $zone = $this->tzLabel !== null ? new DateTimeZone($this->tzLabel) : null;
-        return (new DateTimeImmutable('now', $zone))
+        return (new DateTimeImmutable('now', self::resolveZone($this->tzLabel)))
             ->setDate($year, $month, $day)
             ->setTime($hour, $minute, $second);
     }
@@ -478,6 +476,18 @@ final class Instant implements JsonSerializable
             return $this->jdn <=> $other->jdn;
         }
         return $this->secondsOfDay <=> $other->secondsOfDay;
+    }
+
+    private static function resolveZone(?string $tzLabel): ?DateTimeZone
+    {
+        if ($tzLabel === null) {
+            return null;
+        }
+        try {
+            return new DateTimeZone($tzLabel);
+        } catch (\Exception) {
+            throw InvalidTimezoneException::forLabel($tzLabel);
+        }
     }
 
     private static function encodeTime(int $hour, int $minute, int $second): int

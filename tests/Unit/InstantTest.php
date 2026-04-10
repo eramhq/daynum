@@ -10,9 +10,11 @@ use Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
 use Daynum\Calendar\Hijri\Table;
 use Daynum\Calendar\Jalali\JalaliCalendar;
 use Daynum\Exception\InvalidDateException;
+use Daynum\Exception\InvalidTimezoneException;
 use Daynum\Exception\MissingTimezoneException;
 use Daynum\Exception\WeekAtBoundaryException;
 use Daynum\Instant;
+use Daynum\WeekDay;
 use DateTimeImmutable;
 use DateTimeZone;
 use PHPUnit\Framework\TestCase;
@@ -1050,5 +1052,50 @@ final class InstantTest extends TestCase
         $i = Instant::fromGregorian(2026, 4, 8);
         // Escaped \P, \O, etc. should not trigger DTI construction or throw
         $this->assertSame('P+O', $i->gregorian()->format('\P+\O'));
+    }
+
+    // ─── InvalidTimezoneException ───────────────────────────────────
+
+    public function testNowWithInvalidTimezoneThrows(): void
+    {
+        $this->expectException(InvalidTimezoneException::class);
+        Instant::now('InvalidZone');
+    }
+
+    public function testTodayWithInvalidTimezoneThrows(): void
+    {
+        $this->expectException(InvalidTimezoneException::class);
+        Instant::today('InvalidZone');
+    }
+
+    public function testToDateTimeImmutableWithInvalidTzLabelThrows(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8, 0, 0, 0, 'InvalidZone');
+        $this->expectException(InvalidTimezoneException::class);
+        $i->toDateTimeImmutable();
+    }
+
+    public function testNowWithValidOffsetSucceeds(): void
+    {
+        $i = Instant::now('+03:30');
+        $this->assertSame('+03:30', $i->tzLabel);
+    }
+
+    // ─── WeekDay enum ───────────────────────────────────────────────
+
+    public function testStartOfWeekEnumMatchesInt(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8);
+        $fromEnum = $i->gregorian()->startOfWeek(WeekDay::Saturday);
+        $fromInt = $i->gregorian()->startOfWeek(6);
+        $this->assertSame($fromInt->jdn, $fromEnum->jdn);
+    }
+
+    public function testEndOfWeekEnumMatchesInt(): void
+    {
+        $i = Instant::fromGregorian(2026, 4, 8);
+        $fromEnum = $i->gregorian()->endOfWeek(WeekDay::Sunday);
+        $fromInt = $i->gregorian()->endOfWeek(7);
+        $this->assertSame($fromInt->jdn, $fromEnum->jdn);
     }
 }

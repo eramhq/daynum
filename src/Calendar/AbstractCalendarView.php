@@ -15,6 +15,7 @@ use Daynum\Formatter\FormatContext;
 use Daynum\Instant;
 use Daynum\Locale\LocaleData;
 use Daynum\Locale\LocaleRegistry;
+use Daynum\WeekDay;
 
 /**
  * Shared implementation of {@see CalendarView} for calendars whose arithmetic
@@ -100,7 +101,9 @@ abstract class AbstractCalendarView implements CalendarView
      * Supported tokens:
      * `Y` (4+ digit year), `m`/`n` (month), `d`/`j` (day),
      * `H`/`G` (hour 24h), `h`/`g` (hour 12h), `i` (minute),
-     * `s` (second), `a`/`A` (am/pm meridiem).
+     * `s` (second), `a`/`A` (am/pm meridiem),
+     * `P`/`p` (UTC offset `+HH:MM` or `Z`), `O` (UTC offset `+HHMM`),
+     * `c` (ISO 8601 composite: `Y-m-d\TH:i:sP`).
      *
      * Variable-width tokens (`n`, `j`, `G`, `g`) consume 1-2 digits
      * greedily and must be followed by a literal separator, not another
@@ -481,7 +484,14 @@ abstract class AbstractCalendarView implements CalendarView
             return ['value' => '+00:00', 'end' => $pos + 1];
         }
         if (preg_match($regex, substr($text, $pos), $m)) {
-            return ['value' => $m[1], 'end' => $pos + strlen($m[1])];
+            $raw = $m[1];
+            // UTC+14:00 (Kiribati Line Islands) is the real-world maximum
+            $h = (int) substr($raw, 1, 2);
+            $min = (int) substr($raw, strlen($raw) === 6 && $raw[3] === ':' ? 4 : 3, 2);
+            if ($h > 14 || $min > 59) {
+                return null;
+            }
+            return ['value' => $raw, 'end' => $pos + strlen($raw)];
         }
         return null;
     }
@@ -871,8 +881,9 @@ abstract class AbstractCalendarView implements CalendarView
         return $this->instant->withJdn($this->calendar()->toJdn($c['year'], $lastMonth, $lastDay));
     }
 
-    public function startOfWeek(int $weekStart = 1): Instant
+    public function startOfWeek(WeekDay|int $weekStart = WeekDay::Monday): Instant
     {
+        $weekStart = $weekStart instanceof WeekDay ? $weekStart->value : $weekStart;
         if ($weekStart < 1 || $weekStart > 7) {
             throw new \InvalidArgumentException("weekStart must be in [1, 7]; got {$weekStart}.");
         }
@@ -881,7 +892,7 @@ abstract class AbstractCalendarView implements CalendarView
         return $this->instant->withJdn($this->instant->jdn - $offset);
     }
 
-    public function endOfWeek(int $weekStart = 1): Instant
+    public function endOfWeek(WeekDay|int $weekStart = WeekDay::Monday): Instant
     {
         $startJdn = $this->startOfWeek($weekStart)->jdn;
         return $this->instant->withJdn($startJdn + 6);

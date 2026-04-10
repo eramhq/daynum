@@ -558,6 +558,12 @@ final class DateTokenFormatterTest extends TestCase
         $this->assertSame('+03:30', DateTokenFormatter::format('P', $ctx));
         $this->assertSame('+03:30', DateTokenFormatter::format('p', $ctx));
         $this->assertSame('+0330', DateTokenFormatter::format('O', $ctx));
+        // `e` with numeric offset must also be protected
+        $numericCtx = $this->jalaliPersianContext([
+            'tzLabel' => '+03:30',
+            'dateTimeImmutable' => $dti,
+        ]);
+        $this->assertSame('+03:30', DateTokenFormatter::format('e', $numericCtx));
     }
 
     public function testUvTokensAreTransliteratedWithPersianDigits(): void

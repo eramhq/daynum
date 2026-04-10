@@ -11,6 +11,28 @@ applied. Tagging is a separate release decision.
 ## [Unreleased]
 
 ### Added
+- `WeekDay` backed enum (ISO Mon=1..Sun=7) for self-documenting
+  `startOfWeek(WeekDay::Saturday)` / `endOfWeek(WeekDay::Sunday)` calls.
+  `startOfWeek` / `endOfWeek` now accept `WeekDay|int`; existing `int`
+  callers are unaffected.
+- `InvalidTimezoneException` — thrown by `Instant::now()`, `today()`, and
+  `toDateTimeImmutable()` when a stored timezone label is invalid or
+  unknown. Replaces the raw PHP `DateInvalidTimeZoneException` /
+  `\Exception` that previously leaked.
+
+### Fixed (pre-v1)
+- `e` format token now wraps its output in null-byte sentinels, matching
+  all other timezone tokens (`P`, `O`, `T`, etc.). Previously, formatting
+  `e` with a numeric offset like `+03:30` under Persian digits produced
+  `+۰۳:۳۰` instead of the correct `+03:30`.
+- `parseExact()` now range-validates parsed UTC offsets: hours must be
+  0–14, minutes 0–59. Previously, offsets like `+99:99` passed the regex
+  match and were stored verbatim, producing a deferred PHP exception when
+  `toDateTimeImmutable()` was eventually called.
+- `Instant::now()`, `today()`, and `toDateTimeImmutable()` now catch
+  PHP's timezone exception and rethrow as `InvalidTimezoneException`,
+  ensuring all exceptions from the library implement `DaynumException`.
+
 - PHP `date()` format token `o` — ISO 8601 week-based year. Pairs with
   `W` to emit `Y-W`-style identifiers that round-trip through ISO week
   arithmetic. Differs from `Y` by ±1 around the Jan 1 / Dec 31 edge:
