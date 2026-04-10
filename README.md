@@ -69,7 +69,7 @@ first via `$instant->toDateTimeImmutable()`.
 ## Install
 
 ```bash
-composer require daynum/daynum
+composer require eramhq/daynum
 ```
 
 ## Quick start
@@ -204,7 +204,7 @@ add this to your own application's `composer.json`:
 ```json
 {
     "autoload": {
-        "files": ["vendor/daynum/daynum/src/helpers.php"]
+        "files": ["vendor/eramhq/daynum/src/helpers.php"]
     }
 }
 ```

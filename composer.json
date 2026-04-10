@@ -1,8 +1,13 @@
 {
-    "name": "daynum/daynum",
+    "name": "eramhq/daynum",
     "description": "Immutable, zero-runtime-dependency multi-calendar library for PHP 8.1+. Gregorian, Jalali (Shamsi), and Hijri, differentially tested against ICU.",
     "type": "library",
     "license": "MIT",
+    "homepage": "https://github.com/eramhq/daynum",
+    "support": {
+        "issues": "https://github.com/eramhq/daynum/issues",
+        "source": "https://github.com/eramhq/daynum"
+    },
     "keywords": [
         "calendar",
         "jalali",
@@ -10,6 +15,9 @@
         "persian",
         "arabic",
         "hijri",
+        "ummalqura",
+        "islamic-calendar",
+        "solar-hijri",
         "gregorian",
         "date",
         "immutable"
