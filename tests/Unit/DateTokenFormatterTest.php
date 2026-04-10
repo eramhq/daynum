@@ -476,12 +476,6 @@ final class DateTokenFormatterTest extends TestCase
         $this->assertSame('Asia/Tehran', DateTokenFormatter::format('e', $ctx));
     }
 
-    public function testETokenWithNullTzReturnsEmpty(): void
-    {
-        $ctx = $this->sampleContext(['tzLabel' => null, 'dateTimeImmutable' => null]);
-        $this->assertSame('', DateTokenFormatter::format('e', $ctx));
-    }
-
     public function testUTokenUnixTimestamp(): void
     {
         $ctx = $this->sampleContextWithDti('UTC');
@@ -532,12 +526,13 @@ final class DateTokenFormatterTest extends TestCase
         $ctx = $this->sampleContextWithDti('Asia/Tehran');
         $this->assertSame('+0330', DateTokenFormatter::format('O', $ctx));
         $this->assertSame('+03:30', DateTokenFormatter::format('P', $ctx));
+        $this->assertSame('+03:30', DateTokenFormatter::format('p', $ctx));
     }
 
     public function testTimezoneTokensThrowWithoutTz(): void
     {
         $ctx = $this->sampleContext(['tzLabel' => null, 'dateTimeImmutable' => null]);
-        foreach (['T', 'U', 'O', 'P', 'Z', 'I', 'c', 'r'] as $token) {
+        foreach (['T', 'U', 'O', 'P', 'p', 'Z', 'I', 'c', 'r', 'e'] as $token) {
             try {
                 DateTokenFormatter::format($token, $ctx);
                 $this->fail("Expected MissingTimezoneException for token '{$token}'");
@@ -545,6 +540,12 @@ final class DateTokenFormatterTest extends TestCase
                 $this->assertTrue(true);
             }
         }
+    }
+
+    public function testPLowercaseTokenUtcReturnsZ(): void
+    {
+        $ctx = $this->sampleContextWithDti('UTC');
+        $this->assertSame('Z', DateTokenFormatter::format('p', $ctx));
     }
 
     public function testTimezoneTokensNotTransliteratedWithPersianDigits(): void
@@ -555,6 +556,7 @@ final class DateTokenFormatterTest extends TestCase
         ]);
         // Offset digits should NOT be transliterated to Persian
         $this->assertSame('+03:30', DateTokenFormatter::format('P', $ctx));
+        $this->assertSame('+03:30', DateTokenFormatter::format('p', $ctx));
         $this->assertSame('+0330', DateTokenFormatter::format('O', $ctx));
     }
 
@@ -570,7 +572,7 @@ final class DateTokenFormatterTest extends TestCase
     {
         // Escaped timezone tokens produce literals, never throw
         $ctx = $this->sampleContext(['tzLabel' => null, 'dateTimeImmutable' => null]);
-        $this->assertSame('UOPZIT', DateTokenFormatter::format('\U\O\P\Z\I\T', $ctx));
-        $this->assertSame('cr', DateTokenFormatter::format('\c\r', $ctx));
+        $this->assertSame('UOPpZIT', DateTokenFormatter::format('\U\O\P\p\Z\I\T', $ctx));
+        $this->assertSame('cre', DateTokenFormatter::format('\c\r\e', $ctx));
     }
 }

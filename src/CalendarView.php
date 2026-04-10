@@ -113,6 +113,11 @@ interface CalendarView
      */
     public function endOfWeek(int $weekStart = 1): Instant;
 
+    /**
+     * Signed difference in whole calendar months between this date and another.
+     *
+     * A month is not counted until the same day-of-month is reached.
+     */
     public function diffInMonths(Instant $other): int;
 
     /**

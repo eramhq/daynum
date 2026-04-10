@@ -30,7 +30,7 @@ final class PhpFormatTokenMatrixTest extends TestCase
         'Y', 'y', 'm', 'n', 'd', 'j', 'z',
         'G', 'H', 'g', 'h', 'i', 's', 'a', 'A',
         'N', 'w', 'W', 'o', 't', 'L',
-        'U', 'O', 'P', 'Z', 'I', 'T', 'c', 'r',
+        'U', 'O', 'P', 'p', 'Z', 'I', 'T', 'c', 'r', 'e',
     ];
 
     /**

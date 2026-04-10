@@ -36,11 +36,12 @@ use Daynum\Exception\MissingTimezoneException;
  * | `o`   | ISO 8601 week-based year (may differ from `Y` around Jan 1/Dec 31)|
  * | `t`   | Number of days in the current month                               |
  * | `L`   | 1 if leap year else 0                                             |
- * | `e`   | Timezone identifier (e.g. `Asia/Tehran`); empty string if none    |
+ * | `e`   | Timezone identifier (e.g. `Asia/Tehran`); requires timezone       |
  * | `T`   | Timezone abbreviation (e.g. `IRST`); requires timezone            |
  * | `U`   | Unix timestamp; requires timezone                                 |
  * | `O`   | UTC offset `+0330`; requires timezone                             |
  * | `P`   | UTC offset `+03:30`; requires timezone                            |
+ * | `p`   | UTC offset `+03:30` or `Z` for UTC (PHP 8.0+); requires timezone |
  * | `Z`   | UTC offset in seconds; requires timezone                          |
  * | `I`   | DST flag `0`/`1`; requires timezone                               |
  * | `c`   | ISO 8601 date (always Gregorian); requires timezone               |
@@ -125,11 +126,12 @@ final class DateTokenFormatter
             'o' => self::yearFull($ctx->weekBasedYear),
             't' => (string) $ctx->daysInMonth,
             'L' => $ctx->isLeapYear ? '1' : '0',
-            'e' => $ctx->tzLabel ?? '',
+            'e' => $ctx->tzLabel ?? throw MissingTimezoneException::forToken('e'),
             'T' => self::requireTzRaw($ctx, 'T'),
             'U' => self::requireTzRaw($ctx, 'U'),
             'O' => self::requireTzRaw($ctx, 'O'),
             'P' => self::requireTzRaw($ctx, 'P'),
+            'p' => self::requireTzRaw($ctx, 'p'),
             'Z' => self::requireTzRaw($ctx, 'Z'),
             'I' => self::requireTzRaw($ctx, 'I'),
             'c' => self::requireTzRaw($ctx, 'c'),

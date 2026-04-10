@@ -440,6 +440,19 @@ final class ParseExactTest extends TestCase
         $this->assertSame('+00:00', $i->tzLabel);
     }
 
+    public function testParsePLowercaseTokenWithZ(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08T14:30:45Z', 'Y-m-d\TH:i:sp');
+        $this->assertSame('+00:00', $i->tzLabel);
+        $this->assertSame(14, $i->gregorian()->hour());
+    }
+
+    public function testParsePLowercaseTokenWithOffset(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08 14:30:45+03:30', 'Y-m-d H:i:sp');
+        $this->assertSame('+03:30', $i->tzLabel);
+    }
+
     public function testParseCFormatRoundTrip(): void
     {
         $i = GregorianView::parseExact('2026-04-08T14:30:45+03:30', 'c');

@@ -90,6 +90,7 @@ abstract class AbstractCalendarView implements CalendarView
         'a' => 'meridiem',
         'A' => 'meridiem',
         'P' => 'tzOffsetP',
+        'p' => 'tzOffsetP',
         'O' => 'tzOffsetO',
     ];
 
@@ -180,11 +181,11 @@ abstract class AbstractCalendarView implements CalendarView
                 }
                 $fields[$fieldName] = $extracted['value'];
                 $pos = $extracted['end'];
-            } elseif ($token === 'P') {
+            } elseif ($token === 'P' || $token === 'p') {
                 $extracted = self::extractTzOffset($text, $pos, '/^([+-]\d{2}:\d{2})/', allowZ: true);
                 if ($extracted === null) {
                     throw ParseException::forFormat($text, $format,
-                        sprintf('expected timezone offset (+HH:MM or Z) for "P" at position %d', $pos));
+                        sprintf('expected timezone offset (+HH:MM or Z) for "%s" at position %d', $token, $pos));
                 }
                 $fields['tzOffsetP'] = $extracted['value'];
                 $pos = $extracted['end'];
@@ -702,7 +703,7 @@ abstract class AbstractCalendarView implements CalendarView
         // Lazily construct DateTimeImmutable only when timezone-dependent
         // tokens are present. The DTI is passed through FormatContext so the
         // formatter can delegate timezone math to PHP.
-        $tzTokens = ['U','O','P','Z','I','c','r','T'];
+        $tzTokens = ['U','O','P','p','Z','I','c','r','T'];
         $dti = null;
         foreach ($tzTokens as $t) {
             if (str_contains($pattern, $t) && self::patternContainsUnescaped($pattern, $t)) {
