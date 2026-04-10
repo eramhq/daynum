@@ -21,7 +21,7 @@ See [`CHANGELOG.md`](CHANGELOG.md) for release notes.
 - Multi-calendar date conversion + formatting (Gregorian, Jalali, Hijri)
 - Immutable arithmetic (`addDays`, `addMonths`, `addYears`, `startOfMonth`, …)
 - Locale-aware formatting with PHP `date()` tokens
-- A zero-dependency, ICU-tested, drop-in replacement for `morilog/jalali`
+- A zero-dependency, ICU-tested replacement for `morilog/jalali`
 
 **Daynum is NOT:**
 - Timezone arithmetic — use `toDateTimeImmutable()` for DST transitions, UTC offsets, etc.

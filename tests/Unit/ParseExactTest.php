@@ -523,4 +523,69 @@ final class ParseExactTest extends TestCase
         $this->expectException(ParseException::class);
         GregorianView::parseExact('2026-04-08 14:30:45 +9999', 'Y-m-d H:i:s O');
     }
+
+    // ─── Time component validation ──────────────────────────────────
+
+    /**
+     * @dataProvider invalidTimeProvider
+     */
+    public function testRejectsInvalidTimeComponent(string $input, string $format): void
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('time component out of range');
+        GregorianView::parseExact($input, $format);
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function invalidTimeProvider(): iterable
+    {
+        yield 'hour 24'        => ['2026-04-08 24:00:00', 'Y-m-d H:i:s'];
+        yield 'hour 25'        => ['2026-04-08 25:00:00', 'Y-m-d H:i:s'];
+        yield 'hour 99'        => ['2026-04-08 99:00:00', 'Y-m-d H:i:s'];
+        yield 'hour G=24'      => ['2026/4/8 24:00:00',   'Y/n/j G:i:s'];
+        yield 'minute 60'      => ['2026-04-08 12:60:00', 'Y-m-d H:i:s'];
+        yield 'minute 99'      => ['2026-04-08 12:99:00', 'Y-m-d H:i:s'];
+        yield 'second 60'      => ['2026-04-08 12:00:60', 'Y-m-d H:i:s'];
+        yield 'second 99'      => ['2026-04-08 12:00:99', 'Y-m-d H:i:s'];
+        yield 'combined 22:99:99' => ['2026-04-08 22:99:99', 'Y-m-d H:i:s'];
+        yield 'ISO 8601'       => ['2026-04-08T22:99:00+03:30', 'c'];
+    }
+
+    public function testAcceptsMaxValidTime(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08 23:59:59', 'Y-m-d H:i:s');
+        $g = $i->gregorian();
+        $this->assertSame(23, $g->hour());
+        $this->assertSame(59, $g->minute());
+        $this->assertSame(59, $g->second());
+    }
+
+    public function testAcceptsMidnightTime(): void
+    {
+        $i = GregorianView::parseExact('2026-04-08 00:00:00', 'Y-m-d H:i:s');
+        $g = $i->gregorian();
+        $this->assertSame(0, $g->hour());
+        $this->assertSame(0, $g->minute());
+        $this->assertSame(0, $g->second());
+    }
+
+    // ─── Timezone offset +14 boundary ───────────────────────────────
+
+    /**
+     * @dataProvider invalidOffset14BoundaryProvider
+     */
+    public function testRejectsOffsetBeyond14Hours(string $offset): void
+    {
+        $this->expectException(ParseException::class);
+        GregorianView::parseExact("2026-04-08 14:30:45{$offset}", 'Y-m-d H:i:sP');
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function invalidOffset14BoundaryProvider(): iterable
+    {
+        yield '+14:01' => ['+14:01'];
+        yield '+14:30' => ['+14:30'];
+        yield '+14:59' => ['+14:59'];
+        yield '-14:01' => ['-14:01'];
+    }
 }

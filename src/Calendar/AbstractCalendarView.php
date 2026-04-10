@@ -265,6 +265,13 @@ abstract class AbstractCalendarView implements CalendarView
         $minute = $fields['minute'] ?? 0;
         $second = $fields['second'] ?? 0;
 
+        if ($hour > 23 || $minute > 59 || $second > 59) {
+            throw ParseException::forFormat($text, $format, sprintf(
+                'time component out of range: hour=%d, minute=%d, second=%d',
+                $hour, $minute, $second,
+            ));
+        }
+
         // Resolve parsed timezone offset — overrides the $tzLabel parameter
         $parsedTz = $tzLabel;
         if (isset($fields['tzOffsetP'])) {
@@ -488,7 +495,7 @@ abstract class AbstractCalendarView implements CalendarView
             // UTC+14:00 (Kiribati Line Islands) is the real-world maximum
             $h = (int) substr($raw, 1, 2);
             $min = (int) substr($raw, strlen($raw) === 6 && $raw[3] === ':' ? 4 : 3, 2);
-            if ($h > 14 || $min > 59) {
+            if ($h > 14 || $min > 59 || ($h === 14 && $min > 0)) {
                 return null;
             }
             return ['value' => $raw, 'end' => $pos + strlen($raw)];
