@@ -46,6 +46,27 @@
         "sort-packages": true,
         "optimize-autoloader": true
     },
+    "archive": {
+        "exclude": [
+            "/.github",
+            "/tests",
+            "/tools",
+            "/phpunit.xml.dist",
+            "/phpstan.neon",
+            "/CLAUDE.md",
+            "/.gitattributes",
+            "/.gitignore",
+            "/vendor",
+            "/composer.lock",
+            "/.phpunit.cache",
+            "/.phpunit.result.cache",
+            "/build",
+            "/coverage",
+            "/.idea",
+            "/.vscode",
+            "/.DS_Store"
+        ]
+    },
     "scripts": {
         "test": "phpunit",
         "test:unit": "phpunit --testsuite=unit",

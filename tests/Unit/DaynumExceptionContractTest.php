@@ -28,6 +28,18 @@ final class DaynumExceptionContractTest extends TestCase
         Instant::fromArray(['jdn' => 'abc']);
     }
 
+    public function testFromArrayWithNonIntSecondsOfDayImplementsDaynumException(): void
+    {
+        $this->expectException(DaynumException::class);
+        Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => '0']);
+    }
+
+    public function testFromArrayWithNonStringTzLabelImplementsDaynumException(): void
+    {
+        $this->expectException(DaynumException::class);
+        Instant::fromArray(['jdn' => 2461139, 'tzLabel' => 123]);
+    }
+
     public function testOfWithUnknownDigitScriptImplementsDaynumException(): void
     {
         $this->expectException(DaynumException::class);
@@ -61,6 +73,26 @@ final class DaynumExceptionContractTest extends TestCase
     {
         try {
             Instant::fromArray([]);
+            $this->fail('Expected exception');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertInstanceOf(DaynumException::class, $e);
+        }
+    }
+
+    public function testFromArrayNonIntSecondsOfDayIsStillInvalidArgumentException(): void
+    {
+        try {
+            Instant::fromArray(['jdn' => 1, 'secondsOfDay' => '0']);
+            $this->fail('Expected exception');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertInstanceOf(DaynumException::class, $e);
+        }
+    }
+
+    public function testFromArrayNonStringTzLabelIsStillInvalidArgumentException(): void
+    {
+        try {
+            Instant::fromArray(['jdn' => 1, 'tzLabel' => 123]);
             $this->fail('Expected exception');
         } catch (\InvalidArgumentException $e) {
             $this->assertInstanceOf(DaynumException::class, $e);

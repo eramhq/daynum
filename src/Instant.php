@@ -347,11 +347,21 @@ final class Instant implements JsonSerializable
             throw new Exception\InvalidArgumentException('Instant::fromArray() requires an integer "jdn" key.');
         }
 
-        return new self(
-            $data['jdn'],
-            $data['secondsOfDay'] ?? 0,
-            $data['tzLabel'] ?? null,
-        );
+        $secondsOfDay = $data['secondsOfDay'] ?? 0;
+        if (!is_int($secondsOfDay)) {
+            throw new Exception\InvalidArgumentException(
+                'Instant::fromArray() "secondsOfDay" must be an int; got ' . get_debug_type($secondsOfDay) . '.'
+            );
+        }
+
+        $tzLabel = $data['tzLabel'] ?? null;
+        if ($tzLabel !== null && !is_string($tzLabel)) {
+            throw new Exception\InvalidArgumentException(
+                'Instant::fromArray() "tzLabel" must be a string or null; got ' . get_debug_type($tzLabel) . '.'
+            );
+        }
+
+        return new self($data['jdn'], $secondsOfDay, $tzLabel);
     }
 
     // ─── Calendar views ──────────────────────────────────────────────

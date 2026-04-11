@@ -9,6 +9,8 @@ use Daynum\Calendar\Hijri\HijriCivilCalendar;
 use Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
 use Daynum\Calendar\Hijri\Table;
 use Daynum\Calendar\Jalali\JalaliCalendar;
+use Daynum\Exception\DaynumException;
+use Daynum\Exception\InvalidArgumentException;
 use Daynum\Exception\InvalidDateException;
 use Daynum\Exception\InvalidTimezoneException;
 use Daynum\Exception\MissingTimezoneException;
@@ -650,6 +652,77 @@ final class InstantTest extends TestCase
 
         $this->assertTrue($original->equals($restored));
         $this->assertSame($original->tzLabel, $restored->tzLabel);
+    }
+
+    public function testFromArrayRejectsStringSecondsOfDay(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => '0']);
+    }
+
+    public function testFromArrayRejectsFloatSecondsOfDay(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => 0.0]);
+    }
+
+    public function testFromArrayRejectsBoolSecondsOfDay(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => true]);
+    }
+
+    public function testFromArrayRejectsNonStringTzLabel(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Instant::fromArray(['jdn' => 2461139, 'tzLabel' => 123]);
+    }
+
+    public function testFromArrayRejectsArrayTzLabel(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Instant::fromArray(['jdn' => 2461139, 'tzLabel' => ['UTC']]);
+    }
+
+    public function testFromArrayRejectsStringJdn(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Instant::fromArray(['jdn' => '2461139']);
+    }
+
+    public function testFromArrayAcceptsExplicitNullTzLabel(): void
+    {
+        $i = Instant::fromArray(['jdn' => 2461139, 'tzLabel' => null]);
+        $this->assertSame(2461139, $i->jdn);
+        $this->assertNull($i->tzLabel);
+    }
+
+    public function testFromArrayAcceptsExplicitNullSecondsOfDay(): void
+    {
+        $i = Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => null]);
+        $this->assertSame(2461139, $i->jdn);
+        $this->assertSame(0, $i->secondsOfDay);
+    }
+
+    public function testFromArrayIgnoresExtraKeys(): void
+    {
+        $i = Instant::fromArray(['jdn' => 2461139, 'extra' => 'junk', 'secondsOfDay' => 3600]);
+        $this->assertSame(2461139, $i->jdn);
+        $this->assertSame(3600, $i->secondsOfDay);
+    }
+
+    public function testFromArrayAcceptsBoundarySecondsOfDay(): void
+    {
+        $lo = Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => 0]);
+        $hi = Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => 86399]);
+        $this->assertSame(0, $lo->secondsOfDay);
+        $this->assertSame(86399, $hi->secondsOfDay);
+    }
+
+    public function testFromArrayRejectsSecondsOfDayAt86400(): void
+    {
+        $this->expectException(DaynumException::class);
+        Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => 86400]);
     }
 
     // ─── View toArray() ──────────────────────────────────────────────
