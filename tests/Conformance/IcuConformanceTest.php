@@ -17,11 +17,10 @@ use PHPUnit\Framework\TestCase;
  * pre-generated and checked in. Every row in `tests/fixtures/{gregorian,jalali}.jsonl.gz`
  * is asserted against Daynum's calendar math.
  *
- * Daynum's Jalali uses Ahmad Birashk's 33-year cycle, which diverges from
- * ICU's Borkowski algorithm at four narrow JDN ranges inside the fixture
- * window. Rows inside the {@see JalaliIcuDivergence} windows are skipped —
- * any disagreement OUTSIDE those ranges is treated as a regression and
- * fails the build.
+ * Daynum's Jalali uses Ahmad Birashk's 33-year cycle, while ICU's Persian
+ * calendar can shift at Nowruz boundaries across ICU versions. The Jalali
+ * skip-set is therefore derived dynamically from the current PHP/Node oracle
+ * pair instead of hard-coding specific JDN windows.
  */
 final class IcuConformanceTest extends TestCase
 {
@@ -72,6 +71,8 @@ final class IcuConformanceTest extends TestCase
     public function testJalaliMatchesIcuOutsideKnownDivergence(): void
     {
         $this->assertFileExists(self::JALALI_FIXTURE);
+        $unexpectedRows = JalaliIcuDivergence::unexpectedRows();
+        $this->assertEmpty($unexpectedRows, implode("\n", $unexpectedRows));
 
         $calendar = JalaliCalendar::instance();
         $rows = 0;
@@ -114,34 +115,52 @@ final class IcuConformanceTest extends TestCase
 
         $this->assertGreaterThan(200_000, $rows, 'Jalali fixture appears truncated');
         $this->assertSame(
-            JalaliIcuDivergence::TOTAL_DAYS,
+            JalaliIcuDivergence::count(),
             $skipped,
-            "Known-divergence allow-list skipped {$skipped} rows; "
-                . 'fixture may have been regenerated against a different ICU.'
+            "Dynamic Jalali ICU skip-set skipped {$skipped} rows; "
+                . 'fixture pair changed during the test run.'
         );
         $this->assertEmpty($mismatches, implode("\n", $mismatches));
     }
 
-    public function testJalaliBirashkIcuDivergenceWindowsAreExactlyOneDayOff(): void
+    public function testJalaliFixturePairHasNoUnexplainedDivergence(): void
     {
-        // Inside every allow-listed window, Daynum's Jalali should differ
-        // from ICU's — otherwise the window is mis-stated. Round-trip
-        // through Daynum's own components must still land on the same JDN.
+        $unexpectedRows = JalaliIcuDivergence::unexpectedRows();
+        $this->assertEmpty($unexpectedRows, implode("\n", $unexpectedRows));
+    }
+
+    public function testSkippedJalaliRowsRemainIntentionalAndRoundTripSafely(): void
+    {
+        $unexpectedRows = JalaliIcuDivergence::unexpectedRows();
+        $this->assertEmpty($unexpectedRows, implode("\n", $unexpectedRows));
+
         $calendar = JalaliCalendar::instance();
+        $skipped = 0;
+
         foreach (FixtureReader::rows(self::JALALI_FIXTURE) as $row) {
             if (!JalaliIcuDivergence::contains($row['jdn'])) {
                 continue;
             }
+
+            $skipped++;
             [$jy, $jm, $jd] = $row['j'];
             $actual = $calendar->fromJdn($row['jdn']);
+
             $this->assertNotSame(
                 [$jy, $jm, $jd],
                 $actual,
-                "jdn={$row['jdn']}: inside divergence window but Daynum and ICU agree — window is wrong"
+                "jdn={$row['jdn']}: skipped Jalali row no longer diverges from the PHP fixture"
             );
+
             $roundTrip = $calendar->toJdn($actual[0], $actual[1], $actual[2]);
-            $this->assertSame($row['jdn'], $roundTrip, 'Daynum Jalali round-trip broken in divergence window');
+            $this->assertSame(
+                $row['jdn'],
+                $roundTrip,
+                "jdn={$row['jdn']}: skipped Jalali row breaks Daynum round-trip"
+            );
         }
+
+        $this->assertSame(JalaliIcuDivergence::count(), $skipped);
     }
 
     public function testDayOfWeekMatchesIcu(): void

@@ -43,6 +43,10 @@ final class FormatTokenConformanceTest extends TestCase
     public function testFormatterMatchesIcu(string $fixture, string $locale, string $calendar): void
     {
         $this->assertFileExists($fixture);
+        if ($calendar === 'jalali') {
+            $unexpectedRows = JalaliIcuDivergence::unexpectedRows();
+            $this->assertEmpty($unexpectedRows, implode("\n", $unexpectedRows));
+        }
 
         // Hoist locale lookup out of the per-row loop — locale is constant
         // across the whole fixture.
