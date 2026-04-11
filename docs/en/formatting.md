@@ -96,7 +96,7 @@ Attach one with `withTzLabel()` before formatting, or pass it at construction ti
 If you format dates near these extremes, catch the exception or avoid the `W` / `o` tokens:
 
 ```php
-use Daynum\Exception\WeekAtBoundaryException;
+use Eram\Daynum\Exception\WeekAtBoundaryException;
 
 try {
     $d->jalali()->format('o-\WW');

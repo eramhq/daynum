@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum;
+namespace Eram\Daynum;
 
 /**
  * A view pairs an {@see Instant} with a specific calendar and locale, exposing
@@ -40,7 +40,7 @@ interface CalendarView
     /**
      * ISO 8601 week number within the calendar's own year (1–53).
      *
-     * @throws \Daynum\Exception\WeekAtBoundaryException if this date falls
+     * @throws \Eram\Daynum\Exception\WeekAtBoundaryException if this date falls
      *   within the first or last few days of MIN_YEAR / MAX_YEAR and the
      *   containing ISO week's Thursday lies outside the calendar's
      *   supported range.
@@ -53,7 +53,7 @@ interface CalendarView
      * Dec 31. Pair with {@see weekOfYear()} when emitting `Y-W`-style
      * identifiers that need to round-trip through ISO week arithmetic.
      *
-     * @throws \Daynum\Exception\WeekAtBoundaryException on the same
+     * @throws \Eram\Daynum\Exception\WeekAtBoundaryException on the same
      *   MIN_YEAR / MAX_YEAR boundary conditions as {@see weekOfYear()}.
      */
     public function weekBasedYear(): int;
@@ -135,7 +135,7 @@ interface CalendarView
     /**
      * Try to parse the given text; return null instead of throwing.
      *
-     * @see \Daynum\Calendar\AbstractCalendarView::parseExact()
+     * @see \Eram\Daynum\Calendar\AbstractCalendarView::parseExact()
      */
     public static function tryParseExact(string $text, string $format, ?string $tzLabel = null): ?Instant;
 }

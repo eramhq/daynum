@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Calendar\Gregorian;
+namespace Eram\Daynum\Calendar\Gregorian;
 
-use Daynum\Calendar;
-use Daynum\Exception\InvalidDateException;
-use Daynum\Internal\IntMath;
-use Daynum\Internal\Ymd;
+use Eram\Daynum\Calendar;
+use Eram\Daynum\Exception\InvalidDateException;
+use Eram\Daynum\Internal\IntMath;
+use Eram\Daynum\Internal\Ymd;
 
 /**
  * Proleptic Gregorian calendar — no Julian cutover, year 0 exists, negative

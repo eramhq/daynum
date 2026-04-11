@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Unit\Calendar;
+namespace Eram\Daynum\Tests\Unit\Calendar;
 
-use Daynum\Calendar\Gregorian\GregorianCalendar;
-use Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
-use Daynum\Calendar\Hijri\Table;
-use Daynum\Exception\InvalidDateException;
-use Daynum\Exception\UmmAlQuraOutOfRangeException;
+use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
+use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
+use Eram\Daynum\Calendar\Hijri\Table;
+use Eram\Daynum\Exception\InvalidDateException;
+use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
 use PHPUnit\Framework\TestCase;
 
 final class HijriUmmAlQuraCalendarTest extends TestCase
@@ -122,7 +122,7 @@ final class HijriUmmAlQuraCalendarTest extends TestCase
         $greg = GregorianCalendar::instance();
         $jdn = $greg->toJdn(2020, 1, 1);
         $uaq = HijriUmmAlQuraCalendar::instance();
-        $civil = \Daynum\Calendar\Hijri\HijriCivilCalendar::instance();
+        $civil = \Eram\Daynum\Calendar\Hijri\HijriCivilCalendar::instance();
         $this->assertSame([1441, 5, 5], $civil->fromJdn($jdn));
         $this->assertSame([1441, 5, 6], $uaq->fromJdn($jdn));
     }

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Calendar\Gregorian;
+namespace Eram\Daynum\Calendar\Gregorian;
 
-use Daynum\Calendar;
-use Daynum\Calendar\AbstractCalendarView;
+use Eram\Daynum\Calendar;
+use Eram\Daynum\Calendar\AbstractCalendarView;
 
 /**
- * View of an {@see \Daynum\Instant} as a proleptic Gregorian date.
+ * View of an {@see \Eram\Daynum\Instant} as a proleptic Gregorian date.
  *
  * Use `$instant->gregorian()` to construct; never `new` directly.
  */

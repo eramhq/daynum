@@ -4,7 +4,7 @@ Hand-written, grouped by type. For narrative docs see [getting-started.md](getti
 
 **Jump to:** [`Instant`](#daynuminstant) · [`CalendarView`](#daynumcalendarview) · [`Calendar`](#daynumcalendar) · [`WeekDay`](#daynumweekday-enum) · [Exceptions](#exceptions) · [`LocaleRegistry`](#daynumlocalelocaleregistry) · [`DigitTransliterator`](#daynumformatterdigittransliterator) · [Helpers](#opt-in-helpers-srchelpersphp)
 
-## `Daynum\Instant`
+## `Eram\Daynum\Instant`
 
 The immutable calendar-agnostic core value. Triple of `(jdn, secondsOfDay, tzLabel)`. See [concepts.md](concepts.md).
 
@@ -114,7 +114,7 @@ Instant::fromArray(array $data): Instant
 
 ---
 
-## `Daynum\CalendarView`
+## `Eram\Daynum\CalendarView`
 
 Interface implemented by each calendar-specific view. Views are immutable; mutator-looking methods return new views or new `Instant` values.
 
@@ -204,7 +204,7 @@ static HijriCivilView::tryParseExact     (string $text, string $format, ?string 
 
 ---
 
-## `Daynum\Calendar`
+## `Eram\Daynum\Calendar`
 
 Low-level calendar interface — the pure math of `(year, month, day) ↔ JDN`. You rarely touch this directly; use `Instant::from*` and views. Exposed for extensibility.
 
@@ -236,7 +236,7 @@ Each exposes a `::instance()` singleton.
 
 ---
 
-## `Daynum\WeekDay` enum
+## `Eram\Daynum\WeekDay` enum
 
 ```php
 enum WeekDay: int {
@@ -256,7 +256,7 @@ Used as the `$weekStart` argument to `startOfWeek()` / `endOfWeek()`. ISO 8601 n
 
 ## Exceptions
 
-All implement the marker interface `Daynum\Exception\DaynumException`.
+All implement the marker interface `Eram\Daynum\Exception\DaynumException`.
 
 | Class | SPL parent | Thrown by |
 |---|---|---|
@@ -272,7 +272,7 @@ See [exceptions.md](exceptions.md) for full throw-sites, messages, and recovery 
 
 ---
 
-## `Daynum\Locale\LocaleRegistry`
+## `Eram\Daynum\Locale\LocaleRegistry`
 
 ```php
 LocaleRegistry::get(string $tag): LocaleData
@@ -282,7 +282,7 @@ Accepts `en`, `en-us`, `fa`, `fa-ir`, `ar`, `ar-sa` (case-insensitive). Throws `
 
 ---
 
-## `Daynum\Formatter\DigitTransliterator`
+## `Eram\Daynum\Formatter\DigitTransliterator`
 
 ```php
 DigitTransliterator::LATN;       // 'latn'

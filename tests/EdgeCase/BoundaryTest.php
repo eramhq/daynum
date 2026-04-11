@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\EdgeCase;
+namespace Eram\Daynum\Tests\EdgeCase;
 
-use Daynum\Calendar\Gregorian\GregorianCalendar;
-use Daynum\Calendar\Jalali\JalaliCalendar;
-use Daynum\Exception\InvalidDateException;
-use Daynum\Instant;
+use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
+use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
+use Eram\Daynum\Exception\InvalidDateException;
+use Eram\Daynum\Instant;
 use PHPUnit\Framework\TestCase;
 
 final class BoundaryTest extends TestCase

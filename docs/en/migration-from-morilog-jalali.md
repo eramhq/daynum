@@ -160,7 +160,7 @@ A typical migration path:
 
 ```php
 $d = jdate(1405, 1, 19)->format('Y/m/d');
-// → Error: Call to undefined method Daynum\Instant::format()
+// → Error: Call to undefined method Eram\Daynum\Instant::format()
 ```
 
 `Instant` doesn't have `format()`. Enter a view:
@@ -174,7 +174,7 @@ $d = jdate(1405, 1, 19)->jalali()->format('Y/m/d');
 ```php
 // Wrong
 jdate(1405, 1, 19)->jalali()->addMonths(1)->format('Y/m/d');
-// → Error: Call to undefined method Daynum\Instant::format()
+// → Error: Call to undefined method Eram\Daynum\Instant::format()
 
 // Right
 jdate(1405, 1, 19)->jalali()->addMonths(1)->jalali()->format('Y/m/d');

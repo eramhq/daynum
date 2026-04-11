@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Internal;
+namespace Eram\Daynum\Internal;
 
-use Daynum\Exception\InvalidDateException;
+use Eram\Daynum\Exception\InvalidDateException;
 
 /**
  * @internal

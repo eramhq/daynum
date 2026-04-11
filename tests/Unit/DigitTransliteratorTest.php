@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Unit;
+namespace Eram\Daynum\Tests\Unit;
 
-use Daynum\Formatter\DigitTransliterator;
+use Eram\Daynum\Formatter\DigitTransliterator;
 use PHPUnit\Framework\TestCase;
 
 final class DigitTransliteratorTest extends TestCase

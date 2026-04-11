@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Calendar\Hijri;
+namespace Eram\Daynum\Calendar\Hijri;
 
-use Daynum\Calendar;
-use Daynum\Exception\InvalidDateException;
-use Daynum\Exception\UmmAlQuraOutOfRangeException;
-use Daynum\Internal\Ymd;
+use Eram\Daynum\Calendar;
+use Eram\Daynum\Exception\InvalidDateException;
+use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
+use Eram\Daynum\Internal\Ymd;
 
 /**
  * Saudi Umm al-Qura (KACST) Hijri calendar.

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Formatter;
+namespace Eram\Daynum\Formatter;
 
-use Daynum\Exception\MissingTimezoneException;
+use Eram\Daynum\Exception\MissingTimezoneException;
 
 /**
  * PHP `date()`-style token engine.

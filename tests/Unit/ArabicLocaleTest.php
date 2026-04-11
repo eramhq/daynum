@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Unit;
+namespace Eram\Daynum\Tests\Unit;
 
-use Daynum\Instant;
-use Daynum\Locale\ArabicLocale;
-use Daynum\Locale\LocaleRegistry;
+use Eram\Daynum\Instant;
+use Eram\Daynum\Locale\ArabicLocale;
+use Eram\Daynum\Locale\LocaleRegistry;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 

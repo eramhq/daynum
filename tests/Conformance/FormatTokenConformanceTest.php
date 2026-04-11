@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Conformance;
+namespace Eram\Daynum\Tests\Conformance;
 
-use Daynum\Instant;
-use Daynum\Locale\LocaleRegistry;
-use Daynum\Tests\Conformance\Support\FixtureReader;
-use Daynum\Tests\Conformance\Support\JalaliIcuDivergence;
+use Eram\Daynum\Instant;
+use Eram\Daynum\Locale\LocaleRegistry;
+use Eram\Daynum\Tests\Conformance\Support\FixtureReader;
+use Eram\Daynum\Tests\Conformance\Support\JalaliIcuDivergence;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Differential-tests {@see \Daynum\Formatter\DateTokenFormatter} against
+ * Differential-tests {@see \Eram\Daynum\Formatter\DateTokenFormatter} against
  * ICU-generated golden strings for each supported token, across both
  * Gregorian and Jalali calendars and both English and Persian locales.
  *

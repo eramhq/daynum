@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Unit;
+namespace Eram\Daynum\Tests\Unit;
 
-use Daynum\Calendar\Gregorian\GregorianView;
-use Daynum\Calendar\Jalali\JalaliView;
-use Daynum\Exception\DaynumException;
-use Daynum\Instant;
+use Eram\Daynum\Calendar\Gregorian\GregorianView;
+use Eram\Daynum\Calendar\Jalali\JalaliView;
+use Eram\Daynum\Exception\DaynumException;
+use Eram\Daynum\Instant;
 use PHPUnit\Framework\TestCase;
 
 /**

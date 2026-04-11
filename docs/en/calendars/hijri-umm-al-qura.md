@@ -6,8 +6,8 @@ The official Saudi calendar, with month lengths hand-curated per year by KACST b
 
 | | |
 |---|---|
-| Class | `Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar` |
-| View | `Daynum\Calendar\Hijri\HijriUmmAlQuraView` |
+| Class | `Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar` |
+| View | `Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraView` |
 | Identifier | `hijri-umalqura` |
 | Locale family | `hijri` (shared with civil variant) |
 | Year range | `AH 1300` to `AH 1600` (~1882 to ~2174 CE) |
@@ -17,7 +17,7 @@ The official Saudi calendar, with month lengths hand-curated per year by KACST b
 ## Construction
 
 ```php
-use Daynum\Instant;
+use Eram\Daynum\Instant;
 
 Instant::fromHijri(1447, 10, 21);                        // Saudi UAQ
 Instant::fromHijri(1447, 10, 21, 14, 30, 0, 'Asia/Riyadh');
@@ -33,7 +33,7 @@ Daynum bundles ICU's `islamic-umalqura` table verbatim (`src/Calendar/Hijri/Tabl
 The bundled table covers a fixed range — currently **AH 1300 to AH 1600** (roughly 1882 to 2174 CE), the exact window over which ICU exposes native KACST data. Always read `Table::MIN_YEAR` and `Table::MAX_YEAR` rather than assuming a particular pair of numbers — the window is pinned to the ICU version the table was generated from.
 
 ```php
-use Daynum\Calendar\Hijri\Table;
+use Eram\Daynum\Calendar\Hijri\Table;
 
 Table::MIN_YEAR;      // 1300
 Table::MAX_YEAR;      // 1600
@@ -56,8 +56,8 @@ Instant::fromHijri(1200, 1, 1);
 ### Recovery: fall back to civil
 
 ```php
-use Daynum\Instant;
-use Daynum\Exception\UmmAlQuraOutOfRangeException;
+use Eram\Daynum\Instant;
+use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
 
 try {
     $d = Instant::fromHijri($year, $month, $day);
@@ -114,7 +114,7 @@ $d->hijri()->withLocale('ar')->withDigits('arab')->format('j F Y');    // "٢١ 
 ## Parsing
 
 ```php
-use Daynum\Calendar\Hijri\HijriUmmAlQuraView;
+use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraView;
 
 HijriUmmAlQuraView::parseExact('1447/10/21', 'Y/m/d');
 HijriUmmAlQuraView::tryParseExact('1200/1/1', 'Y/n/j');   // null — out of range

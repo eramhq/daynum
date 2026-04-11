@@ -37,7 +37,7 @@ if (!extension_loaded('intl')) {
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Daynum\Calendar\Gregorian\GregorianCalendar;
+use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
 
 const FIXTURE_DIR = __DIR__ . '/../tests/fixtures';
 

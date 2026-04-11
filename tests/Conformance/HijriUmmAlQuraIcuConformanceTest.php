@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Conformance;
+namespace Eram\Daynum\Tests\Conformance;
 
-use Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
-use Daynum\Calendar\Hijri\Table;
-use Daynum\Tests\Conformance\Support\FixtureReader;
-use Daynum\Tests\Conformance\Support\UmmAlQuraRange;
+use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
+use Eram\Daynum\Calendar\Hijri\Table;
+use Eram\Daynum\Tests\Conformance\Support\FixtureReader;
+use Eram\Daynum\Tests\Conformance\Support\UmmAlQuraRange;
 use PHPUnit\Framework\TestCase;
 
 /**

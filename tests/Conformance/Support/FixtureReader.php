@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Conformance\Support;
+namespace Eram\Daynum\Tests\Conformance\Support;
 
 /**
  * Iterates over the rows in a committed gzipped JSONL fixture, skipping the

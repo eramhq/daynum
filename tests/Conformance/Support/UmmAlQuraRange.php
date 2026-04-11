@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Conformance\Support;
+namespace Eram\Daynum\Tests\Conformance\Support;
 
 /**
  * Reads the native Umm al-Qura year range from the committed

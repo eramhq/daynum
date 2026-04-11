@@ -6,8 +6,8 @@ The deterministic 30-year arithmetic Islamic calendar with the year-16 leap vari
 
 | | |
 |---|---|
-| Class | `Daynum\Calendar\Hijri\HijriCivilCalendar` |
-| View | `Daynum\Calendar\Hijri\HijriCivilView` |
+| Class | `Eram\Daynum\Calendar\Hijri\HijriCivilCalendar` |
+| View | `Eram\Daynum\Calendar\Hijri\HijriCivilView` |
 | Identifier | `hijri-civil` |
 | Locale family | `hijri` (shared with UAQ variant) |
 | Year range | `AH 1` to `AH 9666` (inclusive) |
@@ -33,7 +33,7 @@ Use Umm al-Qura (`fromHijri` / `->hijri()`) for:
 ## Construction
 
 ```php
-use Daynum\Instant;
+use Eram\Daynum\Instant;
 
 Instant::fromHijriCivil(1447, 10, 21);
 Instant::fromHijriCivil(1, 1, 1);         // earliest representable
@@ -105,7 +105,7 @@ $d->hijriCivil()->withLocale('ar')->withDigits('arab')->format('j F Y'); // "٢�
 ## Parsing
 
 ```php
-use Daynum\Calendar\Hijri\HijriCivilView;
+use Eram\Daynum\Calendar\Hijri\HijriCivilView;
 
 HijriCivilView::parseExact('1447/10/21', 'Y/m/d');
 HijriCivilView::parseExact('0001/1/1', 'Y/n/j');    // Y requires 4+ digits — pad short years

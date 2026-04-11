@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Property;
+namespace Eram\Daynum\Tests\Property;
 
-use Daynum\Calendar\Jalali\JalaliCalendar;
-use Daynum\Instant;
+use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
+use Eram\Daynum\Instant;
 use PHPUnit\Framework\TestCase;
 
 /**

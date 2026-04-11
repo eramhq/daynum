@@ -32,8 +32,8 @@ composer require eramhq/daynum
 ## Quick start
 
 ```php
-use Daynum\Instant;
-use Daynum\Calendar\Jalali\JalaliView;
+use Eram\Daynum\Instant;
+use Eram\Daynum\Calendar\Jalali\JalaliView;
 
 // Construction — one calendar to pick from, three calendars to read back
 $d = Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');

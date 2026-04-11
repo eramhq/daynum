@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Locale;
+namespace Eram\Daynum\Locale;
 
 /**
  * Locale-specific names and strings used by the token formatter.

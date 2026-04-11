@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Conformance;
+namespace Eram\Daynum\Tests\Conformance;
 
-use Daynum\Instant;
+use Eram\Daynum\Instant;
 use DateTimeImmutable;
 use DateTimeZone;
 use PHPUnit\Framework\TestCase;

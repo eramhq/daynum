@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Conformance\Support;
+namespace Eram\Daynum\Tests\Conformance\Support;
 
-use Daynum\Calendar\Jalali\JalaliCalendar;
+use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
 
 /**
  * Lazily derives the Jalali rows that must be skipped when comparing Daynum

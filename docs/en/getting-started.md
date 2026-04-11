@@ -16,7 +16,7 @@ Requirements: PHP 8.1 or newer. No `ext-intl` needed at runtime. Zero Composer d
 <?php
 require 'vendor/autoload.php';
 
-use Daynum\Instant;
+use Eram\Daynum\Instant;
 
 $d = Instant::fromGregorian(2026, 4, 8);
 
@@ -30,7 +30,7 @@ One `Instant`, three calendars, one format syntax.
 ## Construction
 
 ```php
-use Daynum\Instant;
+use Eram\Daynum\Instant;
 
 Instant::fromGregorian(2026, 4, 8);
 Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
@@ -105,9 +105,9 @@ Full token reference: [formatting.md](formatting.md).
 ## Parsing
 
 ```php
-use Daynum\Calendar\Gregorian\GregorianView;
-use Daynum\Calendar\Jalali\JalaliView;
-use Daynum\Calendar\Hijri\HijriUmmAlQuraView;
+use Eram\Daynum\Calendar\Gregorian\GregorianView;
+use Eram\Daynum\Calendar\Jalali\JalaliView;
+use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraView;
 
 GregorianView::parseExact('2026-04-08', 'Y-m-d');
 JalaliView::parseExact('1405/01/19', 'Y/m/d');
@@ -136,7 +136,7 @@ $d->jalali()->addYears(1);              // Instant
 $d->jalali()->startOfMonth();           // Instant — Farvardin 1
 $d->jalali()->endOfMonth();             // Instant — Farvardin 31
 $d->jalali()->startOfWeek();            // Instant — Monday by default
-$d->jalali()->startOfWeek(\Daynum\WeekDay::Saturday);
+$d->jalali()->startOfWeek(\Eram\Daynum\WeekDay::Saturday);
 ```
 
 Month arithmetic clamps the day. See [arithmetic.md](arithmetic.md).

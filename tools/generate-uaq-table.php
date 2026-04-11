@@ -195,7 +195,7 @@ $lines[] = '<?php';
 $lines[] = '';
 $lines[] = 'declare(strict_types=1);';
 $lines[] = '';
-$lines[] = 'namespace Daynum\\Calendar\\Hijri;';
+$lines[] = 'namespace Eram\Daynum\\Calendar\\Hijri;';
 $lines[] = '';
 $lines[] = '/**';
 $lines[] = ' * Umm al-Qura month-length and start-of-year tables, generated from ICU';

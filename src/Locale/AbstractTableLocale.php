@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Locale;
+namespace Eram\Daynum\Locale;
 
-use Daynum\Exception\InvalidArgumentException;
+use Eram\Daynum\Exception\InvalidArgumentException;
 
 /**
  * Table-driven {@see LocaleData} base.

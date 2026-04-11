@@ -7,10 +7,10 @@ Daynum parses strict format strings — no relative dates (`"next Monday"`), no 
 Both are **static** methods on each calendar view:
 
 ```php
-use Daynum\Calendar\Gregorian\GregorianView;
-use Daynum\Calendar\Jalali\JalaliView;
-use Daynum\Calendar\Hijri\HijriUmmAlQuraView;
-use Daynum\Calendar\Hijri\HijriCivilView;
+use Eram\Daynum\Calendar\Gregorian\GregorianView;
+use Eram\Daynum\Calendar\Jalali\JalaliView;
+use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraView;
+use Eram\Daynum\Calendar\Hijri\HijriCivilView;
 
 GregorianView::parseExact('2026-04-08', 'Y-m-d');
 JalaliView::parseExact('1405/01/19', 'Y/m/d');
@@ -127,7 +127,7 @@ GregorianView::parseExact('2026-04-08', 'Y-m-d')
 ```php
 try {
     JalaliView::parseExact('1405/13/01', 'Y/m/d');
-} catch (\Daynum\Exception\ParseException $e) {
+} catch (\Eram\Daynum\Exception\ParseException $e) {
     // "Cannot parse '1405/13/01' with format 'Y/m/d': month must be in [1, 12]"
 }
 ```

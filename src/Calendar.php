@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum;
+namespace Eram\Daynum;
 
 /**
  * A calendar system: the pure math of mapping between a (year, month, day) triple
@@ -20,7 +20,7 @@ interface Calendar
     /**
      * Convert a calendar date to its Julian Day Number.
      *
-     * @throws \Daynum\Exception\InvalidDateException if the components are invalid
+     * @throws \Eram\Daynum\Exception\InvalidDateException if the components are invalid
      *         for this calendar (e.g., February 30, month 13, year outside the
      *         calendar's supported range).
      */

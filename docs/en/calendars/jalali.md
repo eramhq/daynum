@@ -6,8 +6,8 @@ The Persian solar calendar, implemented using Ahmad Birashk's 33-year arithmetic
 
 | | |
 |---|---|
-| Class | `Daynum\Calendar\Jalali\JalaliCalendar` |
-| View | `Daynum\Calendar\Jalali\JalaliView` |
+| Class | `Eram\Daynum\Calendar\Jalali\JalaliCalendar` |
+| View | `Eram\Daynum\Calendar\Jalali\JalaliView` |
 | Identifier | `jalali` |
 | Locale family | `jalali` |
 | Year range | `1` to `3177` AP (inclusive) |
@@ -17,7 +17,7 @@ The Persian solar calendar, implemented using Ahmad Birashk's 33-year arithmetic
 ## Construction
 
 ```php
-use Daynum\Instant;
+use Eram\Daynum\Instant;
 
 Instant::fromJalali(1405, 1, 19);
 Instant::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
@@ -105,7 +105,7 @@ Arabic + Jalali formatting throws on `F` / `M` tokens because ICU's Arabic trans
 ## Parsing
 
 ```php
-use Daynum\Calendar\Jalali\JalaliView;
+use Eram\Daynum\Calendar\Jalali\JalaliView;
 
 JalaliView::parseExact('1405/01/19', 'Y/m/d');
 JalaliView::parseExact('۱۴۰۵/۰۱/۱۹', 'Y/m/d');     // Persian digits normalized

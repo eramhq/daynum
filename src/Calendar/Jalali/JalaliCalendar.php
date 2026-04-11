@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Calendar\Jalali;
+namespace Eram\Daynum\Calendar\Jalali;
 
-use Daynum\Calendar;
-use Daynum\Calendar\Gregorian\GregorianCalendar;
-use Daynum\Exception\InvalidDateException;
-use Daynum\Internal\Ymd;
+use Eram\Daynum\Calendar;
+use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
+use Eram\Daynum\Exception\InvalidDateException;
+use Eram\Daynum\Internal\Ymd;
 
 /**
  * Jalali (Shamsi / Solar Hijri) calendar using Ahmad Birashk's 33-year

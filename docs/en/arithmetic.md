@@ -38,8 +38,8 @@ $view->endOfYear();
 
 // Week boundaries — ISO-configurable
 $view->startOfWeek();                                // Monday start (default)
-$view->startOfWeek(\Daynum\WeekDay::Saturday);       // Saturday start
-$view->endOfWeek(\Daynum\WeekDay::Saturday);
+$view->startOfWeek(\Eram\Daynum\WeekDay::Saturday);       // Saturday start
+$view->endOfWeek(\Eram\Daynum\WeekDay::Saturday);
 ```
 
 ## Month arithmetic clamps the day
@@ -59,7 +59,7 @@ Year arithmetic clamps similarly — `2024-02-29 + 1 year` is `2025-02-28`, beca
 ## Weeks
 
 ```php
-use Daynum\WeekDay;
+use Eram\Daynum\WeekDay;
 
 $view->startOfWeek();                   // Monday (default)
 $view->startOfWeek(WeekDay::Monday);    // same
@@ -112,7 +112,7 @@ $a->jalali()->diffInMonths($b);      // may differ from the Gregorian count
 Arithmetic on a UAQ view produces a calendar-neutral `Instant`. Viewing the result in Hijri Umm al-Qura may throw if the new date is outside the table range (AH 1300–1600). Use `hijriCivil()` as a fallback:
 
 ```php
-use Daynum\Exception\UmmAlQuraOutOfRangeException;
+use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
 
 $d = Instant::fromHijri(1600, 12, 29);     // near table edge
 $result = $d->hijri()->addDays(100);        // returns Instant (no error)

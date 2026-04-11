@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Unit;
+namespace Eram\Daynum\Tests\Unit;
 
-use Daynum\Exception\MissingTimezoneException;
-use Daynum\Formatter\DateTokenFormatter;
-use Daynum\Formatter\DigitTransliterator;
-use Daynum\Formatter\FormatContext;
-use Daynum\Locale\EnglishLocale;
-use Daynum\Locale\PersianLocale;
+use Eram\Daynum\Exception\MissingTimezoneException;
+use Eram\Daynum\Formatter\DateTokenFormatter;
+use Eram\Daynum\Formatter\DigitTransliterator;
+use Eram\Daynum\Formatter\FormatContext;
+use Eram\Daynum\Locale\EnglishLocale;
+use Eram\Daynum\Locale\PersianLocale;
 use PHPUnit\Framework\TestCase;
 
 final class DateTokenFormatterTest extends TestCase

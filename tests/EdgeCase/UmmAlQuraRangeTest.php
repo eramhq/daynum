@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\EdgeCase;
+namespace Eram\Daynum\Tests\EdgeCase;
 
-use Daynum\Calendar\Hijri\Table;
-use Daynum\Exception\DaynumException;
-use Daynum\Exception\UmmAlQuraOutOfRangeException;
-use Daynum\Instant;
+use Eram\Daynum\Calendar\Hijri\Table;
+use Eram\Daynum\Exception\DaynumException;
+use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
+use Eram\Daynum\Instant;
 use PHPUnit\Framework\TestCase;
 
 /**

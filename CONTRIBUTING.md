@@ -105,7 +105,7 @@ The Node oracle uses Node's bundled ICU (`node -e 'console.log(process.versions.
 
 Post-v1, Daynum will ship Hebrew, Buddhist, Japanese, Indian, Coptic, and Ethiopic. The process:
 
-1. **Write the `Calendar` implementation** in `src/Calendar/<Name>/<Name>Calendar.php`. It must implement `Daynum\Calendar` — `toJdn`, `fromJdn`, `isLeapYear`, `daysInMonth`, `dayOfYear`, `monthsInYear`, `name`, `localeFamily`, `supportedRange`, `supportsYear`.
+1. **Write the `Calendar` implementation** in `src/Calendar/<Name>/<Name>Calendar.php`. It must implement `Eram\Daynum\Calendar` — `toJdn`, `fromJdn`, `isLeapYear`, `daysInMonth`, `dayOfYear`, `monthsInYear`, `name`, `localeFamily`, `supportedRange`, `supportsYear`.
 
 2. **Write a stateless singleton**: `public static function instance(): self`.
 

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Calendar\Jalali;
+namespace Eram\Daynum\Calendar\Jalali;
 
-use Daynum\Calendar;
-use Daynum\Calendar\AbstractCalendarView;
+use Eram\Daynum\Calendar;
+use Eram\Daynum\Calendar\AbstractCalendarView;
 
 /**
- * View of an {@see \Daynum\Instant} as a Jalali (Shamsi / Solar Hijri) date.
+ * View of an {@see \Eram\Daynum\Instant} as a Jalali (Shamsi / Solar Hijri) date.
  *
  * Use `$instant->jalali()` to construct; never `new` directly.
  */

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Property;
+namespace Eram\Daynum\Tests\Property;
 
-use Daynum\Instant;
+use Eram\Daynum\Instant;
 use PHPUnit\Framework\TestCase;
 
 /**

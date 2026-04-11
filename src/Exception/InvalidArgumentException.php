@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Exception;
+namespace Eram\Daynum\Exception;
 
 /**
  * Thrown when a method receives an argument outside its accepted domain.

@@ -22,9 +22,9 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Daynum\Instant;
-use Daynum\Calendar\Jalali\JalaliView;
-use Daynum\Calendar\Gregorian\GregorianView;
+use Eram\Daynum\Instant;
+use Eram\Daynum\Calendar\Jalali\JalaliView;
+use Eram\Daynum\Calendar\Gregorian\GregorianView;
 
 $opts = getopt('', ['filter::', 'iterations::']);
 $filter = isset($opts['filter']) && $opts['filter'] !== false ? (string) $opts['filter'] : null;

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Unit;
+namespace Eram\Daynum\Tests\Unit;
 
-use Daynum\Calendar\Gregorian\GregorianView;
-use Daynum\Calendar\Hijri\HijriCivilView;
-use Daynum\Calendar\Hijri\HijriUmmAlQuraView;
-use Daynum\Calendar\Jalali\JalaliView;
-use Daynum\Exception\ParseException;
+use Eram\Daynum\Calendar\Gregorian\GregorianView;
+use Eram\Daynum\Calendar\Hijri\HijriCivilView;
+use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraView;
+use Eram\Daynum\Calendar\Jalali\JalaliView;
+use Eram\Daynum\Exception\ParseException;
 use PHPUnit\Framework\TestCase;
 
 final class ParseExactTest extends TestCase
@@ -176,7 +176,7 @@ final class ParseExactTest extends TestCase
 
     public function testGregorianRoundTrip(): void
     {
-        $original = \Daynum\Instant::fromGregorian(2026, 4, 8, 14, 30, 45);
+        $original = \Eram\Daynum\Instant::fromGregorian(2026, 4, 8, 14, 30, 45);
         $formatted = $original->gregorian()->format('Y-m-d H:i:s');
         $parsed = GregorianView::parseExact($formatted, 'Y-m-d H:i:s');
 
@@ -185,7 +185,7 @@ final class ParseExactTest extends TestCase
 
     public function testJalaliRoundTrip(): void
     {
-        $original = \Daynum\Instant::fromJalali(1405, 1, 19, 8, 0, 0);
+        $original = \Eram\Daynum\Instant::fromJalali(1405, 1, 19, 8, 0, 0);
         $formatted = $original->jalali()->format('Y/m/d H:i:s');
         $parsed = JalaliView::parseExact($formatted, 'Y/m/d H:i:s');
 
@@ -194,7 +194,7 @@ final class ParseExactTest extends TestCase
 
     public function testHijriRoundTrip(): void
     {
-        $original = \Daynum\Instant::fromHijri(1447, 10, 21);
+        $original = \Eram\Daynum\Instant::fromHijri(1447, 10, 21);
         $formatted = $original->hijri()->format('Y/m/d');
         $parsed = HijriUmmAlQuraView::parseExact($formatted, 'Y/m/d');
 
@@ -345,7 +345,7 @@ final class ParseExactTest extends TestCase
 
     public function testArabicMeridiemRoundTrip(): void
     {
-        $original = \Daynum\Instant::fromGregorian(2026, 4, 8, 14, 30, 0);
+        $original = \Eram\Daynum\Instant::fromGregorian(2026, 4, 8, 14, 30, 0);
         $formatted = $original->gregorian()->withLocale('ar')->format('Y-m-d h:i:s a');
         $parsed = GregorianView::parseExact($formatted, 'Y-m-d h:i:s a');
 
@@ -389,7 +389,7 @@ final class ParseExactTest extends TestCase
 
     public function testVariableWidthRoundTrip(): void
     {
-        $original = \Daynum\Instant::fromGregorian(2026, 4, 8);
+        $original = \Eram\Daynum\Instant::fromGregorian(2026, 4, 8);
         $formatted = $original->gregorian()->format('Y/n/j');
         $this->assertSame('2026/4/8', $formatted);
         $parsed = GregorianView::parseExact($formatted, 'Y/n/j');

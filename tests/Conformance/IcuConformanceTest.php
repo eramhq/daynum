@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Conformance;
+namespace Eram\Daynum\Tests\Conformance;
 
-use Daynum\Calendar\Gregorian\GregorianCalendar;
-use Daynum\Calendar\Jalali\JalaliCalendar;
-use Daynum\Tests\Conformance\Support\FixtureReader;
-use Daynum\Tests\Conformance\Support\JalaliIcuDivergence;
+use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
+use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
+use Eram\Daynum\Tests\Conformance\Support\FixtureReader;
+use Eram\Daynum\Tests\Conformance\Support\JalaliIcuDivergence;
 use PHPUnit\Framework\TestCase;
 
 /**

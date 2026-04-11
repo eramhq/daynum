@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Exception;
+namespace Eram\Daynum\Exception;
 
 final class InvalidTimezoneException extends \RuntimeException implements DaynumException
 {

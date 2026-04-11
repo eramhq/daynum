@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Unit;
+namespace Eram\Daynum\Tests\Unit;
 
-use Daynum\Locale\EnglishLocale;
+use Eram\Daynum\Locale\EnglishLocale;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 

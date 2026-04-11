@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Unit\Calendar;
+namespace Eram\Daynum\Tests\Unit\Calendar;
 
-use Daynum\Calendar\Gregorian\GregorianCalendar;
-use Daynum\Calendar\Hijri\HijriCivilCalendar;
-use Daynum\Exception\InvalidDateException;
+use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
+use Eram\Daynum\Calendar\Hijri\HijriCivilCalendar;
+use Eram\Daynum\Exception\InvalidDateException;
 use PHPUnit\Framework\TestCase;
 
 final class HijriCivilCalendarTest extends TestCase

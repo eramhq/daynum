@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Unit;
+namespace Eram\Daynum\Tests\Unit;
 
-use Daynum\Locale\PersianLocale;
+use Eram\Daynum\Locale\PersianLocale;
 use PHPUnit\Framework\TestCase;
 
 final class PersianLocaleTest extends TestCase

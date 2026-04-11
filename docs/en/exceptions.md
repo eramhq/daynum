@@ -1,9 +1,9 @@
 # Exceptions
 
-Daynum defines 7 concrete exception types plus a marker interface. Every exception the library throws implements `Daynum\Exception\DaynumException`, so one `catch` catches the whole library:
+Daynum defines 7 concrete exception types plus a marker interface. Every exception the library throws implements `Eram\Daynum\Exception\DaynumException`, so one `catch` catches the whole library:
 
 ```php
-use Daynum\Exception\DaynumException;
+use Eram\Daynum\Exception\DaynumException;
 
 try {
     // ... any Daynum code
@@ -15,7 +15,7 @@ try {
 ## Hierarchy
 
 ```text
-Daynum\Exception\DaynumException (marker interface extends \Throwable)
+Eram\Daynum\Exception\DaynumException (marker interface extends \Throwable)
 │
 ├─ InvalidArgumentException      (extends \InvalidArgumentException)
 ├─ InvalidDateException          (extends \InvalidArgumentException)
@@ -47,7 +47,7 @@ All exceptions are `final`. They extend appropriate SPL base classes so existing
 **How to recover**:
 
 ```php
-use Daynum\Exception\InvalidDateException;
+use Eram\Daynum\Exception\InvalidDateException;
 
 try {
     $d = Instant::fromJalali(1405, 13, 1);
@@ -97,7 +97,7 @@ Instant::fromArray(['jdn' => '2461139']);  // throws: "fromArray() requires an i
 **How to recover**:
 
 ```php
-use Daynum\Exception\ParseException;
+use Eram\Daynum\Exception\ParseException;
 
 try {
     $d = JalaliView::parseExact($input, 'Y/m/d');
@@ -161,7 +161,7 @@ Or drop the tz-dependent token from the pattern. See [timezones.md](timezones.md
 **How to recover**: fall back to `hijriCivil()`, which has no range limit:
 
 ```php
-use Daynum\Exception\UmmAlQuraOutOfRangeException;
+use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
 
 try {
     $d = Instant::fromHijri($year, $month, $day);
@@ -194,7 +194,7 @@ Rather than returning a misleading sentinel that would silently collide with rea
 **How to recover**: catch near the boundary, or avoid `W` / `o` when you know the input might touch `MIN_YEAR` / `MAX_YEAR`:
 
 ```php
-use Daynum\Exception\WeekAtBoundaryException;
+use Eram\Daynum\Exception\WeekAtBoundaryException;
 
 try {
     $weekLabel = $d->gregorian()->format('o-\WW');
@@ -206,7 +206,7 @@ try {
 ## Catch-all
 
 ```php
-use Daynum\Exception\DaynumException;
+use Eram\Daynum\Exception\DaynumException;
 
 try {
     $d = Instant::fromHijri($year, $month, $day);

@@ -20,7 +20,7 @@ Task-indexed recipes. Each one is copy-pasteable and runs against Daynum as ship
 ## Convert a Gregorian date to Jalali (and back)
 
 ```php
-use Daynum\Instant;
+use Eram\Daynum\Instant;
 
 $g = Instant::fromGregorian(2026, 4, 8);
 echo $g->jalali()->format('Y/m/d'), "\n";    // 1405/01/19
@@ -47,7 +47,7 @@ printf(
 ## Parse user input safely with `tryParseExact`
 
 ```php
-use Daynum\Calendar\Jalali\JalaliView;
+use Eram\Daynum\Calendar\Jalali\JalaliView;
 
 function parseJalaliBirthday(string $raw): ?Instant
 {
@@ -155,7 +155,7 @@ Clamping matches Carbon, `java.time`, and most mainstream date libraries. See [a
 ## Handle the Umm al-Qura range boundary (fall back to civil)
 
 ```php
-use Daynum\Exception\UmmAlQuraOutOfRangeException;
+use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
 
 function renderHijri(Instant $d): string
 {
@@ -210,7 +210,7 @@ $utc->gregorian()->format('Y-m-d H:i T');   // "2026-04-08 11:00 UTC"
 
 ```php
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
-use Daynum\Instant;
+use Eram\Daynum\Instant;
 
 class InstantCast implements CastsAttributes
 {
@@ -238,7 +238,7 @@ protected $casts = [
 
 ```php
 use Illuminate\Contracts\Validation\Rule;
-use Daynum\Calendar\Jalali\JalaliView;
+use Eram\Daynum\Calendar\Jalali\JalaliView;
 
 class ValidJalaliDate implements Rule
 {
@@ -262,7 +262,7 @@ public function rules(): array
 
 ## Migrate a `jdate()`-heavy codebase without touching call sites
 
-Enable the opt-in `jdate()` / `gdate()` / `hdate()` helpers and existing call sites keep working unchanged, now returning `Daynum\Instant` values. See [migration-from-morilog-jalali.md](migration-from-morilog-jalali.md) for the one-line `composer.json` edit and full walkthrough.
+Enable the opt-in `jdate()` / `gdate()` / `hdate()` helpers and existing call sites keep working unchanged, now returning `Eram\Daynum\Instant` values. See [migration-from-morilog-jalali.md](migration-from-morilog-jalali.md) for the one-line `composer.json` edit and full walkthrough.
 
 ## See also
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Exception;
+namespace Eram\Daynum\Exception;
 
 /**
  * Marker interface implemented by every exception Daynum throws.

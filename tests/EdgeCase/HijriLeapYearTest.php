@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\EdgeCase;
+namespace Eram\Daynum\Tests\EdgeCase;
 
-use Daynum\Calendar\Hijri\HijriCivilCalendar;
+use Eram\Daynum\Calendar\Hijri\HijriCivilCalendar;
 use PHPUnit\Framework\TestCase;
 
 /**

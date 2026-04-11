@@ -34,7 +34,7 @@ if (!extension_loaded('intl')) {
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Daynum\Calendar\Gregorian\GregorianCalendar;
+use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
 
 const FIXTURE_DIR = __DIR__ . '/../tests/fixtures';
 const START_YEAR = 1700;
@@ -67,10 +67,10 @@ $uaqFile  = fopen('compress.zlib://' . FIXTURE_DIR . '/hijri-umalqura.jsonl.gz',
 // simply produced over an empty range — running the tool a second time
 // after `tools/generate-uaq-table.php` completes will populate it.
 $uaqRange = null;
-if (class_exists(\Daynum\Calendar\Hijri\Table::class)) {
+if (class_exists(\Eram\Daynum\Calendar\Hijri\Table::class)) {
     $uaqRange = [
-        \Daynum\Calendar\Hijri\Table::MIN_YEAR,
-        \Daynum\Calendar\Hijri\Table::MAX_YEAR,
+        \Eram\Daynum\Calendar\Hijri\Table::MIN_YEAR,
+        \Eram\Daynum\Calendar\Hijri\Table::MAX_YEAR,
     ];
 }
 

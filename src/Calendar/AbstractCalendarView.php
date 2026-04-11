@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Calendar;
+namespace Eram\Daynum\Calendar;
 
-use Daynum\Calendar;
-use Daynum\CalendarView;
-use Daynum\Exception\DaynumException;
-use Daynum\Exception\InvalidArgumentException;
-use Daynum\Exception\ParseException;
-use Daynum\Exception\WeekAtBoundaryException;
-use Daynum\Formatter\DateTokenFormatter;
-use Daynum\Formatter\DigitTransliterator;
-use Daynum\Formatter\FormatContext;
-use Daynum\Instant;
-use Daynum\Locale\LocaleData;
-use Daynum\Locale\LocaleRegistry;
-use Daynum\WeekDay;
+use Eram\Daynum\Calendar;
+use Eram\Daynum\CalendarView;
+use Eram\Daynum\Exception\DaynumException;
+use Eram\Daynum\Exception\InvalidArgumentException;
+use Eram\Daynum\Exception\ParseException;
+use Eram\Daynum\Exception\WeekAtBoundaryException;
+use Eram\Daynum\Formatter\DateTokenFormatter;
+use Eram\Daynum\Formatter\DigitTransliterator;
+use Eram\Daynum\Formatter\FormatContext;
+use Eram\Daynum\Instant;
+use Eram\Daynum\Locale\LocaleData;
+use Eram\Daynum\Locale\LocaleRegistry;
+use Eram\Daynum\WeekDay;
 
 /**
  * Shared implementation of {@see CalendarView} for calendars whose arithmetic
@@ -293,7 +293,7 @@ abstract class AbstractCalendarView implements CalendarView
 
         try {
             return new Instant($jdn, $hour * 3600 + $minute * 60 + $second, $parsedTz);
-        } catch (\Daynum\Exception\InvalidDateException $e) {
+        } catch (\Eram\Daynum\Exception\InvalidDateException $e) {
             throw ParseException::forFormat($text, $format, $e->getMessage());
         }
     }

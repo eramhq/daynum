@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Formatter;
+namespace Eram\Daynum\Formatter;
 
-use Daynum\Exception\InvalidArgumentException;
+use Eram\Daynum\Exception\InvalidArgumentException;
 
 /**
  * Bidirectional digit transliteration between three Unicode script families.

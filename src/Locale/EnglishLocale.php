@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Locale;
+namespace Eram\Daynum\Locale;
 
 /**
  * English names for months and weekdays, in the Gregorian, Jalali, and Hijri

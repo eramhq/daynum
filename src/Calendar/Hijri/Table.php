@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Calendar\Hijri;
+namespace Eram\Daynum\Calendar\Hijri;
 
 /**
  * Umm al-Qura month-length and start-of-year tables, generated from ICU

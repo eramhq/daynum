@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Unit;
+namespace Eram\Daynum\Tests\Unit;
 
-use Daynum\Calendar\Gregorian\GregorianCalendar;
-use Daynum\Calendar\Hijri\HijriCivilCalendar;
-use Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
-use Daynum\Calendar\Hijri\Table;
-use Daynum\Calendar\Jalali\JalaliCalendar;
-use Daynum\Exception\DaynumException;
-use Daynum\Exception\InvalidArgumentException;
-use Daynum\Exception\InvalidDateException;
-use Daynum\Exception\InvalidTimezoneException;
-use Daynum\Exception\MissingTimezoneException;
-use Daynum\Exception\WeekAtBoundaryException;
-use Daynum\Instant;
-use Daynum\WeekDay;
+use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
+use Eram\Daynum\Calendar\Hijri\HijriCivilCalendar;
+use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
+use Eram\Daynum\Calendar\Hijri\Table;
+use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
+use Eram\Daynum\Exception\DaynumException;
+use Eram\Daynum\Exception\InvalidArgumentException;
+use Eram\Daynum\Exception\InvalidDateException;
+use Eram\Daynum\Exception\InvalidTimezoneException;
+use Eram\Daynum\Exception\MissingTimezoneException;
+use Eram\Daynum\Exception\WeekAtBoundaryException;
+use Eram\Daynum\Instant;
+use Eram\Daynum\WeekDay;
 use DateTimeImmutable;
 use DateTimeZone;
 use PHPUnit\Framework\TestCase;

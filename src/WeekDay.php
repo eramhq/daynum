@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum;
+namespace Eram\Daynum;
 
 enum WeekDay: int
 {

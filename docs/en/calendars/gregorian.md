@@ -6,8 +6,8 @@ The proleptic Gregorian calendar — no Julian cutover, year 0 exists, negative 
 
 | | |
 |---|---|
-| Class | `Daynum\Calendar\Gregorian\GregorianCalendar` |
-| View | `Daynum\Calendar\Gregorian\GregorianView` |
+| Class | `Eram\Daynum\Calendar\Gregorian\GregorianCalendar` |
+| View | `Eram\Daynum\Calendar\Gregorian\GregorianView` |
 | Identifier | `gregorian` |
 | Locale family | `gregorian` |
 | Year range | `-9999` to `9999` (inclusive) |
@@ -17,7 +17,7 @@ The proleptic Gregorian calendar — no Julian cutover, year 0 exists, negative 
 ## Construction
 
 ```php
-use Daynum\Instant;
+use Eram\Daynum\Instant;
 
 Instant::fromGregorian(2026, 4, 8);
 Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
@@ -87,7 +87,7 @@ $d->gregorian()->withLocale('fa')->format('l j F Y');   // "چهارشنبه 8 �
 ## Parsing
 
 ```php
-use Daynum\Calendar\Gregorian\GregorianView;
+use Eram\Daynum\Calendar\Gregorian\GregorianView;
 
 GregorianView::parseExact('2026-04-08', 'Y-m-d');
 GregorianView::parseExact('2026-04-08 14:30:00', 'Y-m-d H:i:s');

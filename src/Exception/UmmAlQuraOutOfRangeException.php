@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Exception;
+namespace Eram\Daynum\Exception;
 
-use Daynum\Calendar\Hijri\Table;
+use Eram\Daynum\Calendar\Hijri\Table;
 use OutOfRangeException;
 
 /**

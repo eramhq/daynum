@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Conformance;
+namespace Eram\Daynum\Tests\Conformance;
 
-use Daynum\Calendar\Hijri\HijriCivilCalendar;
-use Daynum\Tests\Conformance\Support\FixtureReader;
+use Eram\Daynum\Calendar\Hijri\HijriCivilCalendar;
+use Eram\Daynum\Tests\Conformance\Support\FixtureReader;
 use PHPUnit\Framework\TestCase;
 
 /**

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Locale;
+namespace Eram\Daynum\Locale;
 
 /**
  * Persian (Farsi, `fa`) names for months and weekdays in both Gregorian and

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\Property;
+namespace Eram\Daynum\Tests\Property;
 
-use Daynum\Calendar;
-use Daynum\Calendar\Gregorian\GregorianCalendar;
-use Daynum\Calendar\Hijri\HijriCivilCalendar;
-use Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
-use Daynum\Calendar\Hijri\Table;
-use Daynum\Calendar\Jalali\JalaliCalendar;
+use Eram\Daynum\Calendar;
+use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
+use Eram\Daynum\Calendar\Hijri\HijriCivilCalendar;
+use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
+use Eram\Daynum\Calendar\Hijri\Table;
+use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
 use PHPUnit\Framework\TestCase;
 
 /**

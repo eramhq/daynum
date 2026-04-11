@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Exception;
+namespace Eram\Daynum\Exception;
 
 /**
  * Thrown when a format token that requires timezone information is used

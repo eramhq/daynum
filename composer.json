@@ -34,12 +34,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Daynum\\": "src/"
+            "Eram\\Daynum\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Daynum\\Tests\\": "tests/"
+            "Eram\\Daynum\\Tests\\": "tests/"
         }
     },
     "config": {

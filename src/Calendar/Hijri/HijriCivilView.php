@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Calendar\Hijri;
+namespace Eram\Daynum\Calendar\Hijri;
 
-use Daynum\Calendar;
-use Daynum\Calendar\AbstractCalendarView;
+use Eram\Daynum\Calendar;
+use Eram\Daynum\Calendar\AbstractCalendarView;
 
 /**
- * View of an {@see \Daynum\Instant} as a tabular Hijri (arithmetic Islamic)
+ * View of an {@see \Eram\Daynum\Instant} as a tabular Hijri (arithmetic Islamic)
  * date.
  *
  * Use `$instant->hijriCivil()` to construct; never `new` directly. For the

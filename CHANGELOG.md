@@ -7,8 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+- Root PHP namespace renamed from `Daynum\` to `Eram\Daynum\`, aligning with the
+  `eramhq/daynum` Composer vendor and with PHP community conventions
+  (Symfony/Doctrine/PHPUnit-style vendor-prefixed roots). Every
+  `use Daynum\Foo` in downstream code must become `use Eram\Daynum\Foo`;
+  the rename is mechanical with no class aliases or compatibility shim.
+
 ### Added
-- `Daynum\Exception\InvalidArgumentException` — library-owned exception
+- `Eram\Daynum\Exception\InvalidArgumentException` — library-owned exception
   extending `\InvalidArgumentException` and implementing `DaynumException`.
   All bare `\InvalidArgumentException` throws in library code (`Instant::fromArray`,
   `CalendarView::of`, `CalendarView::withDigits`, `CalendarView::startOfWeek`,
@@ -56,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CalendarView::weekBasedYear(): int` — underlying primitive that
   powers the `o` token. Throws `WeekAtBoundaryException` on the same
   MIN/MAX-year boundary conditions as `weekOfYear()`.
-- `Daynum\Exception\WeekAtBoundaryException` — dedicated exception
+- `Eram\Daynum\Exception\WeekAtBoundaryException` — dedicated exception
   thrown by `weekOfYear()` / `weekBasedYear()` when the containing ISO
   week's Thursday, or the resulting week-based year, falls outside the
   calendar's supported range. Implements the `DaynumException` marker

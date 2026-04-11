@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Locale;
+namespace Eram\Daynum\Locale;
 
 /**
  * Arabic (`ar`) names for months and weekdays, matching ICU `ar-SA`.

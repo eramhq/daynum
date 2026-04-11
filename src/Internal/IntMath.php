@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Internal;
+namespace Eram\Daynum\Internal;
 
 /**
  * @internal

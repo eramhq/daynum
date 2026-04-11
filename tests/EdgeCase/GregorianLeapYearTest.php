@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Tests\EdgeCase;
+namespace Eram\Daynum\Tests\EdgeCase;
 
-use Daynum\Calendar\Gregorian\GregorianCalendar;
-use Daynum\Instant;
+use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
+use Eram\Daynum\Instant;
 use PHPUnit\Framework\TestCase;
 
 final class GregorianLeapYearTest extends TestCase
@@ -34,7 +34,7 @@ final class GregorianLeapYearTest extends TestCase
         $this->assertSame(29, $leap->gregorian()->day());
 
         // Feb 29 2023 is not
-        $this->expectException(\Daynum\Exception\InvalidDateException::class);
+        $this->expectException(\Eram\Daynum\Exception\InvalidDateException::class);
         Instant::fromGregorian(2023, 2, 29);
     }
 

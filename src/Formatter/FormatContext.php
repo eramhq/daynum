@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Daynum\Formatter;
+namespace Eram\Daynum\Formatter;
 
-use Daynum\Locale\LocaleData;
+use Eram\Daynum\Locale\LocaleData;
 
 /**
  * Everything {@see DateTokenFormatter} needs to render a formatted string.

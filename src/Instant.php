@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Daynum;
+namespace Eram\Daynum;
 
-use Daynum\Calendar\Gregorian\GregorianCalendar;
-use Daynum\Calendar\Gregorian\GregorianView;
-use Daynum\Calendar\Hijri\HijriCivilCalendar;
-use Daynum\Calendar\Hijri\HijriCivilView;
-use Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
-use Daynum\Calendar\Hijri\HijriUmmAlQuraView;
-use Daynum\Calendar\Jalali\JalaliCalendar;
-use Daynum\Calendar\Jalali\JalaliView;
-use Daynum\Exception\InvalidDateException;
-use Daynum\Exception\InvalidTimezoneException;
-use Daynum\Exception\UmmAlQuraOutOfRangeException;
+use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
+use Eram\Daynum\Calendar\Gregorian\GregorianView;
+use Eram\Daynum\Calendar\Hijri\HijriCivilCalendar;
+use Eram\Daynum\Calendar\Hijri\HijriCivilView;
+use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
+use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraView;
+use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
+use Eram\Daynum\Calendar\Jalali\JalaliView;
+use Eram\Daynum\Exception\InvalidDateException;
+use Eram\Daynum\Exception\InvalidTimezoneException;
+use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
@@ -94,8 +94,8 @@ final class Instant implements JsonSerializable
      * {@see fromHijriCivil} explicitly when you need far-historical or
      * far-future dates.
      *
-     * @throws \Daynum\Exception\UmmAlQuraOutOfRangeException
-     * @throws \Daynum\Exception\InvalidDateException
+     * @throws \Eram\Daynum\Exception\UmmAlQuraOutOfRangeException
+     * @throws \Eram\Daynum\Exception\InvalidDateException
      */
     public static function fromHijri(
         int $year,
@@ -380,7 +380,7 @@ final class Instant implements JsonSerializable
      * View as a Saudi Umm al-Qura (KACST) Hijri date.
      *
      * Component accessors and formatting on this view can throw
-     * {@see \Daynum\Exception\UmmAlQuraOutOfRangeException} if the
+     * {@see \Eram\Daynum\Exception\UmmAlQuraOutOfRangeException} if the
      * underlying JDN falls outside the bundled table — use
      * {@see hijriCivil()} for dates outside that window.
      */

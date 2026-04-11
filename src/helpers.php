@@ -16,7 +16,7 @@ declare(strict_types=1);
  * override a name the host application has already defined.
  */
 
-use Daynum\Instant;
+use Eram\Daynum\Instant;
 
 if (!function_exists('gdate')) {
     function gdate(int $year, int $month, int $day, int $hour = 0, int $minute = 0, int $second = 0, ?string $tz = null): Instant
@@ -39,7 +39,7 @@ if (!function_exists('hdate')) {
      * Mirrors the `gdate` / `jdate` helpers and defaults to the UAQ
      * calendar to match `Instant::fromHijri`. If the year is outside the
      * bundled table range, this throws
-     * {@see \Daynum\Exception\UmmAlQuraOutOfRangeException}; use
+     * {@see \Eram\Daynum\Exception\UmmAlQuraOutOfRangeException}; use
      * `Instant::fromHijriCivil` directly if you need the tabular civil
      * variant.
      */
