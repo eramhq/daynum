@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 - Root PHP namespace renamed from `Daynum\` to `Eram\Daynum\`, aligning with the
-  `eramhq/daynum` Composer vendor and with PHP community conventions
+  `eram/daynum` Composer vendor and with PHP community conventions
   (Symfony/Doctrine/PHPUnit-style vendor-prefixed roots). Every
   `use Daynum\Foo` in downstream code must become `use Eram\Daynum\Foo`;
   the rename is mechanical with no class aliases or compatibility shim.

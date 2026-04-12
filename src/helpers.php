@@ -9,7 +9,7 @@ declare(strict_types=1);
  * following to your own project's `composer.json`:
  *
  *     "autoload": {
- *         "files": ["vendor/eramhq/daynum/src/helpers.php"]
+ *         "files": ["vendor/eram/daynum/src/helpers.php"]
  *     }
  *
  * Each helper is wrapped in `function_exists` so Daynum will never silently

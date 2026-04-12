@@ -1,5 +1,5 @@
 {
-    "name": "eramhq/daynum",
+    "name": "eram/daynum",
     "description": "Immutable, zero-runtime-dependency multi-calendar library for PHP 8.1+. Gregorian, Jalali (Shamsi), and Hijri, differentially tested against ICU.",
     "type": "library",
     "license": "MIT",

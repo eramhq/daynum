@@ -26,7 +26,7 @@ v1 ships **Gregorian**, **Jalali**, and **Hijri** (Saudi Umm al-Qura + tabular c
 ## Install
 
 ```bash
-composer require eramhq/daynum
+composer require eram/daynum
 ```
 
 ## Quick start

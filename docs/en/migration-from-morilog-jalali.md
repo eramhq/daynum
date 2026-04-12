@@ -7,13 +7,13 @@ This page walks through the common migration paths.
 ## TL;DR
 
 1. `composer remove morilog/jalali`
-2. `composer require eramhq/daynum`
+2. `composer require eram/daynum`
 3. Add the opt-in helpers so existing `jdate()` calls keep working:
 
    ```json
    {
        "autoload": {
-           "files": ["vendor/eramhq/daynum/src/helpers.php"]
+           "files": ["vendor/eram/daynum/src/helpers.php"]
        }
    }
    ```
@@ -35,7 +35,7 @@ Daynum ships `jdate()`, `gdate()`, `hdate()` helpers in `src/helpers.php`. They 
 ```json
 {
     "autoload": {
-        "files": ["vendor/eramhq/daynum/src/helpers.php"]
+        "files": ["vendor/eram/daynum/src/helpers.php"]
     }
 }
 ```
