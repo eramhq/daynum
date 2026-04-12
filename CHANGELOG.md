@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.1] — 2026-04-12
+
 ### Breaking
 - Root PHP namespace renamed from `Daynum\` to `Eram\Daynum\`, aligning with the
   `eram/daynum` Composer vendor and with PHP community conventions
@@ -206,8 +208,8 @@ Gregorian and Hijri benchmarks are unchanged within ±2% noise.
   implementing the interface in their own code — not a documented
   use case, but possible — must add the method. All calendars
   shipped by Daynum have it. Same kind of source-level break as
-  M2's `localeFamily()`; the `0.x.y` version range signals the v1
-  API is still settling.
+  M2's `localeFamily()`; the `1.0.0-beta` pre-release range signals
+  the public API may still receive minor adjustments before stable.
 
 ### Breaking (external `CalendarView` implementers only)
 - The `CalendarView` interface gained `weekBasedYear(): int`. Anyone
@@ -267,8 +269,9 @@ Gregorian and Hijri benchmarks are unchanged within ±2% noise.
 - The `Calendar` interface gained `localeFamily(): string`. Anyone
   implementing the interface in their own code — not a documented
   use case, but possible — must add the method. All calendars
-  shipped by Daynum have it. The `0.x.y` version range signals the
-  v1 API is still settling.
+  shipped by Daynum have it. The `1.0.0-beta` pre-release range
+  signals the public API may still receive minor adjustments before
+  stable.
 
 ## [0.1.0] — M1 initial release
 

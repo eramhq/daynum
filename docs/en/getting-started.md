@@ -5,7 +5,7 @@ A 5-minute tour of Daynum — install, construct, view, format, and do arithmeti
 ## Install
 
 ```bash
-composer require eram/daynum
+composer require eram/daynum:^1.0@beta
 ```
 
 Requirements: PHP 8.1 or newer. No `ext-intl` needed at runtime. Zero Composer dependencies.
