@@ -69,6 +69,7 @@ final class FormatTokenConformanceTest extends TestCase
                 'gregorian'   => $instant->gregorian()->withLocale($locale),
                 'jalali'      => $instant->jalali()->withLocale($locale),
                 'hijri-civil' => $instant->hijriCivil()->withLocale($locale),
+                default       => throw new \LogicException("Unknown calendar: {$calendar}"),
             };
 
             foreach ($row['expected'] as $token => $expected) {

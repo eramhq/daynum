@@ -603,6 +603,7 @@ final class InstantTest extends TestCase
     {
         $i = Instant::fromGregorian(2026, 4, 8, 0, 0, 0, 'UTC');
         $json = json_encode($i);
+        $this->assertNotFalse($json);
         $decoded = json_decode($json, true);
 
         $this->assertSame($i->jdn, $decoded['jdn']);
@@ -618,6 +619,7 @@ final class InstantTest extends TestCase
         $this->assertNull($data['tzLabel']);
         // Verify JSON encodes null correctly
         $json = json_encode($i);
+        $this->assertNotFalse($json);
         $this->assertStringContainsString('"tzLabel":null', $json);
     }
 
@@ -648,6 +650,7 @@ final class InstantTest extends TestCase
     {
         $original = Instant::fromJalali(1405, 1, 19, 8, 15, 0, 'Asia/Tehran');
         $json = json_encode($original);
+        $this->assertNotFalse($json);
         $restored = Instant::fromArray(json_decode($json, true));
 
         $this->assertTrue($original->equals($restored));

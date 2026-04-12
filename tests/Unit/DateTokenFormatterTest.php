@@ -18,6 +18,8 @@ final class DateTokenFormatterTest extends TestCase
      * 2026-04-08 Wednesday 14:30:45, Gregorian, English locale — the base
      * sample used by most token-coverage tests. Pass `$overrides` to tweak
      * specific fields without re-typing the whole 16-argument constructor.
+     *
+     * @param array<string, mixed> $overrides Partial FormatContext field overrides.
      */
     private function sampleContext(array $overrides = []): FormatContext
     {
@@ -47,6 +49,8 @@ final class DateTokenFormatterTest extends TestCase
     /**
      * Jalali 1405-01-19 (equivalent to 2026-04-08) 14:30 under the Persian
      * locale with Perso-Arabic digits. Shared base for digit-script tests.
+     *
+     * @param array<string, mixed> $overrides Partial FormatContext field overrides.
      */
     private function jalaliPersianContext(array $overrides = []): FormatContext
     {
@@ -453,6 +457,8 @@ final class DateTokenFormatterTest extends TestCase
 
     /**
      * Build a context with a real DateTimeImmutable for timezone token tests.
+     *
+     * @param array<string, mixed> $overrides Partial FormatContext field overrides.
      */
     private function sampleContextWithDti(string $tz = 'UTC', array $overrides = []): FormatContext
     {
@@ -480,6 +486,7 @@ final class DateTokenFormatterTest extends TestCase
     {
         $ctx = $this->sampleContextWithDti('UTC');
         $dti = $ctx->dateTimeImmutable;
+        $this->assertNotNull($dti);
         $this->assertSame($dti->format('U'), DateTokenFormatter::format('U', $ctx));
     }
 
@@ -511,6 +518,7 @@ final class DateTokenFormatterTest extends TestCase
     {
         $ctx = $this->sampleContextWithDti('UTC');
         $dti = $ctx->dateTimeImmutable;
+        $this->assertNotNull($dti);
         $this->assertSame($dti->format('c'), DateTokenFormatter::format('c', $ctx));
     }
 
@@ -518,6 +526,7 @@ final class DateTokenFormatterTest extends TestCase
     {
         $ctx = $this->sampleContextWithDti('UTC');
         $dti = $ctx->dateTimeImmutable;
+        $this->assertNotNull($dti);
         $this->assertSame($dti->format('r'), DateTokenFormatter::format('r', $ctx));
     }
 
@@ -537,7 +546,7 @@ final class DateTokenFormatterTest extends TestCase
                 DateTokenFormatter::format($token, $ctx);
                 $this->fail("Expected MissingTimezoneException for token '{$token}'");
             } catch (MissingTimezoneException) {
-                $this->assertTrue(true);
+                $this->addToAssertionCount(1);
             }
         }
     }

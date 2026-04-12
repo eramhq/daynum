@@ -44,11 +44,13 @@ final class JalaliIcuDivergence
         [2533073, 2533438], // 366 days, Nowruz 1602 AP / 2223 CE
     ];
 
-    /** @var array<int, true>|null */
-    private static ?array $skipMap = null;
+    /** @var array<int, true> */
+    private static array $skipMap = [];
 
-    /** @var list<string>|null */
-    private static ?array $unexpectedRows = null;
+    /** @var list<string> */
+    private static array $unexpectedRows = [];
+
+    private static bool $bootstrapped = false;
 
     public static function contains(int $jdn): bool
     {
@@ -76,12 +78,10 @@ final class JalaliIcuDivergence
 
     private static function bootstrap(): void
     {
-        if (self::$skipMap !== null && self::$unexpectedRows !== null) {
+        if (self::$bootstrapped) {
             return;
         }
-
-        self::$skipMap = [];
-        self::$unexpectedRows = [];
+        self::$bootstrapped = true;
 
         if (!is_file(self::PHP_FIXTURE) || !is_file(self::NODE_FIXTURE)) {
             self::$unexpectedRows[] = 'Missing Jalali ICU fixtures; regenerate tests/fixtures/jalali*.jsonl.gz.';

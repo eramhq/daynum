@@ -73,6 +73,6 @@
         "test:edgecase": "phpunit --testsuite=edgecase",
         "test:property": "phpunit --testsuite=property",
         "test:conformance": "phpunit --testsuite=conformance",
-        "phpstan": "phpstan analyse"
+        "phpstan": "phpstan analyse --memory-limit=512M"
     }
 }

@@ -15,8 +15,8 @@ namespace Eram\Daynum\Tests\Conformance\Support;
  */
 final class UmmAlQuraRange
 {
-    private static ?int $minYear = null;
-    private static ?int $maxYear = null;
+    private static int $minYear = 0;
+    private static int $maxYear = 0;
 
     public static function minYear(): int
     {
@@ -32,7 +32,7 @@ final class UmmAlQuraRange
 
     private static function load(): void
     {
-        if (self::$minYear !== null) {
+        if (self::$minYear > 0) {
             return;
         }
         $path = __DIR__ . '/../../fixtures/hijri-umalqura.jsonl.gz';
