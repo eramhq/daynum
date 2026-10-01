@@ -32,6 +32,11 @@ final class NameNormalizerTest extends TestCase
         yield 'Arabic yeh and kaf'     => ['ذوالحجة ك', 'ذوالحجة ک'];
         yield 'alef maksura'           => ['ى', 'ی'];
         yield 'ZWNJ and ezafe dropped' => ["سه\u{200C}شنبه ژانویهٔ", 'سهشنبه ژانویه'];
+        yield 'shadda'                 => ['الاوّل', 'الاول'];
+        yield 'vocalized name'         => ['مُحَرَّم', 'محرم'];
+        yield 'tanween'                => ["\u{064B}\u{064C}\u{064D}", ''];
+        yield 'damma and sukun'        => ["\u{064F}\u{0652}", ''];
+        yield 'superscript alef'       => ['رحمٰن', 'رحمن'];
     }
 
     #[DataProvider('foldingProvider')]

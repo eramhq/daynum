@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Eram\Daynum\Tests\Unit;
 
 use Eram\Daynum\Calendar\Gregorian\GregorianView;
+use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraView;
 use Eram\Daynum\CivilDateTime;
 use Eram\Daynum\Exception\InvalidArgumentException;
 use Eram\Daynum\Locale\LocaleRegistry;
@@ -65,6 +66,19 @@ final class UrduLocaleTest extends TestCase
         $this->assertSame('PM', $locale->meridiem(true, true));
         $this->assertSame('am', $locale->meridiem(false, false));
         $this->assertSame('', $locale->ordinalSuffix(2));
+    }
+
+    /**
+     * ICU's month 3 and 5 names carry a shadda (short ربیع الاوّل) or a
+     * stray space (full ر بیع الاول); the usual spelling matches anyway.
+     */
+    public function testParsesHijriMonthsTypedWithoutShadda(): void
+    {
+        $h = HijriUmmAlQuraView::parseExact('5 ربیع الاول 1447', 'j F Y', null, 'ur')->hijri();
+        $this->assertSame([1447, 3, 5], [$h->year(), $h->month(), $h->day()]);
+
+        $h = HijriUmmAlQuraView::parseExact('5 جمادی الاول 1447', 'j F Y', null, 'ur')->hijri();
+        $this->assertSame([1447, 5, 5], [$h->year(), $h->month(), $h->day()]);
     }
 
     public function testParsesMeridiem(): void

@@ -121,7 +121,8 @@ abstract class AbstractCalendarView implements CalendarView
      * Digits in any script (Persian U+06F0, Arabic-Indic U+0660) are
      * normalized to ASCII before parsing. Names match case-insensitively
      * (ASCII, Latin-1 and Turkish letters; İ, I and ı all match) and treat
-     * Arabic ي/ك as Persian ی/ک, ignoring ZWNJ and the ezafe hamza (ٔ).
+     * Arabic ي/ك as Persian ی/ک, ignoring ZWNJ, the ezafe hamza (ٔ) and
+     * Arabic vowel marks (tashkeel, e.g. shadda).
      *
      * @param ?string $locale tag whose month/weekday names `F M l D` and
      *                        AM/PM markers `a A` match;
@@ -709,7 +710,8 @@ abstract class AbstractCalendarView implements CalendarView
         foreach ($names as [$name, $value]) {
             if ($name !== '' && str_starts_with($normalized, $name) && isset($endAt[strlen($name)])) {
                 $end = $endAt[strlen($name)];
-                // Swallow trailing characters that normalize away (ZWNJ, ezafe).
+                // Swallow trailing characters that normalize away (ZWNJ,
+                // ezafe, tashkeel).
                 while ($end < $length) {
                     $charLength = self::utf8CharLength($text, $end);
                     if (NameNormalizer::normalize(substr($text, $end, $charLength)) !== '') {

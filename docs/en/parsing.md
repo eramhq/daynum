@@ -73,6 +73,7 @@ Matching is forgiving where keyboards and fonts differ, and strict everywhere el
 - Latin letters are case-insensitive (`APRIL`, `april`), including Latin-1 and Turkish letters (`ŞEVVAL`, `şevval`). Every Turkish I (`İ`, `I`, `ı`) matches every other, so the dotted/dotless difference never blocks a match.
 - Arabic `ي`, `ى` and `ك` match Persian `ی` and `ک`, so text typed on an Arabic keyboard parses as Persian.
 - The zero-width non-joiner (ZWNJ) and the ezafe hamza (`ٔ`) are optional: `سهشنبه` matches `سه‌شنبه`, and `ژانویه` matches `ژانویهٔ`.
+- Arabic vowel marks (tashkeel: fatha, kasra, damma, tanween, sukun, shadda, superscript alef) are optional: Urdu `ربیع الاول` matches ICU's `ربیع الاوّل`.
 - A space is not a ZWNJ: `سه شنبه` does not match.
 - A weekday must agree with the date: `Monday 8 April 2026` throws, because 8 April 2026 is a Wednesday.
 - Two tokens for the same field must agree: `F Y-m-d` throws if the name and the number name different months.

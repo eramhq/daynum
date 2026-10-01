@@ -29,6 +29,17 @@ final class NameNormalizer
         "\u{0649}" => "\u{06CC}",   // ALEF MAKSURA → FARSI YEH (ى → ی)
         "\u{200C}" => '',            // ZERO WIDTH NON-JOINER
         "\u{0654}" => '',            // HAMZA ABOVE (Persian ezafe: ژانویهٔ)
+        // Arabic vowel marks (tashkeel), which most text omits: Urdu ICU
+        // spells ربیع الاوّل with a shadda, typed as ربیع الاول.
+        "\u{064B}" => '',            // FATHATAN
+        "\u{064C}" => '',            // DAMMATAN
+        "\u{064D}" => '',            // KASRATAN
+        "\u{064E}" => '',            // FATHA
+        "\u{064F}" => '',            // DAMMA
+        "\u{0650}" => '',            // KASRA
+        "\u{0651}" => '',            // SHADDA
+        "\u{0652}" => '',            // SUKUN
+        "\u{0670}" => '',            // SUPERSCRIPT ALEF
         // Latin-1 uppercase → lowercase (À..Þ, skipping ×).
         'À' => 'à', 'Á' => 'á', 'Â' => 'â', 'Ã' => 'ã', 'Ä' => 'ä', 'Å' => 'å',
         'Æ' => 'æ', 'Ç' => 'ç', 'È' => 'è', 'É' => 'é', 'Ê' => 'ê', 'Ë' => 'ë',

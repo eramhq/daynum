@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `10:00 am pm` with `h:i a a` throws "conflicting values for meridiem: AM
   and PM". Previously the last token won. Offsets compare as `+HH:MM`, so
   `c O` accepts `…+03:30 +0330` and `Z` equals `+0000`.
+- Name matching ignores Arabic vowel marks (tashkeel: fatha, kasra, damma,
+  tanween, sukun, shadda and superscript alef), as it already ignored ZWNJ
+  and the ezafe hamza. ICU spells Urdu Hijri months 3 and 5 with a shadda
+  (`ربیع الاوّل`, `جمادی الاوّل`), so the common unmarked spelling did not
+  parse before; formatted output is unchanged.
 
 ### Fixed
 - Name matching no longer depends on the C library locale. On PHP 8.1,
