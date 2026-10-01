@@ -36,8 +36,8 @@ $view->endOfMonth();
 $view->startOfYear();
 $view->endOfYear();
 
-// Week boundaries — ISO-configurable
-$view->startOfWeek();                                // Monday start (default)
+// Week boundaries — locale default, or explicit
+$view->startOfWeek();                                     // the view locale's first day
 $view->startOfWeek(\Eram\Daynum\WeekDay::Saturday);       // Saturday start
 $view->endOfWeek(\Eram\Daynum\WeekDay::Saturday);
 ```
@@ -86,15 +86,29 @@ Year arithmetic clamps similarly — `2024-02-29 + 1 year` is `2025-02-28`, beca
 ```php
 use Eram\Daynum\WeekDay;
 
-$view->startOfWeek();                   // Monday (default)
-$view->startOfWeek(WeekDay::Monday);    // same
-$view->startOfWeek(WeekDay::Saturday);  // Saturday-start week (common in Jalali contexts)
-$view->startOfWeek(WeekDay::Sunday);    // US convention
+$d->jalali()->startOfWeek();                    // Monday — the default `en` locale
+$d->jalali()->withLocale('fa')->startOfWeek();  // Saturday — Iranian week
+$d->hijri()->withLocale('ar')->startOfWeek();   // Sunday — Saudi week
 
+$view->startOfWeek(WeekDay::Saturday);  // explicit start, any locale
 $view->endOfWeek(WeekDay::Saturday);    // 6 days after startOfWeek(Saturday)
 ```
 
-`WeekDay` is an enum with `Monday=1 … Sunday=7`. You can also pass an `int` in `[1, 7]` directly.
+With no argument, the week starts on the view locale's first day: `en` Monday (ISO 8601), `fa` Saturday, `ar` Sunday. `WeekDay` is an enum with `Monday=1 … Sunday=7`; you can also pass an `int` in `[1, 7]`. ISO `weekOfYear()` always uses Monday weeks regardless of locale.
+
+### Weekends
+
+```php
+$view->weekDay();     // WeekDay::Friday
+$view->isWeekend();   // the view locale's weekend
+$view->isWeekday();
+```
+
+| Locale | First day | Weekend |
+|---|---|---|
+| `en` | Monday | Saturday, Sunday |
+| `fa` | Saturday | Friday |
+| `ar` | Sunday | Friday, Saturday |
 
 ## Diffs
 

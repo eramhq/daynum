@@ -6,6 +6,7 @@ namespace Eram\Daynum\Tests\Unit;
 
 use Eram\Daynum\Locale\EnglishLocale;
 use InvalidArgumentException;
+use Eram\Daynum\WeekDay;
 use PHPUnit\Framework\TestCase;
 
 final class EnglishLocaleTest extends TestCase
@@ -116,5 +117,12 @@ final class EnglishLocaleTest extends TestCase
         foreach ($table as $day => $suffix) {
             yield "day {$day}" => [$day, $suffix];
         }
+    }
+
+    public function testWeekStartAndWeekend(): void
+    {
+        $locale = new EnglishLocale();
+        $this->assertSame(WeekDay::Monday, $locale->firstDayOfWeek());
+        $this->assertSame([WeekDay::Saturday, WeekDay::Sunday], $locale->weekendDays());
     }
 }

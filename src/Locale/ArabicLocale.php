@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Locale;
 
+use Eram\Daynum\WeekDay;
+
 /**
  * Arabic (`ar`) names for months and weekdays, matching ICU `ar-SA`.
  *
@@ -81,5 +83,16 @@ final class ArabicLocale extends AbstractTableLocale
     public function ordinalSuffix(int $day): string
     {
         return '';
+    }
+
+    /** Saudi Arabia (CLDR `ar-SA`): Sunday start, Friday–Saturday weekend. */
+    public function firstDayOfWeek(): WeekDay
+    {
+        return WeekDay::Sunday;
+    }
+
+    public function weekendDays(): array
+    {
+        return [WeekDay::Friday, WeekDay::Saturday];
     }
 }

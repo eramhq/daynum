@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mechanical, with no alias: `use Eram\Daynum\Instant` →
   `use Eram\Daynum\CivilDateTime`. The JSON shape is unchanged.
 - `CalendarView::instant()` is renamed to `CalendarView::dateTime()`.
+- `startOfWeek()` / `endOfWeek()` with no argument now start the week on
+  the view locale's first day instead of always Monday. The default `en`
+  locale still uses Monday; `withLocale('fa')` views now use Saturday and
+  `withLocale('ar')` views Sunday. Custom `LocaleData` implementations must
+  add `firstDayOfWeek()` and `weekendDays()`.
 
 ### Added
 - Timestamps: `CivilDateTime::fromTimestamp(int $ts, string $tz = 'UTC')` and
@@ -25,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   exact elapsed time.
 - `diffInSeconds()`, `diffInMinutes()`, `diffInHours()` (wall-clock,
   truncated toward zero). `diffInDays()` stays a calendar-day difference.
+- Locale-aware weeks: `LocaleData::firstDayOfWeek()` and `weekendDays()`
+  (en: Monday / Sat–Sun, fa: Saturday / Fri, ar: Sunday / Fri–Sat), and view
+  methods `weekDay(): WeekDay`, `isWeekend()`, `isWeekday()`.
 - `CivilDateTime::compare()` (a `usort` callback), `min()`, `max()`,
   `between($a, $b, bool $inclusive = true)` and `isSameDay()`.
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Locale;
 
+use Eram\Daynum\WeekDay;
+
 /**
  * Locale-specific names and strings used by the token formatter.
  *
@@ -63,4 +65,17 @@ interface LocaleData
      * @param int $day 1-indexed day of month
      */
     public function ordinalSuffix(int $day): string;
+
+    /**
+     * First day of the week in this locale's region, used by
+     * `startOfWeek()` / `endOfWeek()` when no explicit start is given.
+     */
+    public function firstDayOfWeek(): WeekDay;
+
+    /**
+     * Days of the weekend in this locale's region, used by `isWeekend()`.
+     *
+     * @return list<WeekDay>
+     */
+    public function weekendDays(): array;
 }

@@ -47,8 +47,12 @@ Order doesn't matter — both methods return a fresh view, and they compose free
 | Short weekdays | `Sun`, `Mon`, … | (same as long) | (same as long) |
 | Meridiem | `am`/`pm` / `AM`/`PM` | `ق.ظ` / `ب.ظ` | `ص` / `م` |
 | Ordinal suffix (`S`) | `st`, `nd`, `rd`, `th` | `""` (empty) | `""` (empty) |
+| First day of week | Monday | Saturday | Sunday |
+| Weekend | Saturday, Sunday | Friday | Friday, Saturday |
 
 Persian and Arabic have no traditional weekday abbreviations or ordinal suffixes, so `D` emits the same string as `l`, and `S` emits an empty string. This matches ICU's behavior and keeps patterns like `jS F Y` from leaving broken `th` residue inside Perso-Arabic text.
+
+The week rows drive `startOfWeek()` / `endOfWeek()` with no argument and `isWeekend()`. See [arithmetic.md](arithmetic.md#weeks).
 
 ## The Arabic + Jalali limitation
 

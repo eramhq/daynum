@@ -100,18 +100,28 @@ interface CalendarView
     /**
      * First day of the week containing this date.
      *
-     * @param WeekDay|int $weekStart ISO day-of-week of the first day of the week
-     *                               (1=Monday, 6=Saturday, 7=Sunday). Defaults to Monday.
+     * @param WeekDay|int|null $weekStart ISO day-of-week of the first day of the
+     *                                    week (1=Monday, 6=Saturday, 7=Sunday).
+     *                                    Null uses the view locale's first day
+     *                                    (en: Monday, fa: Saturday, ar: Sunday).
      */
-    public function startOfWeek(WeekDay|int $weekStart = WeekDay::Monday): CivilDateTime;
+    public function startOfWeek(WeekDay|int|null $weekStart = null): CivilDateTime;
 
     /**
      * Last day of the week containing this date.
      *
-     * @param WeekDay|int $weekStart ISO day-of-week of the first day of the week
-     *                               (1=Monday, 6=Saturday, 7=Sunday). Defaults to Monday.
+     * @param WeekDay|int|null $weekStart See {@see startOfWeek()}.
      */
-    public function endOfWeek(WeekDay|int $weekStart = WeekDay::Monday): CivilDateTime;
+    public function endOfWeek(WeekDay|int|null $weekStart = null): CivilDateTime;
+
+    /** Day of the week as an enum. */
+    public function weekDay(): WeekDay;
+
+    /** Whether this date falls on the view locale's weekend (en: Sat–Sun, fa: Fri, ar: Fri–Sat). */
+    public function isWeekend(): bool;
+
+    /** Opposite of {@see isWeekend()}. */
+    public function isWeekday(): bool;
 
     /**
      * Signed difference in whole calendar months between this date and another.

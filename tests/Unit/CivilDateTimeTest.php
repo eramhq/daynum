@@ -1021,6 +1021,53 @@ final class CivilDateTimeTest extends TestCase
         $this->assertSame(15, $j->day());
     }
 
+    // ─── Locale-aware week start and weekend ────────────────────────
+
+    /**
+     * @return iterable<string, array{string, WeekDay, list<WeekDay>}>
+     */
+    public static function localeWeekProvider(): iterable
+    {
+        yield 'en' => ['en', WeekDay::Monday, [WeekDay::Saturday, WeekDay::Sunday]];
+        yield 'fa' => ['fa', WeekDay::Saturday, [WeekDay::Friday]];
+        yield 'ar' => ['ar', WeekDay::Sunday, [WeekDay::Friday, WeekDay::Saturday]];
+    }
+
+    /**
+     * @param list<WeekDay> $weekend
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('localeWeekProvider')]
+    public function testDefaultWeekStartAndWeekendFollowLocale(string $tag, WeekDay $first, array $weekend): void
+    {
+        // 2026-04-06 is a Monday; walk one full week in every calendar view.
+        $monday = CivilDateTime::fromGregorian(2026, 4, 6);
+        foreach (['gregorian', 'jalali', 'hijri', 'hijriCivil'] as $cal) {
+            for ($i = 0; $i < 7; $i++) {
+                $view = $monday->addDays($i)->{$cal}()->withLocale($tag);
+                $start = $view->startOfWeek();
+                $this->assertSame($first, $start->{$cal}()->weekDay(), "{$tag} {$cal} +{$i}");
+                $this->assertLessThan(7, $view->dateTime()->diffInDays($start));
+                $this->assertSame(6, $view->endOfWeek()->diffInDays($start));
+                $this->assertSame(in_array($view->weekDay(), $weekend, true), $view->isWeekend(), "{$tag} {$cal} +{$i}");
+                $this->assertSame(!$view->isWeekend(), $view->isWeekday());
+            }
+        }
+    }
+
+    public function testExplicitWeekStartOverridesLocale(): void
+    {
+        $wed = CivilDateTime::fromGregorian(2026, 4, 8)->jalali()->withLocale('fa');
+        $this->assertSame('1405/01/15', $wed->startOfWeek()->jalali()->format('Y/m/d'));          // Saturday
+        $this->assertSame('1405/01/17', $wed->startOfWeek(WeekDay::Monday)->jalali()->format('Y/m/d'));
+        $this->assertSame('1405/01/21', $wed->endOfWeek()->jalali()->format('Y/m/d'));            // Friday
+    }
+
+    public function testWeekDayAccessor(): void
+    {
+        $this->assertSame(WeekDay::Wednesday, CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->weekDay());
+        $this->assertSame(WeekDay::Friday, CivilDateTime::fromJalali(1405, 1, 21)->jalali()->weekDay());
+    }
+
     // ─── Timestamps ─────────────────────────────────────────────────
 
     public function testFromTimestampDefaultsToUtc(): void

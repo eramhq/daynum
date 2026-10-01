@@ -891,8 +891,9 @@ abstract class AbstractCalendarView implements CalendarView
         return $this->dateTime->withJdn($this->calendar()->toJdn($c['year'], $lastMonth, $lastDay));
     }
 
-    public function startOfWeek(WeekDay|int $weekStart = WeekDay::Monday): CivilDateTime
+    public function startOfWeek(WeekDay|int|null $weekStart = null): CivilDateTime
     {
+        $weekStart ??= $this->locale->firstDayOfWeek();
         $weekStart = $weekStart instanceof WeekDay ? $weekStart->value : $weekStart;
         if ($weekStart < 1 || $weekStart > 7) {
             throw new InvalidArgumentException("weekStart must be in [1, 7]; got {$weekStart}.");
@@ -902,10 +903,25 @@ abstract class AbstractCalendarView implements CalendarView
         return $this->dateTime->withJdn($this->dateTime->jdn - $offset);
     }
 
-    public function endOfWeek(WeekDay|int $weekStart = WeekDay::Monday): CivilDateTime
+    public function endOfWeek(WeekDay|int|null $weekStart = null): CivilDateTime
     {
         $startJdn = $this->startOfWeek($weekStart)->jdn;
         return $this->dateTime->withJdn($startJdn + 6);
+    }
+
+    public function weekDay(): WeekDay
+    {
+        return WeekDay::from($this->dayOfWeekIso());
+    }
+
+    public function isWeekend(): bool
+    {
+        return in_array($this->weekDay(), $this->locale->weekendDays(), true);
+    }
+
+    public function isWeekday(): bool
+    {
+        return !$this->isWeekend();
     }
 
     public function isInSupportedRange(): bool

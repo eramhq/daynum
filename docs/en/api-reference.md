@@ -157,6 +157,9 @@ $view->minute():       int
 $view->second():       int
 $view->dayOfWeek():    int        // 0..6, Sunday = 0
 $view->dayOfWeekIso(): int        // 1..7, Monday = 1
+$view->weekDay():      WeekDay
+$view->isWeekend():    bool       // locale weekend: en Sat–Sun, fa Fri, ar Fri–Sat
+$view->isWeekday():    bool
 $view->dayOfYear():    int        // 1-indexed
 $view->weekOfYear():     int      // ISO 8601 week — can throw WeekAtBoundaryException
 $view->weekBasedYear():  int      // ISO 8601 week-based year — can throw WeekAtBoundaryException
@@ -192,8 +195,8 @@ $view->startOfMonth():     CivilDateTime
 $view->endOfMonth():       CivilDateTime
 $view->startOfYear():      CivilDateTime
 $view->endOfYear():        CivilDateTime
-$view->startOfWeek(WeekDay|int $weekStart = WeekDay::Monday): CivilDateTime
-$view->endOfWeek(WeekDay|int $weekStart = WeekDay::Monday):   CivilDateTime
+$view->startOfWeek(WeekDay|int|null $weekStart = null): CivilDateTime   // null: locale's first day
+$view->endOfWeek(WeekDay|int|null $weekStart = null):   CivilDateTime
 ```
 
 See [arithmetic.md](arithmetic.md).
@@ -276,7 +279,7 @@ enum WeekDay: int {
 }
 ```
 
-Used as the `$weekStart` argument to `startOfWeek()` / `endOfWeek()`. ISO 8601 numbering.
+Used as the `$weekStart` argument to `startOfWeek()` / `endOfWeek()` and returned by `weekDay()` and `LocaleData::firstDayOfWeek()` / `weekendDays()`. ISO 8601 numbering.
 
 ---
 

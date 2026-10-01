@@ -8,6 +8,7 @@ use Eram\Daynum\CivilDateTime;
 use Eram\Daynum\Locale\ArabicLocale;
 use Eram\Daynum\Locale\LocaleRegistry;
 use InvalidArgumentException;
+use Eram\Daynum\WeekDay;
 use PHPUnit\Framework\TestCase;
 
 final class ArabicLocaleTest extends TestCase
@@ -145,5 +146,12 @@ final class ArabicLocaleTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown calendar family: jalali');
         $d->jalali()->withLocale('ar')->format('F');
+    }
+
+    public function testWeekStartAndWeekend(): void
+    {
+        $locale = new ArabicLocale();
+        $this->assertSame(WeekDay::Sunday, $locale->firstDayOfWeek());
+        $this->assertSame([WeekDay::Friday, WeekDay::Saturday], $locale->weekendDays());
     }
 }

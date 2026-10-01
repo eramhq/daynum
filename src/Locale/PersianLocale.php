@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Locale;
 
+use Eram\Daynum\WeekDay;
+
 /**
  * Persian (Farsi, `fa`) names for months and weekdays in both Gregorian and
  * Jalali forms.
@@ -108,5 +110,16 @@ final class PersianLocale extends AbstractTableLocale
     public function ordinalSuffix(int $day): string
     {
         return '';
+    }
+
+    /** Iran: the week starts on Saturday (شنبه) and Friday is the weekend. */
+    public function firstDayOfWeek(): WeekDay
+    {
+        return WeekDay::Saturday;
+    }
+
+    public function weekendDays(): array
+    {
+        return [WeekDay::Friday];
     }
 }

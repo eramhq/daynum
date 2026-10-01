@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Eram\Daynum\Tests\Unit;
 
 use Eram\Daynum\Locale\PersianLocale;
+use Eram\Daynum\WeekDay;
 use PHPUnit\Framework\TestCase;
 
 final class PersianLocaleTest extends TestCase
@@ -72,5 +73,12 @@ final class PersianLocaleTest extends TestCase
         $this->assertSame('', $locale->ordinalSuffix(1));
         $this->assertSame('', $locale->ordinalSuffix(11));
         $this->assertSame('', $locale->ordinalSuffix(22));
+    }
+
+    public function testWeekStartAndWeekend(): void
+    {
+        $locale = new PersianLocale();
+        $this->assertSame(WeekDay::Saturday, $locale->firstDayOfWeek());
+        $this->assertSame([WeekDay::Friday], $locale->weekendDays());
     }
 }

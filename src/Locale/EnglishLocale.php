@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Locale;
 
+use Eram\Daynum\WeekDay;
+
 /**
  * English names for months and weekdays, in the Gregorian, Jalali, and Hijri
  * locale families.
@@ -114,5 +116,19 @@ final class EnglishLocale extends AbstractTableLocale
             3 => 'rd',
             default => 'th',
         };
+    }
+
+    /**
+     * Generic English: ISO 8601 Monday start (CLDR's `001` world default).
+     * US-style Sunday-start weeks can pass `WeekDay::Sunday` explicitly.
+     */
+    public function firstDayOfWeek(): WeekDay
+    {
+        return WeekDay::Monday;
+    }
+
+    public function weekendDays(): array
+    {
+        return [WeekDay::Saturday, WeekDay::Sunday];
     }
 }
