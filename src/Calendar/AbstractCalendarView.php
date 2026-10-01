@@ -15,6 +15,7 @@ use Eram\Daynum\Formatter\DateTokenFormatter;
 use Eram\Daynum\Formatter\DigitTransliterator;
 use Eram\Daynum\Formatter\FormatContext;
 use Eram\Daynum\CivilDateTime;
+use Eram\Daynum\Internal\NameNormalizer;
 use Eram\Daynum\Locale\LocaleData;
 use Eram\Daynum\Locale\LocaleRegistry;
 use Eram\Daynum\WeekDay;
@@ -106,7 +107,7 @@ abstract class AbstractCalendarView implements CalendarView
      * Supported tokens:
      * `Y` (4+ digit year), `m`/`n` (month), `d`/`j` (day),
      * `H`/`G` (hour 24h), `h`/`g` (hour 12h), `i` (minute),
-     * `s` (second), `a`/`A` (am/pm meridiem),
+     * `s` (second), `a`/`A` (AM/PM in `$locale`, or am/pm, ق.ظ/ب.ظ, ص/م),
      * `P`/`p` (UTC offset `+HH:MM` or `Z`), `O` (UTC offset `+HHMM`),
      * `c` (ISO 8601 composite: `Y-m-d\TH:i:sP`),
      * `F`/`M` (month name, full or short, in `$locale`),
@@ -119,10 +120,11 @@ abstract class AbstractCalendarView implements CalendarView
      *
      * Digits in any script (Persian U+06F0, Arabic-Indic U+0660) are
      * normalized to ASCII before parsing. Names match case-insensitively
-     * (Latin letters) and treat Arabic ي/ك as Persian ی/ک, ignoring ZWNJ
-     * and the ezafe hamza (ٔ).
+     * (ASCII, Latin-1 and Turkish letters; İ, I and ı all match) and treat
+     * Arabic ي/ك as Persian ی/ک, ignoring ZWNJ and the ezafe hamza (ٔ).
      *
-     * @param ?string $locale tag whose month/weekday names `F M l D` match;
+     * @param ?string $locale tag whose month/weekday names `F M l D` and
+     *                        AM/PM markers `a A` match;
      *                        defaults to `en`, like views
      *
      * @throws ParseException on format mismatch, unsupported tokens, or invalid date
@@ -184,8 +186,7 @@ abstract class AbstractCalendarView implements CalendarView
                 self::setField($fields, 'year', $extracted['value'], $text, $format);
                 $pos = $extracted['end'];
             } elseif ($token === 'a' || $token === 'A') {
-                // Meridiem: 2-char (am/pm/AM/PM) or locale-specific
-                $extracted = self::extractMeridiem($text, $pos);
+                $extracted = self::extractMeridiem($text, $pos, $localeData);
                 if ($extracted === null) {
                     throw ParseException::forFormat($text, $format, "expected am/pm at position {$pos}");
                 }
@@ -487,41 +488,35 @@ abstract class AbstractCalendarView implements CalendarView
     }
 
     /**
-     * Extract meridiem indicator (am/pm/AM/PM or locale variants like ق.ظ/ب.ظ).
+     * AM/PM markers every parse locale accepts, on top of its own: Latin
+     * am/pm, Persian ق.ظ/ب.ظ and Arabic ص/م. Value 1 means PM.
+     */
+    private const MERIDIEM_FALLBACKS = [
+        ['am', 0], ['pm', 1],
+        ['ق.ظ', 0], ['ب.ظ', 1],
+        ['ص', 0], ['م', 1],
+    ];
+
+    /**
+     * Extract an AM/PM marker: the parse locale's own (either case), or one
+     * of {@see MERIDIEM_FALLBACKS}. Matches like names: case-insensitive,
+     * longest first, ending at a word boundary.
      *
      * @return array{value: bool, end: int}|null  value = true for PM
      */
-    private static function extractMeridiem(string $text, int $pos): ?array
+    private static function extractMeridiem(string $text, int $pos, LocaleData $locale): ?array
     {
-        $remaining = substr($text, $pos);
-
-        // Standard am/pm (case-insensitive)
-        if (preg_match('/^[ap]m/i', $remaining, $m)) {
-            return [
-                'value' => strtolower($m[0]) === 'pm',
-                'end' => $pos + 2,
-            ];
+        $markers = self::MERIDIEM_FALLBACKS;
+        foreach ([false, true] as $isPm) {
+            foreach ([false, true] as $uppercase) {
+                $markers[] = [NameNormalizer::normalize($locale->meridiem($isPm, $uppercase)), (int) $isPm];
+            }
         }
 
-        // Persian meridiem: ق.ظ (AM) / ب.ظ (PM)
-        $persianAm = 'ق.ظ';
-        $persianPm = 'ب.ظ';
-        if (str_starts_with($remaining, $persianPm)) {
-            return ['value' => true, 'end' => $pos + strlen($persianPm)];
-        }
-        if (str_starts_with($remaining, $persianAm)) {
-            return ['value' => false, 'end' => $pos + strlen($persianAm)];
-        }
-
-        // Arabic meridiem: ص (AM) / م (PM)
-        if (str_starts_with($remaining, 'م')) {
-            return ['value' => true, 'end' => $pos + strlen('م')];
-        }
-        if (str_starts_with($remaining, 'ص')) {
-            return ['value' => false, 'end' => $pos + strlen('ص')];
-        }
-
-        return null;
+        $extracted = self::extractName($text, $pos, self::longestFirst($markers));
+        return $extracted === null
+            ? null
+            : ['value' => $extracted['value'] === 1, 'end' => $extracted['end']];
     }
 
     /**
@@ -614,8 +609,8 @@ abstract class AbstractCalendarView implements CalendarView
             try {
                 // 13 leaves room for calendars with a leap month.
                 for ($m = 1; $m <= 13; $m++) {
-                    $names[] = [self::normalizeName($locale->monthName($family, $m)), $m];
-                    $names[] = [self::normalizeName($locale->monthNameShort($family, $m)), $m];
+                    $names[] = [NameNormalizer::normalize($locale->monthName($family, $m)), $m];
+                    $names[] = [NameNormalizer::normalize($locale->monthNameShort($family, $m)), $m];
                 }
             } catch (InvalidArgumentException) {
                 // Unknown family (first call) or past the last month.
@@ -638,8 +633,8 @@ abstract class AbstractCalendarView implements CalendarView
         if (!isset($entry["\0weekday"])) {
             $names = [];
             for ($w = 0; $w <= 6; $w++) {
-                $names[] = [self::normalizeName($locale->weekdayName($w)), $w];
-                $names[] = [self::normalizeName($locale->weekdayNameShort($w)), $w];
+                $names[] = [NameNormalizer::normalize($locale->weekdayName($w)), $w];
+                $names[] = [NameNormalizer::normalize($locale->weekdayNameShort($w)), $w];
             }
             $entry["\0weekday"] = self::longestFirst($names);
             $cache[$locale] = $entry;
@@ -656,20 +651,6 @@ abstract class AbstractCalendarView implements CalendarView
         $names = array_values(array_unique($names, SORT_REGULAR));
         usort($names, static fn(array $a, array $b): int => strlen($b[0]) <=> strlen($a[0]));
         return $names;
-    }
-
-    /** Characters that differ between Arabic and Persian keyboards, or carry no meaning for matching. */
-    private const NAME_NORMALIZATION = [
-        "\u{064A}" => "\u{06CC}",   // ARABIC YEH → FARSI YEH (ي → ی)
-        "\u{0643}" => "\u{06A9}",   // ARABIC KAF → KEHEH (ك → ک)
-        "\u{0649}" => "\u{06CC}",   // ALEF MAKSURA → FARSI YEH (ى → ی)
-        "\u{200C}" => '',            // ZERO WIDTH NON-JOINER
-        "\u{0654}" => '',            // HAMZA ABOVE (Persian ezafe: ژانویهٔ)
-    ];
-
-    private static function normalizeName(string $name): string
-    {
-        return strtolower(strtr($name, self::NAME_NORMALIZATION));
     }
 
     /**
@@ -691,7 +672,7 @@ abstract class AbstractCalendarView implements CalendarView
         $length = strlen($text);
         while ($offset < $length && strlen($normalized) < $maxLength) {
             $charLength = self::utf8CharLength($text, $offset);
-            $normalized .= self::normalizeName(substr($text, $offset, $charLength));
+            $normalized .= NameNormalizer::normalize(substr($text, $offset, $charLength));
             $offset += $charLength;
             $endAt[strlen($normalized)] = $offset;
         }
@@ -702,7 +683,7 @@ abstract class AbstractCalendarView implements CalendarView
                 // Swallow trailing characters that normalize away (ZWNJ, ezafe).
                 while ($end < $length) {
                     $charLength = self::utf8CharLength($text, $end);
-                    if (self::normalizeName(substr($text, $end, $charLength)) !== '') {
+                    if (NameNormalizer::normalize(substr($text, $end, $charLength)) !== '') {
                         break;
                     }
                     $end += $charLength;

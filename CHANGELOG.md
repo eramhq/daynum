@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `parseExact()` reads AM/PM (`a`/`A`) from the parse locale's
+  `meridiem()` markers, so custom locales parse their own. The `am`/`pm`,
+  `ق.ظ`/`ب.ظ` and `ص`/`م` markers still work in every locale. Markers now
+  match like names: longest first and ending at a word boundary, so `pmx`
+  is rejected at the marker instead of as trailing input.
+- Name matching folds Latin-1 and Turkish uppercase letters too (`ŞEVVAL`
+  matches `Şevval`), and treats `İ`, `I` and `ı` alike. Previously only
+  ASCII letters were case-insensitive.
 - Mutation testing now runs every suite, including the ICU conformance and
   property suites that pin down the calendar math. The mutation job samples
   them through two test-only environment variables: `DAYNUM_FIXTURE_STRIDE`

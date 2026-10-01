@@ -44,7 +44,7 @@ Both return a `CivilDateTime` (not a view) on success. On failure, `parseExact` 
 | `g` | hour (12h) | 1–2 digits (greedy) — **requires `a`/`A`** |
 | `i` | minute | exactly 2 digits |
 | `s` | second | exactly 2 digits |
-| `a` / `A` | meridiem | `am`/`pm`/`AM`/`PM`, or `ق.ظ`/`ب.ظ` (fa), or `ص`/`م` (ar) |
+| `a` / `A` | meridiem | the parse locale's AM/PM marker, or `am`/`pm`, `ق.ظ`/`ب.ظ`, `ص`/`م` in any locale |
 | `P` / `p` | tz offset | `+HH:MM` or `Z` |
 | `O` | tz offset | `+HHMM` |
 | `c` | ISO 8601 composite | expands to `Y-m-d\TH:i:sP` |
@@ -70,7 +70,7 @@ Matching is forgiving where keyboards and fonts differ, and strict everywhere el
 
 - `F` and `M` both accept the full and the short name (`April` or `Apr`); `l` and `D` likewise. The longest name wins, so `June` is never read as `Jun` + `e`.
 - A name must end at a word boundary: `Aprl` fails rather than matching `Apr`.
-- Latin letters are case-insensitive (`APRIL`, `april`).
+- Latin letters are case-insensitive (`APRIL`, `april`), including Latin-1 and Turkish letters (`ŞEVVAL`, `şevval`). Every Turkish I (`İ`, `I`, `ı`) matches every other, so the dotted/dotless difference never blocks a match.
 - Arabic `ي`, `ى` and `ك` match Persian `ی` and `ک`, so text typed on an Arabic keyboard parses as Persian.
 - The zero-width non-joiner (ZWNJ) and the ezafe hamza (`ٔ`) are optional: `سهشنبه` matches `سه‌شنبه`, and `ژانویه` matches `ژانویهٔ`.
 - A space is not a ZWNJ: `سه شنبه` does not match.
@@ -110,11 +110,13 @@ You do not need `withDigits()` on the parser — the transliteration is automati
 
 ## Meridiem indicators
 
-The `a` / `A` tokens accept:
+The `a` / `A` tokens accept the parse locale's own markers (from `LocaleData::meridiem()`, in both forms) plus these, whatever the locale:
 
-- English: `am`, `pm`, `AM`, `PM` (case-insensitive)
+- `am`, `pm`
 - Persian: `ق.ظ` (AM), `ب.ظ` (PM)
 - Arabic: `ص` (AM), `م` (PM)
+
+Markers match like names: case-insensitive, longest first, and ending at a word boundary (`pmx` is not `pm`).
 
 ```php
 JalaliView::parseExact('1405/01/19 02:30 ب.ظ', 'Y/m/d h:i A');
