@@ -14,7 +14,9 @@ use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
 use Eram\Daynum\Calendar\Jalali\JalaliView;
 use Eram\Daynum\Exception\InvalidDateException;
 use Eram\Daynum\Exception\InvalidTimezoneException;
+use Eram\Daynum\Exception\MissingTimezoneException;
 use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
+use Eram\Daynum\Internal\IntMath;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
@@ -34,9 +36,10 @@ use JsonSerializable;
  * `secondsOfDay` and `tzLabel` are pass-through metadata. Calendar conversions
  * never touch them; formatting uses them for time/zone tokens only.
  *
- * Comparison methods (equals, lessThan, ...) compare wall-clock readings
- * and ignore tzLabel. For timeline order across timezones, convert with
- * toDateTimeImmutable().
+ * Comparison methods (equals, lessThan, compare, ...) and the time
+ * arithmetic (addHours, diffInSeconds, ...) work on wall-clock readings and
+ * ignore tzLabel; they are not DST-aware. For timeline order or exact
+ * elapsed time across timezones, use toTimestamp() or toDateTimeImmutable().
  */
 final class CivilDateTime implements JsonSerializable
 {
@@ -143,6 +146,24 @@ final class CivilDateTime implements JsonSerializable
         $tzName = $dt->getTimezone()->getName();
 
         return self::fromGregorian($year, $month, $day, $hour, $minute, $second, $tzName);
+    }
+
+    /**
+     * The wall-clock reading of a Unix timestamp in the given timezone.
+     *
+     * `CivilDateTime::fromTimestamp(0)` is 1970-01-01 00:00:00 with
+     * tzLabel `'UTC'`; `fromTimestamp(0, 'Asia/Tehran')` is 03:30:00 with
+     * tzLabel `'Asia/Tehran'`.
+     *
+     * @param string $tzLabel IANA identifier or UTC offset (e.g. '+03:30').
+     *
+     * @throws InvalidTimezoneException if the timezone is unknown
+     */
+    public static function fromTimestamp(int $timestamp, string $tzLabel = 'UTC'): self
+    {
+        $dt = (new DateTimeImmutable('@' . $timestamp))->setTimezone(self::zone($tzLabel));
+
+        return self::fromDateTime($dt);
     }
 
     /**
@@ -408,22 +429,83 @@ final class CivilDateTime implements JsonSerializable
 
     public function lessThan(self $other): bool
     {
-        return $this->compareTo($other) < 0;
+        return self::compare($this, $other) < 0;
     }
 
     public function greaterThan(self $other): bool
     {
-        return $this->compareTo($other) > 0;
+        return self::compare($this, $other) > 0;
     }
 
     public function lessThanOrEqual(self $other): bool
     {
-        return $this->compareTo($other) <= 0;
+        return self::compare($this, $other) <= 0;
     }
 
     public function greaterThanOrEqual(self $other): bool
     {
-        return $this->compareTo($other) >= 0;
+        return self::compare($this, $other) >= 0;
+    }
+
+    /**
+     * Three-way comparison of wall-clock readings: negative when `$a` is
+     * earlier, zero when equal, positive when later. Usable directly as a
+     * `usort()` callback: `usort($dates, CivilDateTime::compare(...))`.
+     */
+    public static function compare(self $a, self $b): int
+    {
+        return $a->jdn <=> $b->jdn ?: $a->secondsOfDay <=> $b->secondsOfDay;
+    }
+
+    /**
+     * The earliest of the given values (the first one on a tie).
+     */
+    public static function min(self $first, self ...$rest): self
+    {
+        foreach ($rest as $candidate) {
+            if (self::compare($candidate, $first) < 0) {
+                $first = $candidate;
+            }
+        }
+        return $first;
+    }
+
+    /**
+     * The latest of the given values (the first one on a tie).
+     */
+    public static function max(self $first, self ...$rest): self
+    {
+        foreach ($rest as $candidate) {
+            if (self::compare($candidate, $first) > 0) {
+                $first = $candidate;
+            }
+        }
+        return $first;
+    }
+
+    /**
+     * Whether this value lies between `$a` and `$b`, in either order.
+     *
+     * @param bool $inclusive whether a value equal to either bound counts
+     */
+    public function between(self $a, self $b, bool $inclusive = true): bool
+    {
+        $low = self::min($a, $b);
+        $high = self::max($a, $b);
+        $fromLow = self::compare($this, $low);
+        $toHigh = self::compare($this, $high);
+
+        return $inclusive
+            ? $fromLow >= 0 && $toHigh <= 0
+            : $fromLow > 0 && $toHigh < 0;
+    }
+
+    /**
+     * Whether both values fall on the same calendar day (time-of-day ignored).
+     */
+    public function isSameDay(self $other): bool
+    {
+        return $this->jdn === $other->jdn;
     }
 
     /**
@@ -435,6 +517,106 @@ final class CivilDateTime implements JsonSerializable
     public function diffInDays(self $other): int
     {
         return $this->jdn - $other->jdn;
+    }
+
+    /**
+     * Signed wall-clock difference in seconds: other subtracted from this.
+     *
+     * Not DST-aware: 01:00 → 03:00 is 7200 seconds even across a
+     * spring-forward gap. For exact elapsed time, diff `toTimestamp()`.
+     */
+    public function diffInSeconds(self $other): int
+    {
+        return ($this->jdn - $other->jdn) * 86400 + ($this->secondsOfDay - $other->secondsOfDay);
+    }
+
+    /**
+     * Signed wall-clock difference in whole minutes, truncated toward zero.
+     */
+    public function diffInMinutes(self $other): int
+    {
+        return intdiv($this->diffInSeconds($other), 60);
+    }
+
+    /**
+     * Signed wall-clock difference in whole hours, truncated toward zero.
+     */
+    public function diffInHours(self $other): int
+    {
+        return intdiv($this->diffInSeconds($other), 3600);
+    }
+
+    // ─── Time arithmetic (wall-clock) ────────────────────────────────
+
+    /**
+     * Move the wall-clock reading by a number of seconds, rolling over
+     * midnight into the neighbouring days. Not DST-aware: adding one hour
+     * to 01:30 always gives 02:30, even on a day the clocks skip that hour.
+     */
+    public function addSeconds(int $seconds): self
+    {
+        return $this->shift($seconds, 1);
+    }
+
+    public function subSeconds(int $seconds): self
+    {
+        return $this->shift(-$seconds, 1);
+    }
+
+    public function addMinutes(int $minutes): self
+    {
+        return $this->shift($minutes, 60);
+    }
+
+    public function subMinutes(int $minutes): self
+    {
+        return $this->shift(-$minutes, 60);
+    }
+
+    public function addHours(int $hours): self
+    {
+        return $this->shift($hours, 3600);
+    }
+
+    public function subHours(int $hours): self
+    {
+        return $this->shift(-$hours, 3600);
+    }
+
+    /**
+     * Days are calendar-neutral, so this matches `$d->gregorian()->addDays()`
+     * (and every other view's `addDays`).
+     */
+    public function addDays(int $days): self
+    {
+        return $this->withJdn($this->jdn + $days);
+    }
+
+    public function subDays(int $days): self
+    {
+        return $this->addDays(-$days);
+    }
+
+    public function addWeeks(int $weeks): self
+    {
+        return $this->addDays($weeks * 7);
+    }
+
+    public function subWeeks(int $weeks): self
+    {
+        return $this->addDays(-$weeks * 7);
+    }
+
+    /** Same day at 00:00:00. */
+    public function startOfDay(): self
+    {
+        return new self($this->jdn, 0, $this->tzLabel);
+    }
+
+    /** Same day at 23:59:59. */
+    public function endOfDay(): self
+    {
+        return new self($this->jdn, 86399, $this->tzLabel);
     }
 
     // ─── Mutation-as-new (used by views) ─────────────────────────────
@@ -461,34 +643,81 @@ final class CivilDateTime implements JsonSerializable
      *
      * The Gregorian Y/M/D is derived from the JDN via the proleptic Gregorian
      * calendar, then the time-of-day and optional timezone label are applied.
+     * A null label uses PHP's default timezone.
+     *
+     * DST edge cases follow PHP's parser: a reading inside a spring-forward
+     * gap moves forward by the gap, and an ambiguous fall-back reading
+     * resolves to the first (earlier) moment.
      */
     public function toDateTimeImmutable(): DateTimeImmutable
     {
         [$year, $month, $day] = GregorianCalendar::instance()->fromJdn($this->jdn);
-        $hour = intdiv($this->secondsOfDay, 3600);
-        $minute = intdiv($this->secondsOfDay % 3600, 60);
-        $second = $this->secondsOfDay % 60;
 
-        return (new DateTimeImmutable('now', self::resolveZone($this->tzLabel)))
-            ->setDate($year, $month, $day)
-            ->setTime($hour, $minute, $second);
+        // Parse a literal string rather than calling setDate()/setTime() on
+        // 'now': setTime() resolves an ambiguous reading using the base
+        // object's current DST state, so the result would depend on the
+        // date the code runs.
+        $text = sprintf(
+            '%s%04d-%02d-%02d %02d:%02d:%02d',
+            $year < 0 ? '-' : '+',   // explicit sign: PHP rejects unsigned 5-digit years
+            abs($year),
+            $month,
+            $day,
+            intdiv($this->secondsOfDay, 3600),
+            intdiv($this->secondsOfDay % 3600, 60),
+            $this->secondsOfDay % 60,
+        );
+
+        return new DateTimeImmutable($text, self::resolveZone($this->tzLabel));
+    }
+
+    /**
+     * Unix timestamp of this wall-clock reading in its timezone.
+     *
+     * Delegates to {@see toDateTimeImmutable()}, so DST edge cases resolve
+     * the same way: gap readings move forward, ambiguous readings resolve to
+     * the earlier moment.
+     *
+     * @throws MissingTimezoneException if tzLabel is null — there is no
+     *         single moment without a timezone, and silently using PHP's
+     *         default would make the result depend on server config.
+     * @throws InvalidTimezoneException if tzLabel is unknown
+     */
+    public function toTimestamp(): int
+    {
+        if ($this->tzLabel === null) {
+            throw MissingTimezoneException::forOperation('toTimestamp()');
+        }
+
+        return $this->toDateTimeImmutable()->getTimestamp();
     }
 
     // ─── Internals ───────────────────────────────────────────────────
 
-    private function compareTo(self $other): int
+    /**
+     * Shift by `$amount` units of `$unitSeconds` (which must divide 86400).
+     * Whole days are split off before multiplying, so large amounts cannot
+     * overflow the seconds arithmetic.
+     */
+    private function shift(int $amount, int $unitSeconds): self
     {
-        if ($this->jdn !== $other->jdn) {
-            return $this->jdn <=> $other->jdn;
-        }
-        return $this->secondsOfDay <=> $other->secondsOfDay;
+        $unitsPerDay = intdiv(86400, $unitSeconds);
+        $seconds = $this->secondsOfDay + ($amount % $unitsPerDay) * $unitSeconds;
+
+        return new self(
+            $this->jdn + intdiv($amount, $unitsPerDay) + IntMath::floorDiv($seconds, 86400),
+            IntMath::floorMod($seconds, 86400),
+            $this->tzLabel,
+        );
     }
 
     private static function resolveZone(?string $tzLabel): ?DateTimeZone
     {
-        if ($tzLabel === null) {
-            return null;
-        }
+        return $tzLabel === null ? null : self::zone($tzLabel);
+    }
+
+    private static function zone(string $tzLabel): DateTimeZone
+    {
         try {
             return new DateTimeZone($tzLabel);
         } catch (\Exception) {

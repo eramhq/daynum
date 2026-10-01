@@ -149,7 +149,7 @@ Mixing input and output calendars is free — no conversion code, no migration s
 
 ## What `CivilDateTime` is not
 
-`CivilDateTime` is wall-clock time, not a UTC moment. Two `CivilDateTime` objects with the same `jdn` + `secondsOfDay` but different `tzLabel` will round-trip to the same string representation and compare `equals()`. If you need a physical-time-ordered column for a job queue or audit log, store the Unix timestamp alongside (`$d->toDateTimeImmutable()->getTimestamp()`) or use a `TIMESTAMPTZ` column instead.
+`CivilDateTime` is wall-clock time, not a UTC moment. Two `CivilDateTime` objects with the same `jdn` + `secondsOfDay` but different `tzLabel` will round-trip to the same string representation and compare `equals()`. If you need a physical-time-ordered column for a job queue or audit log, store the Unix timestamp alongside (`$d->toTimestamp()`) or use a `TIMESTAMPTZ` column instead.
 
 See [concepts.md](concepts.md#civildatetime-is-wall-clock-time).
 

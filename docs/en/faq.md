@@ -14,10 +14,10 @@ Instead, `CivilDateTime` stores `(JDN, time-of-day, timezone label)`. Two `Civil
 
 Because the whole type is civil. Making `equals()` timezone-aware would create an asymmetry: `format()` ignores the zone, `equals()` respects it, and you'd get bugs where two equal displays compare unequal.
 
-If you want physical-time comparison, convert both sides:
+If you want physical-time comparison, compare timestamps:
 
 ```php
-$a->toDateTimeImmutable() == $b->toDateTimeImmutable();
+$a->toTimestamp() === $b->toTimestamp();
 ```
 
 ## Why no relative date parsing ("next Monday", "+2 weeks")?

@@ -1021,6 +1021,197 @@ final class CivilDateTimeTest extends TestCase
         $this->assertSame(15, $j->day());
     }
 
+    // ─── Timestamps ─────────────────────────────────────────────────
+
+    public function testFromTimestampDefaultsToUtc(): void
+    {
+        $d = CivilDateTime::fromTimestamp(0);
+        $this->assertSame('UTC', $d->tzLabel);
+        $this->assertSame('1970-01-01 00:00:00', $d->gregorian()->format('Y-m-d H:i:s'));
+    }
+
+    public function testFromTimestampInTehran(): void
+    {
+        // 2026-04-08T10:00:00Z is 13:30 in Tehran (no DST since 2022).
+        $d = CivilDateTime::fromTimestamp(1775642400, 'Asia/Tehran');
+        $this->assertSame('Asia/Tehran', $d->tzLabel);
+        $this->assertSame('1405/01/19 13:30:00', $d->jalali()->format('Y/m/d H:i:s'));
+    }
+
+    public function testFromTimestampWithOffsetLabel(): void
+    {
+        $d = CivilDateTime::fromTimestamp(0, '+03:30');
+        $this->assertSame('+03:30', $d->tzLabel);
+        $this->assertSame(3 * 3600 + 30 * 60, $d->secondsOfDay);
+    }
+
+    public function testFromTimestampNegative(): void
+    {
+        $d = CivilDateTime::fromTimestamp(-1);
+        $this->assertSame('1969-12-31 23:59:59', $d->gregorian()->format('Y-m-d H:i:s'));
+    }
+
+    public function testFromTimestampInvalidZoneThrows(): void
+    {
+        $this->expectException(InvalidTimezoneException::class);
+        CivilDateTime::fromTimestamp(0, 'Mars/Olympus');
+    }
+
+    public function testToTimestamp(): void
+    {
+        $d = CivilDateTime::fromJalali(1405, 1, 19, 13, 30, 0, 'Asia/Tehran');
+        $this->assertSame(1775642400, $d->toTimestamp());
+    }
+
+    public function testToTimestampWithoutTimezoneThrows(): void
+    {
+        $this->expectException(MissingTimezoneException::class);
+        $this->expectExceptionMessage('toTimestamp() requires a timezone');
+        CivilDateTime::fromGregorian(2026, 4, 8)->toTimestamp();
+    }
+
+    public function testToTimestampInSpringForwardGapMovesForward(): void
+    {
+        // 2026-03-08 02:30 does not exist in New York; PHP moves it to 03:30 EDT.
+        $d = CivilDateTime::fromGregorian(2026, 3, 8, 2, 30, 0, 'America/New_York');
+        $this->assertSame('2026-03-08 03:30:00', CivilDateTime::fromTimestamp($d->toTimestamp(), 'America/New_York')
+            ->gregorian()->format('Y-m-d H:i:s'));
+    }
+
+    public function testAmbiguousFallBackReadingResolvesToEarlierMoment(): void
+    {
+        // 01:30 happens twice in New York on 2026-11-01 (EDT, then EST).
+        $d = CivilDateTime::fromGregorian(2026, 11, 1, 1, 30, 0, 'America/New_York');
+        $this->assertSame(1793511000, $d->toTimestamp());
+        $this->assertSame('EDT', $d->toDateTimeImmutable()->format('T'));
+    }
+
+    public function testToDateTimeImmutableNegativeYear(): void
+    {
+        $d = CivilDateTime::fromGregorian(-44, 3, 15, 10, 0, 0, 'UTC');
+        $this->assertSame('-0044-03-15 10:00:00', $d->toDateTimeImmutable()->format('Y-m-d H:i:s'));
+    }
+
+    public function testToDateTimeImmutableBeyondYear9999(): void
+    {
+        // Arithmetic can step past the Gregorian MAX_YEAR; the escape hatch still works.
+        $d = CivilDateTime::fromGregorian(9999, 12, 31, 12, 0, 0, 'UTC')->addDays(1);
+        $this->assertSame('10000-01-01 12:00:00', $d->toDateTimeImmutable()->format('Y-m-d H:i:s'));
+    }
+
+    // ─── Wall-clock time arithmetic ─────────────────────────────────
+
+    public function testAddHoursRollsOverMidnight(): void
+    {
+        $d = CivilDateTime::fromGregorian(2026, 4, 8, 22, 15, 0, 'UTC');
+        $later = $d->addHours(3);
+        $this->assertSame('2026-04-09 01:15:00', $later->gregorian()->format('Y-m-d H:i:s'));
+        $this->assertSame('UTC', $later->tzLabel);
+    }
+
+    public function testSubMinutesRollsBackOverMidnight(): void
+    {
+        $d = CivilDateTime::fromGregorian(2026, 1, 1, 0, 0, 30);
+        $this->assertSame('2025-12-31 23:59:30', $d->subMinutes(1)->gregorian()->format('Y-m-d H:i:s'));
+    }
+
+    public function testAddSecondsMultipleDays(): void
+    {
+        $d = CivilDateTime::fromGregorian(2026, 4, 8, 12, 0, 0);
+        $this->assertSame('2026-04-11 12:00:01', $d->addSeconds(3 * 86400 + 1)->gregorian()->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-04-05 11:59:59', $d->subSeconds(3 * 86400 + 1)->gregorian()->format('Y-m-d H:i:s'));
+    }
+
+    public function testAddHoursIsWallClockAcrossDst(): void
+    {
+        // Wall-clock: 01:30 + 1h is 02:30 even though New York skips 02:00–03:00 that night.
+        $d = CivilDateTime::fromGregorian(2026, 3, 8, 1, 30, 0, 'America/New_York');
+        $this->assertSame('02:30', $d->addHours(1)->gregorian()->format('H:i'));
+    }
+
+    public function testAddDaysAndWeeks(): void
+    {
+        $d = CivilDateTime::fromJalali(1405, 1, 19, 8, 0, 0);
+        $this->assertSame('1405/01/26 08:00', $d->addWeeks(1)->jalali()->format('Y/m/d H:i'));
+        $this->assertSame('1404/12/27 08:00', $d->subWeeks(3)->jalali()->format('Y/m/d H:i'));
+        $this->assertSame('1405/01/20 08:00', $d->addDays(1)->jalali()->format('Y/m/d H:i'));
+        $this->assertSame($d->jalali()->subDays(5)->jdn, $d->subDays(5)->jdn);
+    }
+
+    public function testStartAndEndOfDay(): void
+    {
+        $d = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 45, 'Asia/Tehran');
+        $this->assertSame('2026-04-08 00:00:00', $d->startOfDay()->gregorian()->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-04-08 23:59:59', $d->endOfDay()->gregorian()->format('Y-m-d H:i:s'));
+        $this->assertSame('Asia/Tehran', $d->endOfDay()->tzLabel);
+    }
+
+    public function testDiffInSecondsMinutesHours(): void
+    {
+        $a = CivilDateTime::fromGregorian(2026, 4, 9, 1, 0, 0);
+        $b = CivilDateTime::fromGregorian(2026, 4, 8, 22, 30, 30);
+        // 22:30:30 → 01:00:00 is 2h 29m 30s.
+        $this->assertSame(8970, $a->diffInSeconds($b));
+        $this->assertSame(149, $a->diffInMinutes($b));
+        $this->assertSame(2, $a->diffInHours($b));
+        $this->assertSame(-2, $b->diffInHours($a));
+        $this->assertSame(-149, $b->diffInMinutes($a));
+    }
+
+    public function testDiffInDaysIgnoresTimeOfDay(): void
+    {
+        $a = CivilDateTime::fromGregorian(2026, 4, 9, 1, 0, 0);
+        $b = CivilDateTime::fromGregorian(2026, 4, 8, 23, 0, 0);
+        $this->assertSame(1, $a->diffInDays($b));
+        $this->assertSame(2, $a->diffInHours($b));
+    }
+
+    // ─── compare / min / max / between / isSameDay ──────────────────
+
+    public function testCompareSortsWithUsort(): void
+    {
+        $a = CivilDateTime::fromGregorian(2026, 4, 8, 10);
+        $b = CivilDateTime::fromGregorian(2026, 4, 8, 9);
+        $c = CivilDateTime::fromGregorian(2025, 12, 31, 23);
+        $list = [$a, $b, $c];
+        usort($list, CivilDateTime::compare(...));
+        $this->assertSame([$c, $b, $a], $list);
+        $this->assertSame(0, CivilDateTime::compare($a, CivilDateTime::fromGregorian(2026, 4, 8, 10, 0, 0, 'UTC')));
+    }
+
+    public function testMinAndMax(): void
+    {
+        $a = CivilDateTime::fromGregorian(2026, 4, 8);
+        $b = CivilDateTime::fromGregorian(2024, 1, 1);
+        $c = CivilDateTime::fromGregorian(2030, 6, 1);
+        $this->assertSame($b, CivilDateTime::min($a, $b, $c));
+        $this->assertSame($c, CivilDateTime::max($a, $b, $c));
+        $this->assertSame($a, CivilDateTime::min($a));
+        $tie = CivilDateTime::fromGregorian(2026, 4, 8);
+        $this->assertSame($a, CivilDateTime::max($a, $tie), 'first wins on a tie');
+    }
+
+    public function testBetween(): void
+    {
+        $lo = CivilDateTime::fromGregorian(2026, 1, 1);
+        $hi = CivilDateTime::fromGregorian(2026, 12, 31);
+        $mid = CivilDateTime::fromGregorian(2026, 6, 15);
+
+        $this->assertTrue($mid->between($lo, $hi));
+        $this->assertTrue($mid->between($hi, $lo), 'bounds in either order');
+        $this->assertTrue($lo->between($lo, $hi));
+        $this->assertFalse($lo->between($lo, $hi, inclusive: false));
+        $this->assertFalse($mid->between($lo, $lo));
+        $this->assertFalse(CivilDateTime::fromGregorian(2027, 1, 1)->between($lo, $hi));
+    }
+
+    public function testIsSameDay(): void
+    {
+        $a = CivilDateTime::fromGregorian(2026, 4, 8, 0, 0, 0);
+        $this->assertTrue($a->isSameDay(CivilDateTime::fromGregorian(2026, 4, 8, 23, 59, 59)));
+        $this->assertFalse($a->isSameDay(CivilDateTime::fromGregorian(2026, 4, 9)));
+    }
+
     // ─── diffInMonths() ─────────────────────────────────────────────
 
     public function testDiffInMonthsAcrossYears(): void

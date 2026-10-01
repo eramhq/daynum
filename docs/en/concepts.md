@@ -15,7 +15,7 @@ $b = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'UTC');
 $a->equals($b);    // true — same wall-clock reading
 ```
 
-For timeline-order comparison across timezones, convert with `$d->toDateTimeImmutable()`. That is the escape hatch for all real timezone math — see [timezones.md](timezones.md).
+For timeline-order comparison across timezones, compare `$d->toTimestamp()` values, or convert with `$d->toDateTimeImmutable()`. That is the escape hatch for all real timezone math — see [timezones.md](timezones.md).
 
 ## Julian Day Number (JDN) is the interlingua
 

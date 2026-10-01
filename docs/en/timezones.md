@@ -89,35 +89,47 @@ $back = CivilDateTime::fromDateTime($native);
 $back->equals($d);     // true
 ```
 
-## Doing timezone math
-
-Daynum deliberately does not offer DST-aware arithmetic. Instead, escape, compute, and re-import:
+## Timestamps
 
 ```php
-function addHoursAcrossDst(CivilDateTime $d, int $hours): CivilDateTime
-{
-    $native = $d->toDateTimeImmutable()->modify("+{$hours} hours");
-    return CivilDateTime::fromDateTime($native);
-}
+$d = CivilDateTime::fromTimestamp(1775642400, 'Asia/Tehran');   // 2026-04-08 13:30 in Tehran
+$d->toTimestamp();                                                // 1775642400
 
-$d = CivilDateTime::fromGregorian(2026, 3, 29, 1, 30, 0, 'Europe/London');  // just before BST
-$d2 = addHoursAcrossDst($d, 1);
-$d2->gregorian()->format('Y-m-d H:i T');   // "2026-03-29 03:30 BST"
+CivilDateTime::fromTimestamp(time());   // tzLabel defaults to 'UTC'
 ```
 
-The civil-time hop from 01:30 to 03:30 (skipping 02:30, which doesn't exist) is handled by PHP, not by Daynum.
+`toTimestamp()` needs a timezone and throws `MissingTimezoneException` when `tzLabel` is `null` — without one there is no single moment to convert to.
+
+Two DST cases have no unique answer. Daynum follows PHP for both:
+
+- **Gap** (spring forward): a reading that doesn't exist, like 02:30 on a night that skips from 02:00 to 03:00, moves forward by the length of the gap (03:30).
+- **Overlap** (fall back): a reading that happens twice, like 01:30 on a night that repeats 01:00–02:00, resolves to the **earlier** moment.
+
+So `fromTimestamp($t, $tz)->toTimestamp()` returns `$t`, except during the second pass through an overlap, where it returns the earlier moment with the same reading.
+
+## Doing timezone math
+
+`addHours()`, `diffInHours()` and friends are wall-clock: they move or compare the clock-face reading and ignore DST. For exact elapsed time, go through timestamps:
+
+```php
+$d = CivilDateTime::fromGregorian(2026, 3, 29, 0, 30, 0, 'Europe/London');   // just before BST
+
+$d->addHours(2)->gregorian()->format('H:i');                                 // "02:30" — wall-clock
+CivilDateTime::fromTimestamp($d->toTimestamp() + 7200, 'Europe/London')
+    ->gregorian()->format('H:i');                                            // "03:30" — two real hours later
+
+$elapsed = $b->toTimestamp() - $a->toTimestamp();   // exact seconds between two values
+```
+
+For anything more involved (`modify('last day of next month')`, recurring events), escape to `DateTimeImmutable` and re-import with `CivilDateTime::fromDateTime()`.
 
 ## Converting between zones
 
 ```php
 $d = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
-$utc = CivilDateTime::fromDateTime(
-    $d->toDateTimeImmutable()->setTimezone(new DateTimeZone('UTC'))
-);
+$utc = CivilDateTime::fromTimestamp($d->toTimestamp(), 'UTC');
 $utc->gregorian()->format('Y-m-d H:i T');   // "2026-04-08 11:00 UTC"
 ```
-
-Again — this works because the conversion goes through native PHP. Daynum's `CivilDateTime` just carries the result back into the calendar-aware world.
 
 ## Fixed offsets
 
@@ -130,15 +142,15 @@ $d->gregorian()->format('c');   // "2026-04-08T14:30:00+03:30"
 
 ## Common pitfall: comparing across timezones
 
-`equals()` and `lessThan()` **do not** translate across zones. If you have two `CivilDateTime` values and want to know which represents the earlier physical moment, escape both and compare natively:
+`equals()`, `lessThan()` and `compare()` **do not** translate across zones. If you have two `CivilDateTime` values and want to know which represents the earlier physical moment, compare timestamps:
 
 ```php
 $a = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
 $b = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'UTC');
 
-$a->equals($b);        // true — civil-time equality (surprising!)
-$a->toDateTimeImmutable() == $b->toDateTimeImmutable();   // false
-$a->toDateTimeImmutable() < $b->toDateTimeImmutable();    // true (Tehran 14:30 is 11:00 UTC)
+$a->equals($b);                          // true — wall-clock equality
+$a->toTimestamp() === $b->toTimestamp(); // false
+$a->toTimestamp() < $b->toTimestamp();   // true (Tehran 14:30 is 11:00 UTC)
 ```
 
 See [faq.md](faq.md#why-isnt-equals-timezone-aware) for the rationale.

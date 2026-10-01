@@ -28,4 +28,13 @@ final class IntMath
         }
         return $q;
     }
+
+    /**
+     * Floor modulo: the remainder paired with {@see floorDiv()}, so it
+     * always has the sign of `$b` (`floorMod(-1, 86400) === 86399`).
+     */
+    public static function floorMod(int $a, int $b): int
+    {
+        return $a - self::floorDiv($a, $b) * $b;
+    }
 }

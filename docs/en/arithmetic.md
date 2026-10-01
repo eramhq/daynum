@@ -42,6 +42,31 @@ $view->startOfWeek(\Eram\Daynum\WeekDay::Saturday);       // Saturday start
 $view->endOfWeek(\Eram\Daynum\WeekDay::Saturday);
 ```
 
+## Time-of-day arithmetic
+
+Seconds, minutes, hours, days and weeks don't depend on the calendar, so they live on `CivilDateTime` itself:
+
+```php
+$d = CivilDateTime::fromJalali(1405, 1, 19, 22, 15, 0, 'Asia/Tehran');
+
+$d->addHours(3);        // 1405/01/20 01:15 — rolls over midnight
+$d->subMinutes(90);
+$d->addSeconds(30);
+$d->addWeeks(2);
+$d->addDays(1);         // same as $d->jalali()->addDays(1)
+
+$d->startOfDay();       // 00:00:00, same day
+$d->endOfDay();         // 23:59:59, same day
+```
+
+This is **wall-clock** arithmetic: it moves the reading on the clock face and ignores the timezone. On a night when the clocks spring forward, `01:30 + 1 hour` is still `02:30`, a time that doesn't exist in that zone. When you need exact elapsed time, go through a timestamp:
+
+```php
+$exact = CivilDateTime::fromTimestamp($d->toTimestamp() + 3600, $d->tzLabel ?? 'UTC');
+```
+
+See [timezones.md](timezones.md#doing-timezone-math).
+
 ## Month arithmetic clamps the day
 
 When the target month doesn't have the source day, the day clamps to the target month's last day. This matches Carbon, `java.time`, and most mainstream date libraries:
@@ -84,7 +109,22 @@ $a->diffInDays($b);    //  2
 $b->diffInDays($a);    // -2
 ```
 
-`diffInDays` lives on `CivilDateTime` because a "day" is calendar-neutral — it's just the JDN difference.
+`diffInDays` lives on `CivilDateTime` because a "day" is calendar-neutral — it's just the JDN difference. It counts calendar days and ignores the time of day: 23:00 → 01:00 the next morning is 1 day.
+
+### `diffInHours` / `diffInMinutes` / `diffInSeconds` — on `CivilDateTime`
+
+Signed wall-clock differences, truncated toward zero:
+
+```php
+$a = CivilDateTime::fromGregorian(2026, 4, 9, 1, 0, 0);
+$b = CivilDateTime::fromGregorian(2026, 4, 8, 22, 30, 30);
+$a->diffInSeconds($b);   //  8970
+$a->diffInMinutes($b);   //   149
+$a->diffInHours($b);     //     2
+$b->diffInHours($a);     //    -2
+```
+
+Like the arithmetic above, these ignore DST. For exact elapsed seconds, subtract timestamps: `$a->toTimestamp() - $b->toTimestamp()`.
 
 ### `diffInMonths` / `diffInYears` — on the view
 
@@ -154,9 +194,17 @@ $a->lessThan($b);
 $a->lessThanOrEqual($b);
 $a->greaterThan($b);
 $a->greaterThanOrEqual($b);
+
+$a->between($lo, $hi);                    // inclusive; bounds in either order
+$a->between($lo, $hi, inclusive: false);
+$a->isSameDay($b);                        // same calendar day, any time
+
+usort($dates, CivilDateTime::compare(...));   // sort ascending
+CivilDateTime::min($a, $b, $c);               // earliest
+CivilDateTime::max($a, $b, $c);               // latest
 ```
 
-All five are methods on `CivilDateTime` — not calendar-specific — because ordering only cares about the JDN and the time-of-day, not which calendar you happened to enter.
+All of these are on `CivilDateTime` — not calendar-specific — because ordering only cares about the JDN and the time-of-day, not which calendar you happened to enter.
 
 Remember: comparison is wall-clock, not UTC. Two `CivilDateTime` objects with the same JDN/time but different `tzLabel` values are `equals()` even though they represent different physical moments. See [concepts.md](concepts.md#civildatetime-is-wall-clock-time).
 

@@ -55,10 +55,12 @@ CivilDateTime::isValidHijriCivil(int $y, int $m, int $d): bool
 
 ```php
 CivilDateTime::fromDateTime(DateTimeInterface $dt): CivilDateTime
+CivilDateTime::fromTimestamp(int $timestamp, string $tzLabel = 'UTC'): CivilDateTime
 $dateTime->toDateTimeImmutable(): DateTimeImmutable
+$dateTime->toTimestamp(): int
 ```
 
-`fromDateTime` reads the proleptic Gregorian date, time-of-day, and timezone name. `toDateTimeImmutable` is the escape hatch for real timezone math. See [timezones.md](timezones.md).
+`fromDateTime` reads the proleptic Gregorian date, time-of-day, and timezone name. `fromTimestamp` is the wall-clock reading of a Unix timestamp in the given zone. `toTimestamp` throws `MissingTimezoneException` when `tzLabel` is `null`. `toDateTimeImmutable` is the escape hatch for real timezone math. See [timezones.md](timezones.md).
 
 ### Current-date helpers
 
@@ -88,10 +90,34 @@ $a->lessThan(CivilDateTime $b):           bool
 $a->lessThanOrEqual(CivilDateTime $b):    bool
 $a->greaterThan(CivilDateTime $b):        bool
 $a->greaterThanOrEqual(CivilDateTime $b): bool
-$a->diffInDays(CivilDateTime $b):         int   // signed: this - other
+$a->between(CivilDateTime $x, CivilDateTime $y, bool $inclusive = true): bool  // bounds in either order
+$a->isSameDay(CivilDateTime $b):          bool
+
+CivilDateTime::compare(CivilDateTime $a, CivilDateTime $b): int   // usort(..., CivilDateTime::compare(...))
+CivilDateTime::min(CivilDateTime $first, CivilDateTime ...$rest): CivilDateTime
+CivilDateTime::max(CivilDateTime $first, CivilDateTime ...$rest): CivilDateTime
+
+$a->diffInDays(CivilDateTime $b):         int   // signed: this - other; calendar days, time ignored
+$a->diffInHours(CivilDateTime $b):        int   // signed, wall-clock, truncated toward zero
+$a->diffInMinutes(CivilDateTime $b):      int
+$a->diffInSeconds(CivilDateTime $b):      int
 ```
 
-All comparison is civil-time. See [concepts.md](concepts.md#civildatetime-is-wall-clock-time).
+All comparison is wall-clock time. See [concepts.md](concepts.md#civildatetime-is-wall-clock-time).
+
+### Time arithmetic (wall-clock)
+
+```php
+$dateTime->addSeconds(int $n) / subSeconds(int $n): CivilDateTime
+$dateTime->addMinutes(int $n) / subMinutes(int $n): CivilDateTime
+$dateTime->addHours(int $n)   / subHours(int $n):   CivilDateTime
+$dateTime->addDays(int $n)    / subDays(int $n):    CivilDateTime
+$dateTime->addWeeks(int $n)   / subWeeks(int $n):   CivilDateTime
+$dateTime->startOfDay():  CivilDateTime   // 00:00:00
+$dateTime->endOfDay():    CivilDateTime   // 23:59:59
+```
+
+Moves the wall-clock reading, rolling over midnight. Not DST-aware — for exact elapsed time, go through `toTimestamp()`. Month and year arithmetic is calendar-specific and lives on the views. See [arithmetic.md](arithmetic.md#time-of-day-arithmetic).
 
 ### Mutation-as-new
 

@@ -12,7 +12,7 @@ Task-indexed recipes. Each one is copy-pasteable and runs against Daynum as ship
 6. [Store a `CivilDateTime` in a database (three-column pattern)](#store-a-civildatetime-in-a-database-three-column-pattern)
 7. [Add months at the end of month (clamping behavior)](#add-months-at-the-end-of-month-clamping-behavior)
 8. [Handle the Umm al-Qura range boundary (fall back to civil)](#handle-the-umm-al-qura-range-boundary-fall-back-to-civil)
-9. [Do timezone math by escape-hatching to `DateTimeImmutable`](#do-timezone-math-by-escape-hatching-to-datetimeimmutable)
+9. [Add real (DST-aware) hours via timestamps](#add-real-dst-aware-hours-via-timestamps)
 10. [Convert a `CivilDateTime` between timezones](#convert-a-civildatetime-between-timezones)
 11. [Use Daynum in a Laravel request/response](#use-daynum-in-a-laravel-requestresponse)
 
@@ -174,20 +174,19 @@ renderHijri(CivilDateTime::fromGregorian(1500, 1, 1));      // "5 Shaʻban 905 (
 
 See [calendars/hijri-umm-al-qura.md](calendars/hijri-umm-al-qura.md).
 
-## Do timezone math by escape-hatching to `DateTimeImmutable`
+## Add real (DST-aware) hours via timestamps
 
-Daynum does not do DST. When you need real timezone arithmetic, escape, compute, re-import.
+`addHours()` is wall-clock arithmetic. When you need "N real hours later" across a DST change, go through a timestamp:
 
 ```php
-function addHours(CivilDateTime $d, int $hours): CivilDateTime
+function addRealHours(CivilDateTime $d, int $hours): CivilDateTime
 {
-    $native = $d->toDateTimeImmutable()->modify("+{$hours} hours");
-    return CivilDateTime::fromDateTime($native);
+    return CivilDateTime::fromTimestamp($d->toTimestamp() + $hours * 3600, $d->tzLabel ?? 'UTC');
 }
 
-$d = CivilDateTime::fromGregorian(2026, 3, 29, 1, 30, 0, 'Europe/London');  // just before BST
-$d2 = addHours($d, 1);
-$d2->gregorian()->format('Y-m-d H:i T');    // "2026-03-29 03:30 BST"
+$d = CivilDateTime::fromGregorian(2026, 3, 29, 0, 30, 0, 'Europe/London');  // just before BST
+addRealHours($d, 2)->gregorian()->format('Y-m-d H:i T');   // "2026-03-29 03:30 BST"
+$d->addHours(2)->gregorian()->format('H:i');               // "02:30" (wall-clock)
 ```
 
 See [timezones.md](timezones.md).
@@ -197,9 +196,7 @@ See [timezones.md](timezones.md).
 ```php
 $tehran = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
 
-$utc = CivilDateTime::fromDateTime(
-    $tehran->toDateTimeImmutable()->setTimezone(new DateTimeZone('UTC'))
-);
+$utc = CivilDateTime::fromTimestamp($tehran->toTimestamp(), 'UTC');
 $utc->gregorian()->format('Y-m-d H:i T');   // "2026-04-08 11:00 UTC"
 ```
 

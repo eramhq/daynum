@@ -35,6 +35,7 @@ function jalali(CivilDateTime $d): JalaliView
 |---|---|
 | `jdate()` / `Jalalian::now()` | `CivilDateTime::now('Asia/Tehran')->jalali()` |
 | `jdate($dateTime)` / `Jalalian::fromDateTime($dt)` | `CivilDateTime::fromDateTime($dt)->jalali()` |
+| `Jalalian::forge($timestamp)` / `jdate($timestamp)` | `CivilDateTime::fromTimestamp($timestamp, 'Asia/Tehran')->jalali()` |
 | `Jalalian::fromCarbon($carbon)` | `CivilDateTime::fromDateTime($carbon)->jalali()` (Carbon is a `DateTimeInterface`) |
 | `new Jalalian(1405, 1, 19)` | `CivilDateTime::fromJalali(1405, 1, 19)` |
 | `Jalalian::fromFormat('Y/m/d', $s)` | `JalaliView::parseExact($s, 'Y/m/d')` |
@@ -49,6 +50,8 @@ function jalali(CivilDateTime $d): JalaliView
 | `->isLeapYear()` | `->isLeapYear()` |
 | `->getDayOfWeek()` (Saturday = 0) | `->dayOfWeek()` (Sunday = 0, PHP `date('w')`) or `->dayOfWeekIso()` |
 | `->addDays(3)` / `addMonths` / `addYears` | `->addDays(3)` … — returns a `CivilDateTime`, see below |
+| `->addHours(2)` / `addMinutes` / `addSeconds` | `$d->addHours(2)` (on the `CivilDateTime`, wall-clock) |
+| `->getTimestamp()` | `$d->toTimestamp()` |
 | `->toCarbon()` | `Carbon::instance($d->toDateTimeImmutable())` |
 
 ### strftime tokens → `date()` tokens

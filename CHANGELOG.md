@@ -15,6 +15,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `use Eram\Daynum\CivilDateTime`. The JSON shape is unchanged.
 - `CalendarView::instant()` is renamed to `CalendarView::dateTime()`.
 
+### Added
+- Timestamps: `CivilDateTime::fromTimestamp(int $ts, string $tz = 'UTC')` and
+  `toTimestamp()`. `toTimestamp()` throws `MissingTimezoneException` (new
+  `forOperation()` factory) when no timezone label is set.
+- Wall-clock time arithmetic on `CivilDateTime`: `add/subSeconds`,
+  `add/subMinutes`, `add/subHours`, `add/subDays`, `add/subWeeks`,
+  `startOfDay()`, `endOfDay()`. Not DST-aware by design; use timestamps for
+  exact elapsed time.
+- `diffInSeconds()`, `diffInMinutes()`, `diffInHours()` (wall-clock,
+  truncated toward zero). `diffInDays()` stays a calendar-day difference.
+- `CivilDateTime::compare()` (a `usort` callback), `min()`, `max()`,
+  `between($a, $b, bool $inclusive = true)` and `isSameDay()`.
+
 ### Removed
 - The opt-in global helpers `gdate()`, `jdate()` and `hdate()` (`src/helpers.php`).
   Their `jdate(int, int, int)` signature clashed with both `morilog/jalali`'s
@@ -23,6 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Instant::fromJalali()` etc. directly, or define a helper in your own namespace.
 
 ### Fixed
+- `toDateTimeImmutable()` (and the timezone format tokens built on it)
+  resolved an ambiguous fall-back reading such as 01:30 on a DST-ending
+  night depending on the DST state of the day the code ran. It now always
+  resolves to the earlier moment, and also works for years beyond 9999
+  reached through arithmetic.
 - `diffInMonths()` counted 12 months per year regardless of the calendar.
   It now walks `Calendar::monthsInYear()` the same way `addMonths()` does,
   so the two stay inverse for days 1–28.
