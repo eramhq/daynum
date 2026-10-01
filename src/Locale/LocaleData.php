@@ -96,4 +96,10 @@ interface LocaleData
      *         unit or a negative value
      */
     public function relativeTime(int $value, string $unit, bool $future): string;
+
+    /**
+     * The word used instead of "0 seconds ago" when two values are equal,
+     * e.g. "now". Matches `Intl.RelativeTimeFormat` with `numeric: 'auto'`.
+     */
+    public function relativeTimeNow(): string;
 }

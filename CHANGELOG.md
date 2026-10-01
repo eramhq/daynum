@@ -18,7 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the view locale's first day instead of always Monday. The default `en`
   locale still uses Monday; `withLocale('fa')` views now use Saturday and
   `withLocale('ar')` views Sunday. Custom `LocaleData` implementations must
-  add `firstDayOfWeek()`, `weekendDays()` and `relativeTime()`.
+  add `firstDayOfWeek()`, `weekendDays()`, `relativeTime()` and
+  `relativeTimeNow()`.
 
 ### Added
 - Timestamps: `CivilDateTime::fromTimestamp(int $ts, string $tz = 'UTC')` and
@@ -36,7 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Relative time: view methods `diffForHumans(CivilDateTime $other)` and
   `ago()` ("3 days ago", "in 2 hours", "۳ روز پیش", "قبل ٣ أيام"), using
   the largest whole unit and counting months/years in the view's calendar.
-  Backed by `LocaleData::relativeTime()`, with Arabic plural forms, and
+  Equal values read "now" (اکنون, الآن) rather than "0 seconds ago".
+  Backed by `LocaleData::relativeTime()` / `relativeTimeNow()`, with Arabic plural forms, and
   conformance-tested against `Intl.RelativeTimeFormat` via a new Node oracle
   (`tools/generate-relative-time-node.mjs`).
 - Custom locales: `LocaleRegistry::register()`, `has()`, `tags()` and

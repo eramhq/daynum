@@ -1183,6 +1183,9 @@ abstract class AbstractCalendarView implements CalendarView
     public function diffForHumans(CivilDateTime $other): string
     {
         $seconds = $this->dateTime->diffInSeconds($other);
+        if ($seconds === 0) {
+            return $this->locale->relativeTimeNow();
+        }
         [$value, $unit] = $this->largestWholeUnit($other, abs($seconds));
 
         return DigitTransliterator::toScript(

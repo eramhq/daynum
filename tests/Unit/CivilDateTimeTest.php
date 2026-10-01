@@ -1075,7 +1075,7 @@ final class CivilDateTimeTest extends TestCase
      */
     public static function relativeTimeProvider(): iterable
     {
-        yield 'same moment'     => [0, '0 seconds ago'];
+        yield 'same moment'     => [0, 'now'];
         yield '59 seconds'      => [-59, '59 seconds ago'];
         yield '60 seconds'      => [-60, '1 minute ago'];
         yield '1h 59m'          => [-7199, '1 hour ago'];
@@ -1131,6 +1131,14 @@ final class CivilDateTimeTest extends TestCase
         $this->assertSame('قبل ٣ أيام', $past->hijri()->withLocale('ar')->withDigits('arab')->diffForHumans($now));
         $this->assertSame('خلال يومين', $future->hijri()->withLocale('ar')->diffForHumans($now));
         $this->assertSame('قبل ١١ ساعة', $now->subHours(11)->hijri()->withLocale('ar')->withDigits('arab')->diffForHumans($now));
+    }
+
+    public function testDiffForHumansNowInEveryLocale(): void
+    {
+        $d = CivilDateTime::fromJalali(1405, 1, 19, 12, 0, 0);
+        $this->assertSame('اکنون', $d->jalali()->withLocale('fa')->diffForHumans($d));
+        $this->assertSame('الآن', $d->hijri()->withLocale('ar')->diffForHumans($d));
+        $this->assertSame('in 1 second', $d->addSeconds(1)->gregorian()->diffForHumans($d));
     }
 
     public function testAgoComparesAgainstNowInOwnTimezone(): void

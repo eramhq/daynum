@@ -104,7 +104,9 @@ claims to support. Daynum's `DateTokenFormatter` must match byte-for-byte.
 ```
 
 One row per locale × unit × value (0–130 plus a few values up to 999),
-with `Intl.RelativeTimeFormat(locale, {numeric: 'always'})` output.
+with `Intl.RelativeTimeFormat(locale, {numeric: 'always'})` output, plus one
+`{"locale":…,"now":…}` row per locale holding the `numeric: 'auto'` word for
+a zero difference.
 
 ## Refreshing the fixtures
 
@@ -139,6 +141,11 @@ git diff tests/fixtures/ src/Calendar/Hijri/Table.php
 ```
 
 ## Pinned versions
+
+The oracle workflow pins ICU with setup-php's `intl-<version>` syntax
+(currently `intl-78.2` on PHP 8.5) so CI regenerates fixtures from the same
+ICU they were committed with. When you refresh fixtures with a newer ICU,
+bump that pin in `.github/workflows/oracle.yml` in the same commit.
 
 Fixture content depends on:
 

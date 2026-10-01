@@ -138,4 +138,9 @@ class PersianLocale extends AbstractTableLocale
         $suffix = !$future ? 'پیش' : ($unit === 'day' ? 'دیگر' : 'بعد');
         return $value . ' ' . self::RELATIVE_UNITS[$unit] . ' ' . $suffix;
     }
+
+    public function relativeTimeNow(): string
+    {
+        return 'اکنون';
+    }
 }

@@ -151,7 +151,7 @@ The shipped Dari locale (`fa-AF`) is built this way: [`DariLocale`](../../src/Lo
 
 ### Writing a locale from scratch
 
-Extend `AbstractTableLocale` and implement the four tables plus `tag()`, `meridiem()`, `ordinalSuffix()`, `firstDayOfWeek()`, `weekendDays()` and `relativeTime()`. Leave a calendar family out of the month tables if your locale has no names for it; formatting `F`/`M` in that calendar then throws, as Arabic does for Jalali. Call `self::assertRelativeTimeArgs($value, $unit)` at the top of `relativeTime()` to get the standard argument checks.
+Extend `AbstractTableLocale` and implement the four tables plus `tag()`, `meridiem()`, `ordinalSuffix()`, `firstDayOfWeek()`, `weekendDays()`, `relativeTime()` and `relativeTimeNow()`. Leave a calendar family out of the month tables if your locale has no names for it; formatting `F`/`M` in that calendar then throws, as Arabic does for Jalali. Call `self::assertRelativeTimeArgs($value, $unit)` at the top of `relativeTime()` to get the standard argument checks.
 
 Or implement the `LocaleData` interface directly if your data isn't table-shaped.
 

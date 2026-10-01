@@ -143,7 +143,7 @@ interface CalendarView
      * the role of "now": this date being earlier gives the past form.
      *
      * Uses the largest whole unit (year, month, week, day, hour, minute,
-     * second). Years and months are counted in this view's calendar, so a
+     * second), or the locale's word for "now" when both are equal. Years and months are counted in this view's calendar, so a
      * Jalali view counts Jalali months. A whole month or year counts only
      * once the time of day has been reached as well.
      *

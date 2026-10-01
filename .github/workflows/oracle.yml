@@ -31,8 +31,12 @@ jobs:
       - name: Set up PHP with ext-intl
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
-          extensions: intl, mbstring, dom, xml, zlib
+          # Pin the ICU the committed fixtures and Table.php were built with
+          # (see their headers / Table::ICU_VERSION). Different ICU releases
+          # place some far-future Jalali leap days differently, which would
+          # show up as data drift. Bump together with a fixture refresh.
+          php-version: '8.5'
+          extensions: intl-78.2, mbstring, dom, xml, zlib
           coverage: none
           tools: composer:v2
 

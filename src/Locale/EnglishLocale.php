@@ -138,4 +138,9 @@ class EnglishLocale extends AbstractTableLocale
         $phrase = $value . ' ' . $unit . ($value === 1 ? '' : 's');
         return $future ? "in {$phrase}" : "{$phrase} ago";
     }
+
+    public function relativeTimeNow(): string
+    {
+        return 'now';
+    }
 }

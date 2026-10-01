@@ -29,6 +29,12 @@ final class RelativeTimeConformanceTest extends TestCase
         foreach (FixtureReader::rows($fixture) as $row) {
             $rows++;
             $locale = LocaleRegistry::get($row['locale']);
+            if (isset($row['now'])) {
+                if ($locale->relativeTimeNow() !== $row['now']) {
+                    $mismatches[] = sprintf('%s now: expected "%s", got "%s"', $row['locale'], $row['now'], $locale->relativeTimeNow());
+                }
+                continue;
+            }
             foreach (['past' => false, 'future' => true] as $key => $future) {
                 $expected = DigitTransliterator::toLatin($row[$key]);
                 $actual = $locale->relativeTime($row['value'], $row['unit'], $future);
@@ -41,7 +47,7 @@ final class RelativeTimeConformanceTest extends TestCase
             }
         }
 
-        $this->assertGreaterThan(2000, $rows, 'fixture looks truncated');
+        $this->assertGreaterThan(3900, $rows, 'fixture looks truncated');
         $this->assertSame([], array_slice($mismatches, 0, 20), count($mismatches) . ' mismatches');
     }
 }

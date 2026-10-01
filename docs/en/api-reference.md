@@ -335,6 +335,7 @@ $locale->ordinalSuffix(int $day): string
 $locale->firstDayOfWeek(): WeekDay
 $locale->weekendDays(): list<WeekDay>
 $locale->relativeTime(int $value, string $unit, bool $future): string
+$locale->relativeTimeNow(): string                   // "now"
 ```
 
 Built-ins: `EnglishLocale`, `PersianLocale`, `DariLocale`, `ArabicLocale`, all extending `AbstractTableLocale`.

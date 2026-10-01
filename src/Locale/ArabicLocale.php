@@ -139,4 +139,9 @@ class ArabicLocale extends AbstractTableLocale
             default => 'other',
         };
     }
+
+    public function relativeTimeNow(): string
+    {
+        return 'الآن';
+    }
 }
