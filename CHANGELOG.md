@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and the ezafe hamza. ICU spells Urdu Hijri months 3 and 5 with a shadda
   (`ربیع الاوّل`, `جمادی الاوّل`), so the common unmarked spelling did not
   parse before; formatted output is unchanged.
+- The mutation job's covered-code MSI floor rises from 90% to 97%. It
+  measured 99.7% on five consecutive CI runs, so the old floor let real
+  regressions through.
 
 ### Fixed
 - Name matching no longer depends on the C library locale. On PHP 8.1,

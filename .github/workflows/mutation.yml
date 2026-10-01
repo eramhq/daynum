@@ -32,9 +32,10 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Run Infection
-        # Covered MSI measured at 99% with the sampled suites; the floor
-        # leaves room for timing-dependent timeouts on shared runners.
-        run: infection --threads=max --no-progress --show-mutations=0 --min-covered-msi=90
+        # Covered MSI measured 99.7% on five runs with the sampled suites;
+        # the floor leaves ~60 mutants of room for timing-dependent
+        # timeouts on shared runners.
+        run: infection --threads=max --no-progress --show-mutations=0 --min-covered-msi=97
 
       - name: Upload Infection log
         # Escaped mutants with file paths; GitHub shows only 10 annotations.
