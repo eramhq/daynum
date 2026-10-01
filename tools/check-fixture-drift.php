@@ -87,9 +87,9 @@ foreach (gitLines('diff --name-only -- tests/fixtures/') as $path) {
 // Table.php: everything except the version / timestamp metadata must match.
 $table = 'src/Calendar/Hijri/Table.php';
 $metadata = '/GENERATED_AT|ICU_VERSION|bundled `islamic-umalqura` data/';
-$strip = static fn (string $src): array => array_values(array_filter(
+$strip = static fn(string $src): array => array_values(array_filter(
     explode("\n", $src),
-    static fn (string $line): bool => preg_match($metadata, $line) !== 1,
+    static fn(string $line): bool => preg_match($metadata, $line) !== 1,
 ));
 $tableBefore = $strip(committed($table));
 $tableAfter = $strip((string) file_get_contents($table));

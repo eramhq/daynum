@@ -78,7 +78,7 @@ final class UmmAlQuraRangeTest extends TestCase
         $civilDt = CivilDateTime::fromHijriCivil(Table::MIN_YEAR - 1, 1, 1);
         $this->assertSame(
             Table::MIN_YEAR - 1,
-            $civilDt->hijriCivil()->year()
+            $civilDt->hijriCivil()->year(),
         );
 
         $this->expectException(UmmAlQuraOutOfRangeException::class);

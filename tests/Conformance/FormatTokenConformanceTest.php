@@ -79,7 +79,10 @@ final class FormatTokenConformanceTest extends TestCase
                 if ($actual !== $expected) {
                     $mismatches[] = sprintf(
                         'jdn=%d token=%s locale=%s cal=%s: expected %s, got %s',
-                        $jdn, $token, $locale, $calendar,
+                        $jdn,
+                        $token,
+                        $locale,
+                        $calendar,
                         json_encode($expected),
                         json_encode($actual),
                     );

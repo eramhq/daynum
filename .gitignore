@@ -13,3 +13,5 @@
 # Node-generated oracle fixtures exist only for the verify-oracles-agree diff
 # in CI. The PHP-generated ones are the committed source of truth.
 /tests/fixtures/*.node.jsonl.gz
+/.php-cs-fixer.cache
+/infection.log

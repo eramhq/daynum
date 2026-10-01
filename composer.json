@@ -26,6 +26,7 @@
         "php": ">=8.1"
     },
     "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^10.5"
     },
@@ -64,7 +65,11 @@
             "/coverage",
             "/.idea",
             "/.vscode",
-            "/.DS_Store"
+            "/.DS_Store",
+            "/.php-cs-fixer.dist.php",
+            "/.php-cs-fixer.cache",
+            "/infection.json5",
+            "/infection.log"
         ]
     },
     "scripts": {
@@ -73,6 +78,8 @@
         "test:edgecase": "phpunit --testsuite=edgecase",
         "test:property": "phpunit --testsuite=property",
         "test:conformance": "phpunit --testsuite=conformance",
-        "phpstan": "phpstan analyse --memory-limit=512M"
+        "phpstan": "phpstan analyse --memory-limit=512M",
+        "cs": "php-cs-fixer check --diff",
+        "cs:fix": "php-cs-fixer fix"
     }
 }

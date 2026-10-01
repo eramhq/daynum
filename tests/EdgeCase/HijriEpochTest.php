@@ -22,7 +22,7 @@ final class HijriEpochTest extends TestCase
         $this->assertSame(1948440, HijriCivilCalendar::EPOCH);
         $this->assertSame(
             1948440,
-            HijriCivilCalendar::instance()->toJdn(1, 1, 1)
+            HijriCivilCalendar::instance()->toJdn(1, 1, 1),
         );
     }
 
@@ -39,7 +39,7 @@ final class HijriEpochTest extends TestCase
     {
         $this->assertSame(
             30,
-            HijriCivilCalendar::instance()->daysInMonth(1, 1)
+            HijriCivilCalendar::instance()->daysInMonth(1, 1),
         );
     }
 

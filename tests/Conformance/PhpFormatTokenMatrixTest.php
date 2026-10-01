@@ -42,8 +42,12 @@ final class PhpFormatTokenMatrixTest extends TestCase
      * @dataProvider dateTimezoneMatrix
      */
     public function testTokenMatchesPhp(
-        int $year, int $month, int $day,
-        int $hour, int $minute, int $second,
+        int $year,
+        int $month,
+        int $day,
+        int $hour,
+        int $minute,
+        int $second,
         string $tz,
     ): void {
         $dti = new DateTimeImmutable(
@@ -59,7 +63,7 @@ final class PhpFormatTokenMatrixTest extends TestCase
             $this->assertSame(
                 $expected,
                 $actual,
-                "Token '{$token}' mismatch for {$year}-{$month}-{$day} {$hour}:{$minute}:{$second} {$tz}"
+                "Token '{$token}' mismatch for {$year}-{$month}-{$day} {$hour}:{$minute}:{$second} {$tz}",
             );
         }
 
@@ -69,7 +73,7 @@ final class PhpFormatTokenMatrixTest extends TestCase
             $this->assertSame(
                 $expected,
                 $actual,
-                "Locale token '{$token}' mismatch for {$year}-{$month}-{$day} {$tz}"
+                "Locale token '{$token}' mismatch for {$year}-{$month}-{$day} {$tz}",
             );
         }
     }
@@ -119,7 +123,7 @@ final class PhpFormatTokenMatrixTest extends TestCase
             $this->assertSame(
                 $dti->format('S'),
                 $i->gregorian()->format('S'),
-                "S mismatch for day {$day}"
+                "S mismatch for day {$day}",
             );
         }
     }

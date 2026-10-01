@@ -151,8 +151,14 @@ final class DateTokenFormatterTest extends TestCase
      * @dataProvider isoWeekYearCases
      */
     public function testOTokenCrossYearThursdayRule(
-        int $year, int $month, int $day, int $dow, int $isoDow,
-        int $week, int $weekBasedYear, string $expected
+        int $year,
+        int $month,
+        int $day,
+        int $dow,
+        int $isoDow,
+        int $week,
+        int $weekBasedYear,
+        string $expected,
     ): void {
         $ctx = $this->sampleContext([
             'year' => $year, 'month' => $month, 'day' => $day,
@@ -250,7 +256,13 @@ final class DateTokenFormatterTest extends TestCase
      * @dataProvider isoWeekCases
      */
     public function testWTokenAcrossGregorianBoundaries(
-        int $year, int $month, int $day, int $dow, int $isoDow, int $week, string $expected
+        int $year,
+        int $month,
+        int $day,
+        int $dow,
+        int $isoDow,
+        int $week,
+        string $expected,
     ): void {
         $ctx = $this->sampleContext([
             'year' => $year, 'month' => $month, 'day' => $day,
@@ -288,7 +300,7 @@ final class DateTokenFormatterTest extends TestCase
         // `jS F Y` should render identically to `j F Y`.
         $this->assertSame(
             '۱۹ فروردین ۱۴۰۵',
-            DateTokenFormatter::format('jS F Y', $this->jalaliPersianContext())
+            DateTokenFormatter::format('jS F Y', $this->jalaliPersianContext()),
         );
     }
 
@@ -310,9 +322,14 @@ final class DateTokenFormatterTest extends TestCase
             $ctx = new FormatContext(
                 locale: new EnglishLocale(),
                 calendarName: 'gregorian',
-                year: $year, month: $month, day: $day,
-                hour: 0, minute: 0, second: 0,
-                dayOfWeek: 0, dayOfWeekIso: 7,
+                year: $year,
+                month: $month,
+                day: $day,
+                hour: 0,
+                minute: 0,
+                second: 0,
+                dayOfWeek: 0,
+                dayOfWeekIso: 7,
                 daysInMonth: $dim,
                 dayOfYear: $doy,
                 weekOfYear: 1,
@@ -324,7 +341,7 @@ final class DateTokenFormatterTest extends TestCase
             $this->assertSame(
                 $expected,
                 DateTokenFormatter::format('z', $ctx),
-                "z for {$year}-{$month}-{$day}"
+                "z for {$year}-{$month}-{$day}",
             );
         }
     }
@@ -335,9 +352,14 @@ final class DateTokenFormatterTest extends TestCase
         $ctx = new FormatContext(
             locale: new PersianLocale(),
             calendarName: 'jalali',
-            year: 1405, month: 1, day: 19,
-            hour: 0, minute: 0, second: 0,
-            dayOfWeek: 3, dayOfWeekIso: 3,
+            year: 1405,
+            month: 1,
+            day: 19,
+            hour: 0,
+            minute: 0,
+            second: 0,
+            dayOfWeek: 3,
+            dayOfWeekIso: 3,
             daysInMonth: 31,
             dayOfYear: 19,
             weekOfYear: 3,
@@ -369,8 +391,11 @@ final class DateTokenFormatterTest extends TestCase
             year: -44,
             month: 3,
             day: 15,
-            hour: 0, minute: 0, second: 0,
-            dayOfWeek: 0, dayOfWeekIso: 7,
+            hour: 0,
+            minute: 0,
+            second: 0,
+            dayOfWeek: 0,
+            dayOfWeekIso: 7,
             daysInMonth: 31,
             dayOfYear: 74,      // 31 (Jan) + 28 (Feb) + 15
             weekOfYear: 1,
@@ -387,9 +412,14 @@ final class DateTokenFormatterTest extends TestCase
         $ctx = new FormatContext(
             locale: new EnglishLocale(),
             calendarName: 'gregorian',
-            year: 0, month: 1, day: 1,
-            hour: 0, minute: 0, second: 0,
-            dayOfWeek: 6, dayOfWeekIso: 6,
+            year: 0,
+            month: 1,
+            day: 1,
+            hour: 0,
+            minute: 0,
+            second: 0,
+            dayOfWeek: 6,
+            dayOfWeekIso: 6,
             daysInMonth: 31,
             dayOfYear: 1,
             weekOfYear: 1,
@@ -406,9 +436,14 @@ final class DateTokenFormatterTest extends TestCase
         $ctx = new FormatContext(
             locale: new PersianLocale(),
             calendarName: 'jalali',
-            year: 1405, month: 1, day: 19,
-            hour: 14, minute: 30, second: 0,
-            dayOfWeek: 3, dayOfWeekIso: 3,
+            year: 1405,
+            month: 1,
+            day: 19,
+            hour: 14,
+            minute: 30,
+            second: 0,
+            dayOfWeek: 3,
+            dayOfWeekIso: 3,
             daysInMonth: 31,
             dayOfYear: 19,
             weekOfYear: 3,

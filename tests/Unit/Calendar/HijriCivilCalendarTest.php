@@ -15,11 +15,11 @@ final class HijriCivilCalendarTest extends TestCase
     {
         $this->assertSame(
             1948440,
-            HijriCivilCalendar::instance()->toJdn(1, 1, 1)
+            HijriCivilCalendar::instance()->toJdn(1, 1, 1),
         );
         $this->assertSame(
             [1, 1, 1],
-            HijriCivilCalendar::instance()->fromJdn(1948440)
+            HijriCivilCalendar::instance()->fromJdn(1948440),
         );
     }
 
@@ -29,11 +29,11 @@ final class HijriCivilCalendarTest extends TestCase
         $greg = GregorianCalendar::instance()->toJdn(2000, 4, 6);
         $this->assertSame(
             [1421, 1, 1],
-            HijriCivilCalendar::instance()->fromJdn($greg)
+            HijriCivilCalendar::instance()->fromJdn($greg),
         );
         $this->assertSame(
             $greg,
-            HijriCivilCalendar::instance()->toJdn(1421, 1, 1)
+            HijriCivilCalendar::instance()->toJdn(1421, 1, 1),
         );
     }
 
@@ -132,7 +132,7 @@ final class HijriCivilCalendarTest extends TestCase
         $jdn = HijriCivilCalendar::instance()->toJdn(2, 12, 30);
         $this->assertSame(
             [2, 12, 30],
-            HijriCivilCalendar::instance()->fromJdn($jdn)
+            HijriCivilCalendar::instance()->fromJdn($jdn),
         );
     }
 

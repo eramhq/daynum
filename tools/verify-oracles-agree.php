@@ -74,8 +74,12 @@ foreach ($pairs as [$phpFile, $nodeFile]) {
         && $phpMeta['icuVersion'] !== $nodeMeta['icuVersion'];
 
     if ($tolerateJalali) {
-        fprintf(STDOUT, "  ⚠ ICU versions differ (%s vs %s) — tolerating known Jalali divergence windows\n",
-            $phpMeta['icuVersion'], $nodeMeta['icuVersion']);
+        fprintf(
+            STDOUT,
+            "  ⚠ ICU versions differ (%s vs %s) — tolerating known Jalali divergence windows\n",
+            $phpMeta['icuVersion'],
+            $nodeMeta['icuVersion'],
+        );
     }
 
     $line = 1; // the headers were line 1

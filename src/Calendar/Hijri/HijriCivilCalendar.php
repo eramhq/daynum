@@ -132,7 +132,7 @@ final class HijriCivilCalendar implements Calendar
     {
         if ($month < 1 || $month > 12) {
             throw new InvalidDateException(
-                "Invalid Hijri month {$month} (expected 1..12)."
+                "Invalid Hijri month {$month} (expected 1..12).",
             );
         }
         // Odd months 1,3,5,7,9,11 → 30 days; even months 2,4,6,8,10 → 29

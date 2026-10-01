@@ -38,7 +38,13 @@ final class HijriCivilIcuConformanceTest extends TestCase
             if ($actual !== [$hy, $hm, $hd]) {
                 $mismatches[] = sprintf(
                     'jdn=%d: expected Hijri %d-%02d-%02d, got %d-%02d-%02d',
-                    $jdn, $hy, $hm, $hd, $actual[0], $actual[1], $actual[2]
+                    $jdn,
+                    $hy,
+                    $hm,
+                    $hd,
+                    $actual[0],
+                    $actual[1],
+                    $actual[2],
                 );
                 if (count($mismatches) >= 5) {
                     break;
@@ -50,7 +56,11 @@ final class HijriCivilIcuConformanceTest extends TestCase
             if ($back !== $jdn) {
                 $mismatches[] = sprintf(
                     'Hijri %d-%02d-%02d → jdn %d, expected %d',
-                    $hy, $hm, $hd, $back, $jdn
+                    $hy,
+                    $hm,
+                    $hd,
+                    $back,
+                    $jdn,
                 );
                 if (count($mismatches) >= 5) {
                     break;

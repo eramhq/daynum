@@ -71,7 +71,7 @@ abstract class AbstractTableLocale implements LocaleData
     {
         if (!in_array($unit, self::RELATIVE_TIME_UNITS, true)) {
             throw new InvalidArgumentException(
-                "Unknown relative-time unit '{$unit}'; expected one of: " . implode(', ', self::RELATIVE_TIME_UNITS) . '.'
+                "Unknown relative-time unit '{$unit}'; expected one of: " . implode(', ', self::RELATIVE_TIME_UNITS) . '.',
             );
         }
         if ($value < 0) {

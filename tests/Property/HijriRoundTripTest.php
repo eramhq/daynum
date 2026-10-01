@@ -37,7 +37,7 @@ final class HijriRoundTripTest extends TestCase
             $this->assertSame(
                 [$y, $m, $d],
                 [$back->year(), $back->month(), $back->day()],
-                "Iteration {$i}: Gregorian→HijriCivil→Gregorian mismatch"
+                "Iteration {$i}: Gregorian→HijriCivil→Gregorian mismatch",
             );
         }
     }
@@ -58,7 +58,7 @@ final class HijriRoundTripTest extends TestCase
             $this->assertSame(
                 [$y, $m, $d],
                 [$back->year(), $back->month(), $back->day()],
-                "Iteration {$i}: HijriCivil→Gregorian→HijriCivil mismatch"
+                "Iteration {$i}: HijriCivil→Gregorian→HijriCivil mismatch",
             );
         }
     }
@@ -80,7 +80,7 @@ final class HijriRoundTripTest extends TestCase
             $this->assertSame(
                 [$y, $m, $d],
                 [$back->year(), $back->month(), $back->day()],
-                "Iteration {$i}: Gregorian→UAQ→Gregorian mismatch"
+                "Iteration {$i}: Gregorian→UAQ→Gregorian mismatch",
             );
         }
     }
@@ -101,7 +101,7 @@ final class HijriRoundTripTest extends TestCase
             $this->assertSame(
                 [$y, $m, $d],
                 [$back->year(), $back->month(), $back->day()],
-                "Iteration {$i}: UAQ→Gregorian→UAQ mismatch"
+                "Iteration {$i}: UAQ→Gregorian→UAQ mismatch",
             );
         }
     }
@@ -150,6 +150,6 @@ final class HijriRoundTripTest extends TestCase
     private function seededRng(): \Closure
     {
         mt_srand(self::SEED);
-        return static fn (int $min, int $max): int => mt_rand($min, $max);
+        return static fn(int $min, int $max): int => mt_rand($min, $max);
     }
 }

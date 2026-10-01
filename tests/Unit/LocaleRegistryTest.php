@@ -35,7 +35,7 @@ final class LocaleRegistryTest extends TestCase
 
     public function testRegisterCustomRegionalLocale(): void
     {
-        $canadian = new class () extends EnglishLocale {
+        $canadian = new class extends EnglishLocale {
             public function tag(): string
             {
                 return 'en-CA';
@@ -59,7 +59,7 @@ final class LocaleRegistryTest extends TestCase
 
     public function testRegisteredLanguageServesItsRegions(): void
     {
-        $klingon = new class () extends EnglishLocale {
+        $klingon = new class extends EnglishLocale {
             public function tag(): string
             {
                 return 'tlh';
@@ -73,7 +73,7 @@ final class LocaleRegistryTest extends TestCase
     public function testRegisterReplacesBuiltIn(): void
     {
         $original = LocaleRegistry::get('fa-AF');
-        $replacement = new class () extends PersianLocale {
+        $replacement = new class extends PersianLocale {
             public function weekendDays(): array
             {
                 return [WeekDay::Friday];

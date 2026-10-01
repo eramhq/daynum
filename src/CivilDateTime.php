@@ -50,7 +50,7 @@ final class CivilDateTime implements JsonSerializable
     ) {
         if ($secondsOfDay < 0 || $secondsOfDay >= 86400) {
             throw new InvalidDateException(
-                "secondsOfDay must be in [0, 86400); got {$secondsOfDay}."
+                "secondsOfDay must be in [0, 86400); got {$secondsOfDay}.",
             );
         }
     }
@@ -367,14 +367,14 @@ final class CivilDateTime implements JsonSerializable
         $secondsOfDay = $data['secondsOfDay'] ?? 0;
         if (!is_int($secondsOfDay)) {
             throw new Exception\InvalidArgumentException(
-                'CivilDateTime::fromArray() "secondsOfDay" must be an int; got ' . get_debug_type($secondsOfDay) . '.'
+                'CivilDateTime::fromArray() "secondsOfDay" must be an int; got ' . get_debug_type($secondsOfDay) . '.',
             );
         }
 
         $tzLabel = $data['tzLabel'] ?? null;
         if ($tzLabel !== null && !is_string($tzLabel)) {
             throw new Exception\InvalidArgumentException(
-                'CivilDateTime::fromArray() "tzLabel" must be a string or null; got ' . get_debug_type($tzLabel) . '.'
+                'CivilDateTime::fromArray() "tzLabel" must be a string or null; got ' . get_debug_type($tzLabel) . '.',
             );
         }
 

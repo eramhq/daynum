@@ -54,7 +54,7 @@ final class UmmAlQuraRange
         if (self::$minYear <= 0 || self::$maxYear <= 0) {
             throw new \RuntimeException(
                 'UAQ fixture header is missing uaqMinYear/uaqMaxYear metadata; '
-                . 'regenerate via tools/generate-fixtures-php.php.'
+                . 'regenerate via tools/generate-fixtures-php.php.',
             );
         }
     }

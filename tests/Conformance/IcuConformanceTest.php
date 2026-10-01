@@ -44,7 +44,13 @@ final class IcuConformanceTest extends TestCase
             if ($actual !== [$gy, $gm, $gd]) {
                 $mismatches[] = sprintf(
                     'jdn=%d: expected %d-%02d-%02d, got %d-%02d-%02d',
-                    $jdn, $gy, $gm, $gd, $actual[0], $actual[1], $actual[2]
+                    $jdn,
+                    $gy,
+                    $gm,
+                    $gd,
+                    $actual[0],
+                    $actual[1],
+                    $actual[2],
                 );
                 if (count($mismatches) >= 5) {
                     break;
@@ -56,7 +62,11 @@ final class IcuConformanceTest extends TestCase
             if ($back !== $jdn) {
                 $mismatches[] = sprintf(
                     '%d-%02d-%02d → jdn %d, expected %d',
-                    $gy, $gm, $gd, $back, $jdn
+                    $gy,
+                    $gm,
+                    $gd,
+                    $back,
+                    $jdn,
                 );
                 if (count($mismatches) >= 5) {
                     break;
@@ -93,7 +103,13 @@ final class IcuConformanceTest extends TestCase
             if ($actual !== [$jy, $jm, $jd]) {
                 $mismatches[] = sprintf(
                     'NEW divergence at jdn=%d: expected Jalali %d-%02d-%02d, got %d-%02d-%02d',
-                    $jdn, $jy, $jm, $jd, $actual[0], $actual[1], $actual[2]
+                    $jdn,
+                    $jy,
+                    $jm,
+                    $jd,
+                    $actual[0],
+                    $actual[1],
+                    $actual[2],
                 );
                 if (count($mismatches) >= 5) {
                     break;
@@ -105,7 +121,11 @@ final class IcuConformanceTest extends TestCase
             if ($back !== $jdn) {
                 $mismatches[] = sprintf(
                     'Jalali %d-%02d-%02d → jdn %d, expected %d',
-                    $jy, $jm, $jd, $back, $jdn
+                    $jy,
+                    $jm,
+                    $jd,
+                    $back,
+                    $jdn,
                 );
                 if (count($mismatches) >= 5) {
                     break;
@@ -118,7 +138,7 @@ final class IcuConformanceTest extends TestCase
             JalaliIcuDivergence::count(),
             $skipped,
             "Dynamic Jalali ICU skip-set skipped {$skipped} rows; "
-                . 'fixture pair changed during the test run.'
+                . 'fixture pair changed during the test run.',
         );
         $this->assertEmpty($mismatches, implode("\n", $mismatches));
     }
@@ -149,14 +169,14 @@ final class IcuConformanceTest extends TestCase
             $this->assertNotSame(
                 [$jy, $jm, $jd],
                 $actual,
-                "jdn={$row['jdn']}: skipped Jalali row no longer diverges from the PHP fixture"
+                "jdn={$row['jdn']}: skipped Jalali row no longer diverges from the PHP fixture",
             );
 
             $roundTrip = $calendar->toJdn($actual[0], $actual[1], $actual[2]);
             $this->assertSame(
                 $row['jdn'],
                 $roundTrip,
-                "jdn={$row['jdn']}: skipped Jalali row breaks Daynum round-trip"
+                "jdn={$row['jdn']}: skipped Jalali row breaks Daynum round-trip",
             );
         }
 

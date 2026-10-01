@@ -103,6 +103,6 @@ final class TimeArithmeticTest extends TestCase
     private function seededRng(): \Closure
     {
         mt_srand(self::SEED);
-        return static fn (int $min, int $max): int => mt_rand($min, $max);
+        return static fn(int $min, int $max): int => mt_rand($min, $max);
     }
 }

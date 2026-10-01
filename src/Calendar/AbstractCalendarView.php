@@ -42,8 +42,7 @@ abstract class AbstractCalendarView implements CalendarView
         protected readonly CivilDateTime $dateTime,
         protected readonly LocaleData $locale,
         protected readonly string $digitScript,
-    ) {
-    }
+    ) {}
 
     abstract public function calendar(): Calendar;
 
@@ -217,29 +216,41 @@ abstract class AbstractCalendarView implements CalendarView
                 $nextPart = $parts[$idx + 1] ?? null;
                 $nextIsToken = $nextPart !== null && $nextPart['type'] === 'token';
                 if ($nextIsToken) {
-                    throw ParseException::forFormat($text, $format,
-                        sprintf('variable-width token "%s" cannot be followed directly by another token without a literal separator', $token));
+                    throw ParseException::forFormat(
+                        $text,
+                        $format,
+                        sprintf('variable-width token "%s" cannot be followed directly by another token without a literal separator', $token),
+                    );
                 }
                 $extracted = self::extractVariableWidth($text, $pos);
                 if ($extracted === null) {
-                    throw ParseException::forFormat($text, $format,
-                        sprintf('expected 1-2 digits for "%s" at position %d', $token, $pos));
+                    throw ParseException::forFormat(
+                        $text,
+                        $format,
+                        sprintf('expected 1-2 digits for "%s" at position %d', $token, $pos),
+                    );
                 }
                 self::setField($fields, $fieldName, $extracted['value'], $text, $format);
                 $pos = $extracted['end'];
             } elseif ($token === 'P' || $token === 'p') {
                 $extracted = self::extractTzOffset($text, $pos, '/^([+-]\d{2}:\d{2})/', allowZ: true);
                 if ($extracted === null) {
-                    throw ParseException::forFormat($text, $format,
-                        sprintf('expected timezone offset (+HH:MM or Z) for "%s" at position %d', $token, $pos));
+                    throw ParseException::forFormat(
+                        $text,
+                        $format,
+                        sprintf('expected timezone offset (+HH:MM or Z) for "%s" at position %d', $token, $pos),
+                    );
                 }
                 $fields['tzOffsetP'] = $extracted['value'];
                 $pos = $extracted['end'];
             } elseif ($token === 'O') {
                 $extracted = self::extractTzOffset($text, $pos, '/^([+-]\d{4})/');
                 if ($extracted === null) {
-                    throw ParseException::forFormat($text, $format,
-                        sprintf('expected timezone offset (+HHMM) for "O" at position %d', $pos));
+                    throw ParseException::forFormat(
+                        $text,
+                        $format,
+                        sprintf('expected timezone offset (+HHMM) for "O" at position %d', $pos),
+                    );
                 }
                 $fields['tzOffsetO'] = $extracted['value'];
                 $pos = $extracted['end'];
@@ -311,7 +322,9 @@ abstract class AbstractCalendarView implements CalendarView
         if ($hour > 23 || $minute > 59 || $second > 59) {
             throw ParseException::forFormat($text, $format, sprintf(
                 'time component out of range: hour=%d, minute=%d, second=%d',
-                $hour, $minute, $second,
+                $hour,
+                $minute,
+                $second,
             ));
         }
 
@@ -647,7 +660,7 @@ abstract class AbstractCalendarView implements CalendarView
     private static function longestFirst(array $names): array
     {
         $names = array_values(array_unique($names, SORT_REGULAR));
-        usort($names, static fn (array $a, array $b): int => strlen($b[0]) <=> strlen($a[0]));
+        usort($names, static fn(array $a, array $b): int => strlen($b[0]) <=> strlen($a[0]));
         return $names;
     }
 
@@ -926,8 +939,8 @@ abstract class AbstractCalendarView implements CalendarView
         // hit `str_contains` as a false positive, then `patternContainsUnescaped`
         // rejects them — important because it also means an escaped token
         // at a calendar boundary never trips the throw.
-        $dayOfYear     = str_contains($pattern, 'z') && self::patternContainsUnescaped($pattern, 'z') ? $this->dayOfYear()     : 0;
-        $weekOfYear    = str_contains($pattern, 'W') && self::patternContainsUnescaped($pattern, 'W') ? $this->weekOfYear()    : 0;
+        $dayOfYear     = str_contains($pattern, 'z') && self::patternContainsUnescaped($pattern, 'z') ? $this->dayOfYear() : 0;
+        $weekOfYear    = str_contains($pattern, 'W') && self::patternContainsUnescaped($pattern, 'W') ? $this->weekOfYear() : 0;
         $weekBasedYear = str_contains($pattern, 'o') && self::patternContainsUnescaped($pattern, 'o') ? $this->weekBasedYear() : 0;
 
         // Lazily construct DateTimeImmutable only when timezone-dependent
@@ -1084,7 +1097,7 @@ abstract class AbstractCalendarView implements CalendarView
     {
         $c = $this->components();
         return $this->dateTime->withJdn(
-            $this->calendar()->toJdn($c['year'], $c['month'], $c['daysInMonth'])
+            $this->calendar()->toJdn($c['year'], $c['month'], $c['daysInMonth']),
         );
     }
 

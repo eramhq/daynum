@@ -132,7 +132,9 @@ for ($y = $MIN_YEAR; $y < $MAX_YEAR; $y++) {
     if ($delta !== 354 && $delta !== 355) {
         throw new RuntimeException(sprintf(
             "Unexpected year-start delta %d between AH %d and %d",
-            $delta, $y, $y + 1
+            $delta,
+            $y,
+            $y + 1,
         ));
     }
     // Year length = 29*12 + (# bits set) = 348 + popcount.
@@ -146,7 +148,9 @@ for ($y = $MIN_YEAR; $y < $MAX_YEAR; $y++) {
     if ($yearLenFromBits !== $delta) {
         throw new RuntimeException(sprintf(
             "Year-length disagreement at AH %d: bits→%d days, yearStart delta→%d",
-            $y, $yearLenFromBits, $delta
+            $y,
+            $yearLenFromBits,
+            $delta,
         ));
     }
 }

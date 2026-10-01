@@ -38,7 +38,7 @@ final class RoundTripTest extends TestCase
             $this->assertSame(
                 [$y, $m, $d],
                 [$back->year(), $back->month(), $back->day()],
-                "Iteration {$i}: Gregorian→Jalali→Gregorian mismatch"
+                "Iteration {$i}: Gregorian→Jalali→Gregorian mismatch",
             );
         }
     }
@@ -58,7 +58,7 @@ final class RoundTripTest extends TestCase
             $this->assertSame(
                 [$y, $m, $d],
                 [$back->year(), $back->month(), $back->day()],
-                "Iteration {$i}: Jalali→Gregorian→Jalali mismatch"
+                "Iteration {$i}: Jalali→Gregorian→Jalali mismatch",
             );
         }
     }
@@ -90,6 +90,6 @@ final class RoundTripTest extends TestCase
     private function seededRng(): \Closure
     {
         mt_srand(self::SEED);
-        return static fn (int $min, int $max): int => mt_rand($min, $max);
+        return static fn(int $min, int $max): int => mt_rand($min, $max);
     }
 }

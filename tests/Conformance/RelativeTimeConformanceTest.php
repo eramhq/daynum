@@ -41,7 +41,12 @@ final class RelativeTimeConformanceTest extends TestCase
                 if ($actual !== $expected) {
                     $mismatches[] = sprintf(
                         '%s %s %d %s: expected "%s", got "%s"',
-                        $row['locale'], $row['unit'], $row['value'], $key, $expected, $actual,
+                        $row['locale'],
+                        $row['unit'],
+                        $row['value'],
+                        $key,
+                        $expected,
+                        $actual,
                     );
                 }
             }

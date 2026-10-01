@@ -155,7 +155,7 @@ final class HijriUmmAlQuraCalendarTest extends TestCase
         }
         $this->assertSame(
             $total,
-            $c->dayOfYear(1445, 12, $c->daysInMonth(1445, 12))
+            $c->dayOfYear(1445, 12, $c->daysInMonth(1445, 12)),
         );
     }
 

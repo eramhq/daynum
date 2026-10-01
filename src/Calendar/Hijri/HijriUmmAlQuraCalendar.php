@@ -137,7 +137,7 @@ final class HijriUmmAlQuraCalendar implements Calendar
         }
         if ($month < 1 || $month > 12) {
             throw new InvalidDateException(
-                "Invalid Hijri month {$month} (expected 1..12)."
+                "Invalid Hijri month {$month} (expected 1..12).",
             );
         }
         return (Table::MONTH_LENGTHS[$year] & (1 << ($month - 1))) !== 0 ? 30 : 29;

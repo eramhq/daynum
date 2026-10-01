@@ -75,9 +75,9 @@ if (class_exists(\Eram\Daynum\Calendar\Hijri\Table::class)) {
 }
 
 fwrite($gregFile, json_encode(['meta' => $header + ['calendar' => 'gregorian']]) . "\n");
-fwrite($jalFile,  json_encode(['meta' => $header + ['calendar' => 'persian']]) . "\n");
-fwrite($hcFile,   json_encode(['meta' => $header + ['calendar' => 'islamic-civil']]) . "\n");
-fwrite($uaqFile,  json_encode(['meta' => $header + [
+fwrite($jalFile, json_encode(['meta' => $header + ['calendar' => 'persian']]) . "\n");
+fwrite($hcFile, json_encode(['meta' => $header + ['calendar' => 'islamic-civil']]) . "\n");
+fwrite($uaqFile, json_encode(['meta' => $header + [
     'calendar'    => 'islamic-umalqura',
     'uaqMinYear'  => $uaqRange[0] ?? null,
     'uaqMaxYear'  => $uaqRange[1] ?? null,

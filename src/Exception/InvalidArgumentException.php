@@ -11,6 +11,4 @@ namespace Eram\Daynum\Exception;
  * that target \InvalidArgumentException still work. Implements DaynumException
  * so `catch (DaynumException)` covers every exception the library throws.
  */
-final class InvalidArgumentException extends \InvalidArgumentException implements DaynumException
-{
-}
+final class InvalidArgumentException extends \InvalidArgumentException implements DaynumException {}

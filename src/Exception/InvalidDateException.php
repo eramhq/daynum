@@ -19,7 +19,7 @@ final class InvalidDateException extends InvalidArgumentException implements Day
         int $year,
         int $month,
         int $day,
-        string $reason
+        string $reason,
     ): self {
         return new self(sprintf(
             'Invalid %s date %d-%02d-%02d: %s',
@@ -27,7 +27,7 @@ final class InvalidDateException extends InvalidArgumentException implements Day
             $year,
             $month,
             $day,
-            $reason
+            $reason,
         ));
     }
 
@@ -37,7 +37,7 @@ final class InvalidDateException extends InvalidArgumentException implements Day
             'Invalid time-of-day %02d:%02d:%02d: hour must be 0-23, minute 0-59, second 0-59.',
             $hour,
             $minute,
-            $second
+            $second,
         ));
     }
 }

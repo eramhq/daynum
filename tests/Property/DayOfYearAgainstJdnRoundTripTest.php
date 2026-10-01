@@ -38,7 +38,7 @@ final class DayOfYearAgainstJdnRoundTripTest extends TestCase
             $this->assertSame(
                 $expected,
                 $c->dayOfYear($y, $m, $d),
-                sprintf('%s dayOfYear(%d, %d, %d)', $c->name(), $y, $m, $d)
+                sprintf('%s dayOfYear(%d, %d, %d)', $c->name(), $y, $m, $d),
             );
         }
     }
@@ -58,6 +58,6 @@ final class DayOfYearAgainstJdnRoundTripTest extends TestCase
     private function seededRng(): \Closure
     {
         mt_srand(self::SEED);
-        return static fn (int $min, int $max): int => mt_rand($min, $max);
+        return static fn(int $min, int $max): int => mt_rand($min, $max);
     }
 }

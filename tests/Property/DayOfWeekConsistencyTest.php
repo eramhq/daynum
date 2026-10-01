@@ -29,11 +29,11 @@ final class DayOfWeekConsistencyTest extends TestCase
             $this->assertSame(
                 $dateTime->gregorian()->dayOfWeek(),
                 $dateTime->jalali()->dayOfWeek(),
-                "Iteration {$i}: Gregorian and Jalali views disagree on day-of-week"
+                "Iteration {$i}: Gregorian and Jalali views disagree on day-of-week",
             );
             $this->assertSame(
                 $dateTime->gregorian()->dayOfWeekIso(),
-                $dateTime->jalali()->dayOfWeekIso()
+                $dateTime->jalali()->dayOfWeekIso(),
             );
         }
     }
@@ -72,7 +72,7 @@ final class DayOfWeekConsistencyTest extends TestCase
             $b = $a->gregorian()->addDays(1);
             $this->assertSame(
                 ($a->gregorian()->dayOfWeek() + 1) % 7,
-                $b->gregorian()->dayOfWeek()
+                $b->gregorian()->dayOfWeek(),
             );
         }
     }

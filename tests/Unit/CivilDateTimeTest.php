@@ -129,7 +129,7 @@ final class CivilDateTimeTest extends TestCase
         // 2026-04-08: 31 (Jan) + 28 (Feb) + 31 (Mar) + 8 = 98.
         $this->assertSame(
             98,
-            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->dayOfYear()
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->dayOfYear(),
         );
     }
 
@@ -138,7 +138,7 @@ final class CivilDateTimeTest extends TestCase
         // 1403 is a leap year, so Esfand 30 is valid and is day 366.
         $this->assertSame(
             366,
-            CivilDateTime::fromJalali(1403, 12, 30)->jalali()->dayOfYear()
+            CivilDateTime::fromJalali(1403, 12, 30)->jalali()->dayOfYear(),
         );
     }
 
@@ -147,7 +147,7 @@ final class CivilDateTimeTest extends TestCase
         // AH 2 is leap — Dhu al-Hijjah 30 is the 355th day of the year.
         $this->assertSame(
             355,
-            CivilDateTime::fromHijriCivil(2, 12, 30)->hijriCivil()->dayOfYear()
+            CivilDateTime::fromHijriCivil(2, 12, 30)->hijriCivil()->dayOfYear(),
         );
     }
 
@@ -161,7 +161,7 @@ final class CivilDateTimeTest extends TestCase
         }
         $this->assertSame(
             $expected,
-            CivilDateTime::fromHijri(1445, 9, 1)->hijri()->dayOfYear()
+            CivilDateTime::fromHijri(1445, 9, 1)->hijri()->dayOfYear(),
         );
     }
 
@@ -170,7 +170,7 @@ final class CivilDateTimeTest extends TestCase
         // 2026-04-08 is the 98th day of 2026; PHP-style z is 97.
         $this->assertSame(
             '97',
-            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('z')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('z'),
         );
     }
 
@@ -179,7 +179,7 @@ final class CivilDateTimeTest extends TestCase
         // 1403 is a leap Jalali year: Esfand 30 is day 366, z = 365.
         $this->assertSame(
             '365',
-            CivilDateTime::fromJalali(1403, 12, 30)->jalali()->format('z')
+            CivilDateTime::fromJalali(1403, 12, 30)->jalali()->format('z'),
         );
     }
 
@@ -189,7 +189,7 @@ final class CivilDateTimeTest extends TestCase
         // 355, z = 354.
         $this->assertSame(
             '354',
-            CivilDateTime::fromHijriCivil(2, 12, 30)->hijriCivil()->format('z')
+            CivilDateTime::fromHijriCivil(2, 12, 30)->hijriCivil()->format('z'),
         );
     }
 
@@ -204,7 +204,7 @@ final class CivilDateTimeTest extends TestCase
         }
         $this->assertSame(
             (string) $expected,
-            CivilDateTime::fromHijri(1445, 9, 1)->hijri()->format('z')
+            CivilDateTime::fromHijri(1445, 9, 1)->hijri()->format('z'),
         );
     }
 
@@ -215,7 +215,7 @@ final class CivilDateTimeTest extends TestCase
         // without it, `\z` would still force a dayOfYear() computation.
         $this->assertSame(
             'z',
-            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('\z')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('\z'),
         );
     }
 
@@ -224,7 +224,7 @@ final class CivilDateTimeTest extends TestCase
         // Midnight / noon / 1 PM — the load-bearing `% 12 ?: 12` path.
         $this->assertSame('12', CivilDateTime::fromGregorian(2026, 4, 8, 0, 0, 0)->gregorian()->format('g'));
         $this->assertSame('12', CivilDateTime::fromGregorian(2026, 4, 8, 12, 0, 0)->gregorian()->format('g'));
-        $this->assertSame('1',  CivilDateTime::fromGregorian(2026, 4, 8, 13, 0, 0)->gregorian()->format('g'));
+        $this->assertSame('1', CivilDateTime::fromGregorian(2026, 4, 8, 13, 0, 0)->gregorian()->format('g'));
     }
 
     public function testGregorianFormatH(): void
@@ -240,7 +240,7 @@ final class CivilDateTimeTest extends TestCase
         // PHP's `date('W', strtotime('2026-04-08'))`).
         $this->assertSame(
             '15',
-            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('W')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('W'),
         );
     }
 
@@ -252,7 +252,7 @@ final class CivilDateTimeTest extends TestCase
         // from Gregorian's week 15 of 2026 even though the JDN is identical.
         $this->assertSame(
             '03',
-            CivilDateTime::fromJalali(1405, 1, 19)->jalali()->format('W')
+            CivilDateTime::fromJalali(1405, 1, 19)->jalali()->format('W'),
         );
     }
 
@@ -260,7 +260,7 @@ final class CivilDateTimeTest extends TestCase
     {
         $this->assertSame(
             '8th April 2026',
-            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('jS F Y')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('jS F Y'),
         );
     }
 
@@ -270,7 +270,7 @@ final class CivilDateTimeTest extends TestCase
         // just the day — no `th` residue inside the Perso-Arabic output.
         $this->assertSame(
             '۱۹ فروردین ۱۴۰۵',
-            CivilDateTime::fromJalali(1405, 1, 19)->jalali()->withLocale('fa')->withDigits('persian')->format('jS F Y')
+            CivilDateTime::fromJalali(1405, 1, 19)->jalali()->withLocale('fa')->withDigits('persian')->format('jS F Y'),
         );
     }
 
@@ -323,7 +323,7 @@ final class CivilDateTimeTest extends TestCase
         // without tripping the boundary throw.
         $this->assertSame(
             '01',
-            CivilDateTime::fromHijriCivil(1, 1, 4)->hijriCivil()->format('W')
+            CivilDateTime::fromHijriCivil(1, 1, 4)->hijriCivil()->format('W'),
         );
     }
 
@@ -385,7 +385,7 @@ final class CivilDateTimeTest extends TestCase
         // escape-aware `patternContainsUnescaped($pattern, 'W')` guard.
         $this->assertSame(
             'W',
-            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('\W')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('\W'),
         );
     }
 
@@ -398,7 +398,7 @@ final class CivilDateTimeTest extends TestCase
         // patterns are safe at MIN/MAX edges.
         $this->assertSame(
             'W',
-            CivilDateTime::fromHijriCivil(1, 1, 1)->hijriCivil()->format('\W')
+            CivilDateTime::fromHijriCivil(1, 1, 1)->hijriCivil()->format('\W'),
         );
     }
 
@@ -407,7 +407,7 @@ final class CivilDateTimeTest extends TestCase
         // Same guarantee for `\o` on a Jalali MIN-edge date.
         $this->assertSame(
             'o',
-            CivilDateTime::fromJalali(1, 1, 1)->jalali()->format('\o')
+            CivilDateTime::fromJalali(1, 1, 1)->jalali()->format('\o'),
         );
     }
 
@@ -416,7 +416,7 @@ final class CivilDateTimeTest extends TestCase
         // Mid-year, `o` and `Y` agree — the normal case.
         $this->assertSame(
             '2026',
-            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('o')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('o'),
         );
     }
 
@@ -427,7 +427,7 @@ final class CivilDateTimeTest extends TestCase
         // renders `2025-W01`.
         $this->assertSame(
             '2025-W01',
-            CivilDateTime::fromGregorian(2024, 12, 30)->gregorian()->format('o-\WW')
+            CivilDateTime::fromGregorian(2024, 12, 30)->gregorian()->format('o-\WW'),
         );
     }
 
@@ -436,7 +436,7 @@ final class CivilDateTimeTest extends TestCase
         // 2023-01-01 is a Sunday — ISO week 52 of 2022.
         $this->assertSame(
             '2022-W52',
-            CivilDateTime::fromGregorian(2023, 1, 1)->gregorian()->format('o-\WW')
+            CivilDateTime::fromGregorian(2023, 1, 1)->gregorian()->format('o-\WW'),
         );
     }
 
@@ -446,7 +446,7 @@ final class CivilDateTimeTest extends TestCase
         // both adjacent — 2024-12-30 → `o=2025`, `Y=2024`.
         $this->assertSame(
             '20252024',
-            CivilDateTime::fromGregorian(2024, 12, 30)->gregorian()->format('oY')
+            CivilDateTime::fromGregorian(2024, 12, 30)->gregorian()->format('oY'),
         );
     }
 
@@ -457,7 +457,7 @@ final class CivilDateTimeTest extends TestCase
         // `Y` here since the date is deep inside week 3 of AP 1405.
         $this->assertSame(
             '1405',
-            CivilDateTime::fromJalali(1405, 1, 19)->jalali()->format('o')
+            CivilDateTime::fromJalali(1405, 1, 19)->jalali()->format('o'),
         );
     }
 
@@ -468,7 +468,7 @@ final class CivilDateTimeTest extends TestCase
         // str_contains guards compounding.
         $this->assertSame(
             '97 15',
-            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('z W')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('z W'),
         );
     }
 
@@ -480,7 +480,7 @@ final class CivilDateTimeTest extends TestCase
             '02:30 PM, 8th April 2026, Week 15',
             CivilDateTime::fromGregorian(2026, 4, 8, 14, 30)
                 ->gregorian()
-                ->format('h:i A, jS F Y, \W\e\e\k W')
+                ->format('h:i A, jS F Y, \W\e\e\k W'),
         );
     }
 

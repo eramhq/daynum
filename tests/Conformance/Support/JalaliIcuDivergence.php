@@ -143,7 +143,7 @@ final class JalaliIcuDivergence
             if ($phpLine === false || $nodeLine === false) {
                 self::$unexpectedRows[] = sprintf(
                     'jalali fixture length mismatch at line %d between PHP and Node oracles',
-                    $line
+                    $line,
                 );
                 break;
             }
@@ -153,7 +153,7 @@ final class JalaliIcuDivergence
             if (!is_array($phpRow) || !is_array($nodeRow)) {
                 self::$unexpectedRows[] = sprintf(
                     'invalid Jalali fixture JSON at line %d',
-                    $line
+                    $line,
                 );
                 break;
             }

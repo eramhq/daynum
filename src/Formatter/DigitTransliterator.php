@@ -49,7 +49,7 @@ final class DigitTransliterator
             // poisons the cache with a bad key.
             if (!isset(self::DIGITS[$script])) {
                 throw new InvalidArgumentException(
-                    "Unknown digit script '{$script}'. Expected one of: latn, persian, arab."
+                    "Unknown digit script '{$script}'. Expected one of: latn, persian, arab.",
                 );
             }
             $map = [];

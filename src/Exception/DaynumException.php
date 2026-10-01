@@ -10,6 +10,4 @@ namespace Eram\Daynum\Exception;
  * Catch this to catch anything from the library without catching unrelated
  * user-code exceptions.
  */
-interface DaynumException extends \Throwable
-{
-}
+interface DaynumException extends \Throwable {}
