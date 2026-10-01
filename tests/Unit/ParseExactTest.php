@@ -654,6 +654,9 @@ final class ParseExactTest extends TestCase
         yield '12-hour value 0' => ['2024-01-15 00:00 am', 'Y-m-d h:i a', '12-hour value 0 out of range 1-12'];
         yield '12-hour value 13' => ['2024-01-15 13:00 pm', 'Y-m-d h:i a', '12-hour value 13 out of range 1-12'];
         yield 'second year token disagrees' => ['2024 2025-01-15', 'Y Y-m-d', 'conflicting values for year: 2024 and 2025'];
+        yield 'second meridiem disagrees' => ['10:00 am pm', 'h:i a a', 'conflicting values for meridiem: AM and PM'];
+        yield 'second meridiem disagrees, PM first' => ['10:00 PM am', 'h:i A a', 'conflicting values for meridiem: PM and AM'];
+        yield 'second offset disagrees' => ['2024-01-15+03:30 +0400', 'Y-m-dP O', 'conflicting values for UTC offset: +03:30 and +04:00'];
     }
 
     // ─── Accepted edge cases ────────────────────────────────────────
@@ -689,5 +692,8 @@ final class ParseExactTest extends TestCase
         yield 'O -1200' => ['2024-01-15 -1200', 'Y-m-d O', [2024, 1, 15, 0, 0, 0], '-12:00'];
         yield 'O minute 59' => ['2024-01-15 +0559', 'Y-m-d O', [2024, 1, 15, 0, 0, 0], '+05:59'];
         yield 'P minute 59' => ['2024-01-15+00:59', 'Y-m-dP', [2024, 1, 15, 0, 0, 0], '+00:59'];
+        yield 'repeated meridiem agrees' => ['2024-01-15 1:05 pm PM', 'Y-m-d g:i a A', [2024, 1, 15, 13, 5, 0]];
+        yield 'c and O agree' => ['2024-01-15T10:20:30+03:30 +0330', 'c O', [2024, 1, 15, 10, 20, 30], '+03:30'];
+        yield 'Z and +0000 agree' => ['2024-01-15Z +0000', 'Y-m-dP O', [2024, 1, 15, 0, 0, 0], '+00:00'];
     }
 }

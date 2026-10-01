@@ -76,6 +76,7 @@ Matching is forgiving where keyboards and fonts differ, and strict everywhere el
 - A space is not a ZWNJ: `سه شنبه` does not match.
 - A weekday must agree with the date: `Monday 8 April 2026` throws, because 8 April 2026 is a Wednesday.
 - Two tokens for the same field must agree: `F Y-m-d` throws if the name and the number name different months.
+- Repeated `a`/`A` or UTC-offset tokens must agree too: `h:i a a` throws on `10:00 am pm`. Offsets compare as `+HH:MM`, so `c O` accepts `…+03:30 +0330`, and `Z` equals `+0000`.
 
 Calendars without names in the locale throw `ParseException` — the Arabic locale has no Jalali month names. An unknown locale tag throws `InvalidArgumentException`, since it is a programming error rather than bad input.
 

@@ -190,6 +190,13 @@ abstract class AbstractCalendarView implements CalendarView
                 if ($extracted === null) {
                     throw ParseException::forFormat($text, $format, "expected am/pm at position {$pos}");
                 }
+                if ($isPm !== null && $isPm !== $extracted['value']) {
+                    throw ParseException::forFormat($text, $format, sprintf(
+                        'conflicting values for meridiem: %s and %s',
+                        $isPm ? 'PM' : 'AM',
+                        $isPm ? 'AM' : 'PM',
+                    ));
+                }
                 $isPm = $extracted['value'];
                 $pos = $extracted['end'];
             } elseif ($fieldName === 'weekday' || $token === 'F' || $token === 'M') {
@@ -244,7 +251,7 @@ abstract class AbstractCalendarView implements CalendarView
                         sprintf('expected timezone offset (+HH:MM or Z) for "%s" at position %d', $token, $pos),
                     );
                 }
-                $tzOffset = $extracted['value'];
+                self::setTzOffset($tzOffset, $extracted['value'], $text, $format);
                 $pos = $extracted['end'];
             } elseif ($token === 'O') {
                 $extracted = self::extractTzOffset($text, $pos, '/^[+-]\d{4}/');
@@ -255,7 +262,8 @@ abstract class AbstractCalendarView implements CalendarView
                         sprintf('expected timezone offset (+HHMM) for "O" at position %d', $pos),
                     );
                 }
-                $tzOffset = substr_replace($extracted['value'], ':', 3, 0);   // +HHMM → +HH:MM
+                // +HHMM → +HH:MM, so `c O` with the same offset agrees.
+                self::setTzOffset($tzOffset, substr_replace($extracted['value'], ':', 3, 0), $text, $format);
                 $pos = $extracted['end'];
             } else {
                 // Fixed 2-digit numeric token
@@ -589,6 +597,24 @@ abstract class AbstractCalendarView implements CalendarView
             ));
         }
         $fields[$name] = $value;
+    }
+
+    /**
+     * Store a parsed `+HH:MM` offset, rejecting a second offset token that
+     * names a different one.
+     *
+     * @param-out string $tzOffset
+     */
+    private static function setTzOffset(?string &$tzOffset, string $value, string $text, string $format): void
+    {
+        if ($tzOffset !== null && $tzOffset !== $value) {
+            throw ParseException::forFormat($text, $format, sprintf(
+                'conflicting values for UTC offset: %s and %s',
+                $tzOffset,
+                $value,
+            ));
+        }
+        $tzOffset = $value;
     }
 
     /** @var \WeakMap<LocaleData, array<string, list<array{string, int}>|null>>|null */

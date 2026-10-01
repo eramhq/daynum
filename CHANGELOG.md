@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `parseExact()` rejects repeated AM/PM (`a`/`A`) or UTC-offset (`P`/`p`/
+  `O`) tokens that disagree, as it already did for every other field:
+  `10:00 am pm` with `h:i a a` throws "conflicting values for meridiem: AM
+  and PM". Previously the last token won. Offsets compare as `+HH:MM`, so
+  `c O` accepts `…+03:30 +0330` and `Z` equals `+0000`.
+
 ### Fixed
 - Name matching no longer depends on the C library locale. On PHP 8.1,
   `strtolower()` follows `setlocale(LC_CTYPE)`, and under a single-byte
