@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `parseExact()` / `tryParseExact()` take a `?string $locale` argument and
   parse `F`/`M` (month names, full or short) and `l`/`D` (weekday names,
   checked against the date). Matching ignores Latin case, treats Arabic
-  ي/ك as Persian ی/ک and ignores ZWNJ and the ezafe hamza.
+  ي/ى/ك as Persian ی/ک and ignores ZWNJ and the ezafe hamza.
 - `CivilDateTime::compare()` (a `usort` callback), `min()`, `max()`,
   `between($a, $b, bool $inclusive = true)` and `isSameDay()`.
 
@@ -58,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Their `jdate(int, int, int)` signature clashed with both `morilog/jalali`'s
   `jdate($str = null)` and jdf.php's `jdate($format, $timestamp)`, and the
   `function_exists` guard turned that clash into silent runtime breakage. Call
-  `Instant::fromJalali()` etc. directly, or define a helper in your own namespace.
+  `CivilDateTime::fromJalali()` etc. directly, or define a helper in your own namespace.
 
 ### Fixed
 - `toDateTimeImmutable()` (and the timezone format tokens built on it)
@@ -74,7 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `parseExact()` now rejects formats whose tokens give one field two
   different values (e.g. `F` and `m` naming different months); previously
   the last token silently won.
-- `LocaleRegistry::get()`'s unknown-locale message lists all available tags.
+- `LocaleRegistry::get()`'s unknown-locale message lists all available tags,
+  and malformed tags such as `en-` now throw instead of resolving to `en`.
 - CI runs PHPStan through `composer phpstan` (same memory limit as local runs)
   and adds PHP 8.5 to the test matrix. The oracle workflow uses Node 24, the
   version the committed relative-time fixture was generated with.

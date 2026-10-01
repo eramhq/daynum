@@ -144,7 +144,12 @@ interface CalendarView
      *
      * Uses the largest whole unit (year, month, week, day, hour, minute,
      * second). Years and months are counted in this view's calendar, so a
-     * Jalali view counts Jalali months.
+     * Jalali view counts Jalali months. A whole month or year counts only
+     * once the time of day has been reached as well.
+     *
+     * On an Umm al-Qura view this throws UmmAlQuraOutOfRangeException when
+     * either date is outside the bundled table, like diffInMonths(); use
+     * hijriCivil() for such dates.
      */
     public function diffForHumans(CivilDateTime $other): string;
 

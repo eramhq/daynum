@@ -99,6 +99,12 @@ final class ParseNamesTest extends TestCase
         $this->assertTrue(JalaliView::parseExact('يكشنبه 6 ارديبهشت 1405', 'l j F Y', null, 'fa')->equals(CivilDateTime::fromJalali(1405, 2, 6)));
     }
 
+    public function testAlefMaksuraMatchesFarsiYeh(): void
+    {
+        // Persian جمادی‌الاول typed with Arabic ى and no ZWNJ.
+        $this->assertTrue(HijriCivilView::parseExact('1 جمادىالاول 1447', 'j F Y', null, 'fa')->equals(CivilDateTime::fromHijriCivil(1447, 5, 1)));
+    }
+
     public function testZwnjAndEzafeAreOptional(): void
     {
         // سه‌شنبه written without its ZWNJ; ژانویهٔ written without the ezafe hamza.

@@ -1106,12 +1106,17 @@ final class CivilDateTimeTest extends TestCase
         $this->assertSame('in 1 month', $later->hijri()->diffForHumans($now));
     }
 
-    public function testDiffForHumansMonthUsesCalendarDaysNotElapsedSeconds(): void
+    public function testDiffForHumansWholeYearAndMonthNeedTimeOfDay(): void
     {
-        // Feb 1 23:00 → Mar 1 00:00 is under 28 × 24h, but a whole month by date.
-        $a = CivilDateTime::fromGregorian(2026, 2, 1, 23, 0, 0);
-        $b = CivilDateTime::fromGregorian(2026, 3, 1);
-        $this->assertSame('in 1 month', $b->gregorian()->diffForHumans($a));
+        $a = CivilDateTime::fromGregorian(2025, 1, 1, 23, 59, 59);
+        $b = CivilDateTime::fromGregorian(2026, 1, 1);
+        $this->assertSame('in 11 months', $b->gregorian()->diffForHumans($a));
+        $this->assertSame('11 months ago', $a->gregorian()->diffForHumans($b));
+
+        $c = CivilDateTime::fromGregorian(2026, 2, 1, 0, 30);
+        $d = CivilDateTime::fromGregorian(2026, 3, 1);
+        $this->assertSame('in 3 weeks', $d->gregorian()->diffForHumans($c));
+        $this->assertSame('in 1 month', $d->addMinutes(30)->gregorian()->diffForHumans($c));
     }
 
     public function testDiffForHumansLocalesAndDigits(): void

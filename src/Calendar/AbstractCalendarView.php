@@ -654,6 +654,7 @@ abstract class AbstractCalendarView implements CalendarView
     private const NAME_NORMALIZATION = [
         "\u{064A}" => "\u{06CC}",   // ARABIC YEH → FARSI YEH (ي → ی)
         "\u{0643}" => "\u{06A9}",   // ARABIC KAF → KEHEH (ك → ک)
+        "\u{0649}" => "\u{06CC}",   // ALEF MAKSURA → FARSI YEH (ى → ی)
         "\u{200C}" => '',            // ZERO WIDTH NON-JOINER
         "\u{0654}" => '',            // HAMZA ABOVE (Persian ezafe: ژانویهٔ)
     ];
@@ -1203,11 +1204,11 @@ abstract class AbstractCalendarView implements CalendarView
         // No calendar's month is shorter than 28 days, so closer dates can
         // skip the (comparatively costly) calendar diffs.
         if (abs($this->dateTime->diffInDays($other)) >= 28) {
-            $years = abs($this->diffInYears($other));
+            $years = $this->wholeUnitsElapsed($other, $this->diffInYears($other), 'addYears');
             if ($years > 0) {
                 return [$years, 'year'];
             }
-            $months = abs($this->diffInMonths($other));
+            $months = $this->wholeUnitsElapsed($other, $this->diffInMonths($other), 'addMonths');
             if ($months > 0) {
                 return [$months, 'month'];
             }
@@ -1220,6 +1221,28 @@ abstract class AbstractCalendarView implements CalendarView
             $seconds >= 60        => [intdiv($seconds, 60), 'minute'],
             default               => [$seconds, 'second'],
         };
+    }
+
+    /**
+     * `diffInMonths` / `diffInYears` compare dates only. For relative time
+     * the time of day matters too: Feb 1 00:30 → Mar 1 00:00 is not yet a
+     * whole month. Step `$other` forward by the date-based count and back
+     * off by one if that overshoots this value.
+     *
+     * @param 'addMonths'|'addYears' $add
+     * @return int absolute count
+     */
+    private function wholeUnitsElapsed(CivilDateTime $other, int $count, string $add): int
+    {
+        if ($count === 0) {
+            return 0;
+        }
+        $anchor = static::of($other)->{$add}($count);
+        $overshoot = CivilDateTime::compare($anchor, $this->dateTime);
+        if (($count > 0 && $overshoot > 0) || ($count < 0 && $overshoot < 0)) {
+            $count += $count > 0 ? -1 : 1;
+        }
+        return abs($count);
     }
 
     // ─── Internals ────────────────────────────────────────────────────

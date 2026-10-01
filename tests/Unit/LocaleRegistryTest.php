@@ -95,6 +95,14 @@ final class LocaleRegistryTest extends TestCase
         LocaleRegistry::register('english', new EnglishLocale());
     }
 
+    public function testGetRejectsMalformedTag(): void
+    {
+        $this->assertFalse(LocaleRegistry::has('en-!!'));
+        $this->assertFalse(LocaleRegistry::has('en-'));
+        $this->expectException(InvalidArgumentException::class);
+        LocaleRegistry::get('en-');
+    }
+
     public function testUnknownLanguageThrows(): void
     {
         $this->assertFalse(LocaleRegistry::has('de-DE'));

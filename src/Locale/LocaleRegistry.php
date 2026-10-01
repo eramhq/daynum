@@ -43,16 +43,15 @@ final class LocaleRegistry
      */
     public static function register(string $tag, LocaleData $locale): void
     {
-        $normalized = self::normalize($tag);
-        if (preg_match('/^[a-z]{2,3}(-[a-z0-9]{2,8})*$/', $normalized) !== 1) {
-            throw new InvalidArgumentException("Invalid locale tag '{$tag}'; expected a BCP 47 tag such as 'ps' or 'fa-AF'.");
-        }
-        self::$locales[$normalized] = $locale;
+        self::$locales[self::validTag($tag)] = $locale;
     }
 
+    /**
+     * @throws InvalidArgumentException on a malformed or unknown tag
+     */
     public static function get(string $tag): LocaleData
     {
-        $candidate = self::normalize($tag);
+        $candidate = self::validTag($tag);
         while ($candidate !== '') {
             $found = self::$locales[$candidate] ?? null;
             if ($found === null && isset(self::BUILT_IN[$candidate])) {
@@ -95,6 +94,15 @@ final class LocaleRegistry
         $tags = array_unique([...array_keys(self::BUILT_IN), ...array_keys(self::$locales)]);
         sort($tags);
         return $tags;
+    }
+
+    private static function validTag(string $tag): string
+    {
+        $normalized = self::normalize($tag);
+        if (preg_match('/^[a-z]{2,3}(-[a-z0-9]{2,8})*$/', $normalized) !== 1) {
+            throw new InvalidArgumentException("Invalid locale tag '{$tag}'; expected a BCP 47 tag such as 'ps' or 'fa-AF'.");
+        }
+        return $normalized;
     }
 
     /** Lowercase, with `_` turned into `-`: `fa_AF` → `fa-af`. */

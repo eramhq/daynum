@@ -71,7 +71,7 @@ Matching is forgiving where keyboards and fonts differ, and strict everywhere el
 - `F` and `M` both accept the full and the short name (`April` or `Apr`); `l` and `D` likewise. The longest name wins, so `June` is never read as `Jun` + `e`.
 - A name must end at a word boundary: `Aprl` fails rather than matching `Apr`.
 - Latin letters are case-insensitive (`APRIL`, `april`).
-- Arabic `ي` and `ك` match Persian `ی` and `ک`, so text typed on an Arabic keyboard parses as Persian.
+- Arabic `ي`, `ى` and `ك` match Persian `ی` and `ک`, so text typed on an Arabic keyboard parses as Persian.
 - The zero-width non-joiner (ZWNJ) and the ezafe hamza (`ٔ`) are optional: `سهشنبه` matches `سه‌شنبه`, and `ژانویه` matches `ژانویهٔ`.
 - A space is not a ZWNJ: `سه شنبه` does not match.
 - A weekday must agree with the date: `Monday 8 April 2026` throws, because 8 April 2026 is a Wednesday.

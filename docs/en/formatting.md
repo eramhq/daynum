@@ -146,7 +146,7 @@ $comment->createdAt->jalali()->withLocale('fa')->ago();                 // again
 
 `diffForHumans($other)` treats `$other` as "now"; `ago()` uses `CivilDateTime::now()` in the value's own timezone. Both pick the **largest whole unit**: year, month, week, day, hour, minute, second. The count is truncated, so 13 days is "1 week ago".
 
-Years and months are counted in the **view's calendar**, with the same rule as [`diffInMonths`](arithmetic.md#diffinmonths--diffinyears--on-the-view): 29 days after 8 April 2026 is "in 4 weeks" in a Gregorian view but "in 1 month" in a Hijri view, because the Hijri month was only 29 days long. Smaller units use wall-clock time (not DST-aware).
+Years and months are counted in the **view's calendar**, with the same rule as [`diffInMonths`](arithmetic.md#diffinmonths--diffinyears--on-the-view): 29 days after 8 April 2026 is "in 4 weeks" in a Gregorian view but "in 1 month" in a Hijri view, because the Hijri month was only 29 days long. Unlike `diffInMonths`, a whole month or year also waits for the time of day: 1 January 23:59 to the next 1 January 00:00 is "11 months", not "1 year". Smaller units use wall-clock time (not DST-aware). On a `hijri()` view, both dates must be inside the Umm al-Qura table.
 
 Phrases match `Intl.RelativeTimeFormat` with `numeric: 'always'` (`"0 seconds ago"`, never `"now"` or `"yesterday"`), including Arabic dual and plural forms (`يومين`, `٣ أيام`, `١١ يومًا`). Digits follow `withDigits()` like every other output. Numbers of 1000 and above are not digit-grouped.
 
