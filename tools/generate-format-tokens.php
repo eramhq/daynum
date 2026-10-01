@@ -5,8 +5,8 @@ declare(strict_types=1);
 /**
  * Produce golden formatted strings for the format-token conformance test.
  *
- * Covers a curated set of ~1000 representative dates across both English and
- * Persian locales, formatted against every PHP `date()` token Daynum supports.
+ * Covers a curated set of ~1000 representative dates across every built-in
+ * locale, formatted against every PHP `date()` token Daynum supports.
  * The expected strings are generated via ICU's `IntlDateFormatter` using ICU
  * pattern equivalents of each PHP token.
  *
@@ -26,6 +26,9 @@ declare(strict_types=1);
  *   tests/fixtures/format-tokens-ar-hijri.jsonl.gz
  *   tests/fixtures/format-tokens-fa-af.jsonl.gz
  *   tests/fixtures/format-tokens-fa-af-jalali.jsonl.gz
+ *   tests/fixtures/format-tokens-{ps,ur,tr}.jsonl.gz
+ *   tests/fixtures/format-tokens-{ps,ur,tr}-jalali.jsonl.gz
+ *   tests/fixtures/format-tokens-{ps,ur,tr}-hijri.jsonl.gz
  *
  * No `format-tokens-ar-jalali.jsonl.gz` is emitted: Arabic does not ship
  * Jalali month names (ICU's transliteration is low quality), so there is
@@ -100,6 +103,16 @@ foreach ([
     // Dari: only the tables that differ from `fa` (Hijri names are shared).
     ['fa-af',   'format-tokens-fa-af.jsonl.gz',        'fa-AF-u-ca-gregory-nu-latn', 'gregorian'],
     ['fa-af-j', 'format-tokens-fa-af-jalali.jsonl.gz', 'fa-AF-u-ca-persian-nu-latn', 'persian'],
+    // Pashto, Urdu and Turkish: all three calendars each.
+    ['ps',   'format-tokens-ps.jsonl.gz',          'ps-AF-u-ca-gregory-nu-latn',       'gregorian'],
+    ['ps-j', 'format-tokens-ps-jalali.jsonl.gz',   'ps-AF-u-ca-persian-nu-latn',       'persian'],
+    ['ps-h', 'format-tokens-ps-hijri.jsonl.gz',    'ps-AF-u-ca-islamic-civil-nu-latn', 'islamic-civil'],
+    ['ur',   'format-tokens-ur.jsonl.gz',          'ur-PK-u-ca-gregory-nu-latn',       'gregorian'],
+    ['ur-j', 'format-tokens-ur-jalali.jsonl.gz',   'ur-PK-u-ca-persian-nu-latn',       'persian'],
+    ['ur-h', 'format-tokens-ur-hijri.jsonl.gz',    'ur-PK-u-ca-islamic-civil-nu-latn', 'islamic-civil'],
+    ['tr',   'format-tokens-tr.jsonl.gz',          'tr-TR-u-ca-gregory-nu-latn',       'gregorian'],
+    ['tr-j', 'format-tokens-tr-jalali.jsonl.gz',   'tr-TR-u-ca-persian-nu-latn',       'persian'],
+    ['tr-h', 'format-tokens-tr-hijri.jsonl.gz',    'tr-TR-u-ca-islamic-civil-nu-latn', 'islamic-civil'],
 ] as [$tag, $filename, $icuLocale, $calendar]) {
     $path = FIXTURE_DIR . '/' . $filename;
     $out = fopen('compress.zlib://' . $path, 'w');

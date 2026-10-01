@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Internal;
 
+use Eram\Daynum\Formatter\DigitTransliterator;
+
 /**
  * @internal
  *
  * Folds month, weekday and AM/PM names to the form `parseExact()` compares,
- * so input matches regardless of case, keyboard layout or optional marks.
+ * so input matches regardless of case, keyboard layout, digit script or
+ * optional marks. Digits fold to ASCII because `parseExact()` converts the
+ * input's digits before matching, and some names hold one (Pashto `جماد ۲`).
  * Needs no mbstring: the table covers exactly the letters the built-in
  * locales use.
  */
@@ -38,6 +42,6 @@ final class NameNormalizer
 
     public static function normalize(string $name): string
     {
-        return strtolower(strtr($name, self::MAP));
+        return strtolower(strtr(DigitTransliterator::toLatin($name), self::MAP));
     }
 }

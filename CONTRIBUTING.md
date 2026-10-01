@@ -146,11 +146,11 @@ If any of these steps is unclear, file an issue before writing code. Reviewing h
 
 ## Adding a new locale
 
-1. Create `src/Locale/<Xxx>Locale.php` extending `AbstractTableLocale`, with tables for every `localeFamily()` you want to support.
+1. Create `src/Locale/<Xxx>Locale.php` extending `AbstractTableLocale`, with tables for every `localeFamily()` you want to support. Don't type the names: `php tools/dump-locale-tables.php <icu-locale>` (needs ext-intl) prints ICU's month, weekday and AM/PM names as PHP arrays to paste in.
 2. Register the new tag in `src/Locale/LocaleRegistry.php`.
 3. If the locale does not define names for some calendars (e.g., Arabic + Jalali), explicitly document it in the class docblock and let the base class throw.
-4. Add a golden-string fixture under `tests/fixtures/format-tokens-<lang>-*.jsonl.gz` generated from `tools/generate-format-tokens.php`.
-5. Add conformance tests under `tests/Conformance/` that compare against the new fixtures.
+4. Add the locale to `tools/generate-format-tokens.php` (one entry per calendar) and to `LOCALES` in `tools/generate-relative-time-node.mjs`, regenerate, and add the new fixtures to `FormatTokenConformanceTest::fixtures()`.
+5. Add the locale to `ParseNamesTest::localeCalendarProvider()` so every month round-trips through `format()` and `parseExact()`, and write a `tests/Unit/<Xxx>LocaleTest.php` for what ICU can't check (week rules, season names, AM/PM parsing).
 
 ## Commit style
 

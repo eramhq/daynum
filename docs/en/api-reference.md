@@ -331,11 +331,11 @@ See [exceptions.md](exceptions.md) for full throw-sites, messages, and recovery 
 LocaleRegistry::get(string $tag): LocaleData
 LocaleRegistry::register(string $tag, LocaleData $locale): void
 LocaleRegistry::has(string $tag): bool
-LocaleRegistry::tags(): list<string>                 // ['ar', 'en', 'fa', 'fa-af', ...]
+LocaleRegistry::tags(): list<string>                 // ['ar', 'en', 'fa', 'fa-af', 'ps', 'tr', 'ur', ...]
 LocaleRegistry::normalize(string $tag): string       // 'fa_AF' → 'fa-af'
 ```
 
-Ships `en`, `fa`, `fa-AF` (Dari) and `ar`. Tags are case-insensitive, `_` equals `-`, and regional tags fall back to their language (`fa-IR` → `fa`). `get()` throws `InvalidArgumentException` on unknown tags; `register()` throws on malformed ones and replaces existing entries. You rarely call `get()` directly — use `$view->withLocale($tag)`. See [localization.md](localization.md#custom-locales).
+Ships `en`, `fa`, `fa-AF` (Dari), `ar`, `ps` (Pashto), `ur` (Urdu) and `tr` (Turkish). Tags are case-insensitive, `_` equals `-`, and regional tags fall back to their language (`fa-IR` → `fa`). `get()` throws `InvalidArgumentException` on unknown tags; `register()` throws on malformed ones and replaces existing entries. You rarely call `get()` directly — use `$view->withLocale($tag)`. See [localization.md](localization.md#custom-locales).
 
 ### `LocaleData`
 

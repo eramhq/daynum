@@ -4,7 +4,7 @@
 
 Daynum is a clean, single-package replacement for the 3–4 libraries PHP developers currently glue together to get Gregorian + Jalali (Shamsi) + Hijri support. It targets PHP 8.1+, requires no `ext-intl` at runtime, pulls no transitive dependencies, and is differentially tested against ICU on ~220,000 dates per calendar per CI build.
 
-v1 ships **Gregorian**, **Jalali**, and **Hijri** (Saudi Umm al-Qura + tabular civil), with **English**, **Persian**, **Dari**, and **Arabic** locales — and you can register your own.
+v1 ships **Gregorian**, **Jalali**, and **Hijri** (Saudi Umm al-Qura + tabular civil), with **English**, **Persian**, **Dari**, **Arabic**, **Pashto**, **Urdu** and **Turkish** locales — and you can register your own.
 
 ## What Daynum is (and isn't)
 

@@ -8,6 +8,10 @@ Developers do NOT need `ext-intl` to run the conformance suite — the fixtures
 are pre-committed so `vendor/bin/phpunit --testsuite=conformance` is pure PHP.
 Fixture refresh is a deliberate, reviewed action performed by maintainers.
 
+`DAYNUM_FIXTURE_STRIDE=N` makes the conformance tests read only the rows of
+the four ~220,000-row calendar fixtures whose JDN is a multiple of N. The
+mutation job uses it; normal runs read every row.
+
 ## Files
 
 | File                                | Rows      | Produced by                          |
@@ -30,7 +34,16 @@ Fixture refresh is a deliberate, reviewed action performed by maintainers.
 | `format-tokens-ar-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
 | `format-tokens-fa-af.jsonl.gz`      | ~1,000    | `tools/generate-format-tokens.php`   |
 | `format-tokens-fa-af-jalali.jsonl.gz` | ~1,000  | `tools/generate-format-tokens.php`   |
-| `relative-time.jsonl.gz`           | ~3,000    | `tools/generate-relative-time-node.mjs` |
+| `format-tokens-ps.jsonl.gz`         | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-ps-jalali.jsonl.gz`  | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-ps-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-ur.jsonl.gz`         | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-ur-jalali.jsonl.gz`  | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-ur-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-tr.jsonl.gz`         | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-tr-jalali.jsonl.gz`  | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-tr-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
+| `relative-time.jsonl.gz`           | ~7,000    | `tools/generate-relative-time-node.mjs` |
 
 There is no `format-tokens-ar-jalali.jsonl.gz`: the Arabic locale intentionally
 omits Jalali month names because ICU's Arabic transliteration is low quality.

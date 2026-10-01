@@ -152,9 +152,10 @@ final class LocaleRegistryTest extends TestCase
             $locales->setValue(null, $saved);
         }
 
-        $this->assertSame(['ar', 'en', 'fa', 'fa-af'], $builtInsOnly);
-        $this->assertSame(['ar', 'en', 'fa', 'fa-af'], $withCachedBuiltIns);
-        $this->assertSame(['am', 'ar', 'en', 'fa', 'fa-af', 'zu'], $withCustom);
+        $builtIns = ['ar', 'en', 'fa', 'fa-af', 'ps', 'tr', 'ur'];
+        $this->assertSame($builtIns, $builtInsOnly);
+        $this->assertSame($builtIns, $withCachedBuiltIns);
+        $this->assertSame(['am', 'ar', 'en', 'fa', 'fa-af', 'ps', 'tr', 'ur', 'zu'], $withCustom);
         $this->assertFalse(LocaleRegistry::has('zu'));
     }
 }

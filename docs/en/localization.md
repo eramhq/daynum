@@ -1,6 +1,6 @@
 # Localization
 
-Daynum ships four locales — `en`, `fa`, `fa-AF` (Dari), `ar` — and three digit scripts — `latn`, `persian`, `arab`. Locales and digit scripts are independent dimensions: you can format in Persian with ASCII digits, or in English with Arabic-Indic digits.
+Daynum ships seven locales — `en`, `fa`, `fa-AF` (Dari), `ar`, `ps` (Pashto), `ur` (Urdu), `tr` (Turkish) — and three digit scripts — `latn`, `persian`, `arab`. Locales and digit scripts are independent dimensions: you can format in Persian with ASCII digits, or in English with Arabic-Indic digits.
 
 ## Switching locale
 
@@ -12,7 +12,7 @@ $d->jalali()->withLocale('fa')->format('l j F Y');    // "چهارشنبه 19 ف
 $d->jalali()->withLocale('ar')->format('j F Y');      // throws on the `F` token
 ```
 
-`withLocale()` returns a new view. Tags are case-insensitive and fall back from region to language (`en-US` → `en`, `fa-IR` → `fa`, `ar-SA` → `ar`); `fa-AF` is its own locale. Unknown languages throw `InvalidArgumentException` — no silent fallback to English. Add your own with [`LocaleRegistry::register()`](#custom-locales).
+`withLocale()` returns a new view. Tags are case-insensitive and fall back from region to language (`en-US` → `en`, `fa-IR` → `fa`, `ar-SA` → `ar`, `ps-AF` → `ps`, `ur-PK` → `ur`, `tr-TR` → `tr`); `fa-AF` is its own locale. Unknown languages throw `InvalidArgumentException` — no silent fallback to English. Add your own with [`LocaleRegistry::register()`](#custom-locales).
 
 ## Switching digit script
 
@@ -38,21 +38,21 @@ Order doesn't matter — both methods return a fresh view, and they compose free
 
 ## What each locale provides
 
-| | English (`en`) | Persian (`fa`) | Arabic (`ar`) |
-|---|---|---|---|
-| Gregorian month names | `January`, `February`, … | `ژانویهٔ`, `فوریهٔ`, … | `يناير`, `فبراير`, … |
-| Jalali month names | `Farvardin`, `Ordibehesht`, … | `فروردین`, `اردیبهشت`, … | **throws** |
-| Hijri month names | `Muharram`, `Safar`, … | `محرم`, `صفر`, … | `محرم`, `صفر`, … |
-| Weekday names | `Sunday`, `Monday`, … | `یکشنبه`, `دوشنبه`, … | `الأحد`, `الاثنين`, … |
-| Short weekdays | `Sun`, `Mon`, … | (same as long) | (same as long) |
-| Meridiem | `am`/`pm` / `AM`/`PM` | `ق.ظ` / `ب.ظ` | `ص` / `م` |
-| Ordinal suffix (`S`) | `st`, `nd`, `rd`, `th` | `""` (empty) | `""` (empty) |
-| First day of week | Monday | Saturday | Sunday |
-| Weekend | Saturday, Sunday | Friday | Friday, Saturday |
-| Relative time | `3 days ago`, `in 3 days`, `now` | `3 روز پیش`, `3 روز دیگر`, `اکنون` | `قبل 3 أيام`, `خلال 3 أيام`, `الآن` |
-| Season names | `Spring` … `Winter` | `بهار`, `تابستان`, `پاییز`, `زمستان` | `الربيع`, `الصيف`, `الخريف`, `الشتاء` |
+| Locale | Months: Gregorian · Jalali · Hijri | Weekdays (`l`, `D`) | AM/PM (`A`, `a`) | `S` | Week starts | Weekend | Relative time: past · future · now | Seasons |
+|---|---|---|---|---|---|---|---|---|
+| `en` English | January · Farvardin · Muharram | Sunday, Sun | AM/PM, am/pm | st, nd, rd, th | Monday | Sat–Sun | 3 days ago · in 3 days · now | Spring … Winter |
+| `fa` Persian | ژانویهٔ · فروردین · محرم | یکشنبه | ق.ظ/ب.ظ | — | Saturday | Fri | 3 روز پیش · 3 روز دیگر · اکنون | بهار … زمستان |
+| `fa-AF` Dari | جنوری · حمل · محرم | یکشنبه | ق.ظ/ب.ظ | — | Saturday | Thu–Fri | as `fa` | بهار، تابستان، خزان، زمستان |
+| `ar` Arabic | يناير · **throws** · محرم | الأحد | ص/م | — | Sunday | Fri–Sat | قبل 3 أيام · خلال 3 أيام · الآن | الربيع … الشتاء |
+| `ps` Pashto | جنوري · وری · محرم | يونۍ | غ.م./غ.و. | — | Saturday | Thu–Fri | 3 ورځې مخکې · په 3 ورځو کې · اوس | پسرلی … ژمی ¹ |
+| `ur` Urdu | جنوری · فروردن · محرم | اتوار | AM/PM, am/pm | — | Sunday | Sat–Sun | 3 دنوں پہلے · 3 دنوں میں · اب | بہار … سردی ¹ |
+| `tr` Turkish | Ocak · Ferverdin · Muharrem | Pazar, Paz | ÖÖ/ÖS, öö/ös | — | Monday | Sat–Sun | 3 gün önce · 3 gün sonra · şimdi | İlkbahar … Kış ¹ |
 
-Persian and Arabic have no traditional weekday abbreviations or ordinal suffixes, so `D` emits the same string as `l`, and `S` emits an empty string. This matches ICU's behavior and keeps patterns like `jS F Y` from leaving broken `th` residue inside Perso-Arabic text.
+¹ CLDR has no season names, so these three are not checked against ICU. Corrections from native speakers are welcome.
+
+Month names, weekday names and relative-time phrases are checked against ICU-generated fixtures for every locale. Where a locale has no traditional abbreviations, `D` and `M` emit the full name, as ICU does. Only English has an ordinal suffix: `S` emits an empty string elsewhere, so patterns like `jS F Y` never leave `th` inside other scripts.
+
+Where ICU's data is a transliteration, Daynum ships it unchanged: Urdu and Turkish Jalali months (`فروردن`, `Ferverdin`) are spelled after the Persian names, and some Pashto Hijri names mix scripts (`ربيع II`, short `جماد ۲`). Arabic is the exception — see [below](#the-arabic--jalali-limitation).
 
 Dari (`fa-AF`) is identical to `fa` except for its Jalali month names (`حمل`, `ثور`, `جوزا`, …), its Gregorian month names (`جنوری`, `فبروری`, …), a Thursday–Friday weekend, and `خزان` for autumn.
 

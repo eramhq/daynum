@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.resolve(__dirname, '../tests/fixtures/relative-time.jsonl.gz');
 
-const LOCALES = ['en', 'fa', 'fa-AF', 'ar'];
+const LOCALES = ['en', 'fa', 'fa-AF', 'ar', 'ps', 'ur', 'tr'];
 const UNITS = ['second', 'minute', 'hour', 'day', 'week', 'month', 'year'];
 
 // 0..130 covers every Arabic plural category (zero, one, two, few 3–10,

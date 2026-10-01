@@ -12,8 +12,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Differential-tests {@see \Eram\Daynum\Formatter\DateTokenFormatter} against
- * ICU-generated golden strings for each supported token, across both
- * Gregorian and Jalali calendars and both English and Persian locales.
+ * ICU-generated golden strings for each supported token, across the
+ * Gregorian, Jalali and Hijri calendars and every built-in locale.
  *
  * Only tokens that have a clean ICU pattern equivalent are covered here —
  * numeric day-of-week (`N`, `w`), `L`, `t`, `T`, and `e` are covered by
@@ -37,6 +37,11 @@ final class FormatTokenConformanceTest extends TestCase
         yield 'ar hijri-civil' => [$dir . '/format-tokens-ar-hijri.jsonl.gz',  'ar', 'hijri-civil'];
         yield 'fa-AF gregorian' => [$dir . '/format-tokens-fa-af.jsonl.gz',        'fa-AF', 'gregorian'];
         yield 'fa-AF jalali'    => [$dir . '/format-tokens-fa-af-jalali.jsonl.gz', 'fa-AF', 'jalali'];
+        foreach (['ps', 'ur', 'tr'] as $tag) {
+            yield "{$tag} gregorian"   => [$dir . "/format-tokens-{$tag}.jsonl.gz",        $tag, 'gregorian'];
+            yield "{$tag} jalali"      => [$dir . "/format-tokens-{$tag}-jalali.jsonl.gz", $tag, 'jalali'];
+            yield "{$tag} hijri-civil" => [$dir . "/format-tokens-{$tag}-hijri.jsonl.gz",  $tag, 'hijri-civil'];
+        }
     }
 
     /**

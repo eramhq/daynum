@@ -7,7 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Pashto (`ps`), Urdu (`ur`) and Turkish (`tr`) locales, with month names
+  for all three calendar families, weekday and AM/PM names, week rules and
+  relative time, all from ICU (`ps-AF`, `ur-PK`, `tr-TR`) and checked
+  against new format-token and relative-time fixtures. Where ICU's Jalali
+  or Hijri names are transliterations (Urdu `فروردن`, Turkish `Ferverdin`),
+  they ship as ICU has them. Season names have no CLDR source and are not
+  ICU-checked; native-speaker review is welcome.
+- `tools/dump-locale-tables.php` prints a locale's ICU month, weekday and
+  AM/PM names as PHP arrays for new locale classes.
+
 ### Changed
+- Name matching also folds Persian and Arabic-Indic digits to ASCII, so a
+  name that contains a digit (Pashto `جماد ۲`) parses after `parseExact()`
+  normalizes the input's digits.
 - `parseExact()` reads AM/PM (`a`/`A`) from the parse locale's
   `meridiem()` markers, so custom locales parse their own. The `am`/`pm`,
   `ق.ظ`/`ب.ظ` and `ص`/`م` markers still work in every locale. Markers now

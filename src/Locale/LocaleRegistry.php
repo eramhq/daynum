@@ -9,8 +9,9 @@ use Eram\Daynum\Exception\InvalidArgumentException;
 /**
  * Resolves BCP 47 language tags to locale implementations.
  *
- * Ships `en`, `fa`, `fa-AF` (Dari) and `ar`. Add your own, or replace a
- * built-in, with {@see register()} — typically once at application boot.
+ * Ships `en`, `fa`, `fa-AF` (Dari), `ar`, `ps` (Pashto), `ur` (Urdu) and
+ * `tr` (Turkish). Add your own, or replace a built-in, with
+ * {@see register()} — typically once at application boot.
  *
  * Tags are matched case-insensitively with `_` treated as `-`, and fall
  * back from the most specific subtag to the language: `fa-IR` resolves to
@@ -26,6 +27,9 @@ final class LocaleRegistry
         'fa'    => PersianLocale::class,
         'fa-af' => DariLocale::class,
         'ar'    => ArabicLocale::class,
+        'ps'    => PashtoLocale::class,
+        'ur'    => UrduLocale::class,
+        'tr'    => TurkishLocale::class,
     ];
 
     /** @var array<string, LocaleData> resolved and registered locales, by normalized tag */

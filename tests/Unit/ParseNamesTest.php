@@ -33,7 +33,7 @@ final class ParseNamesTest extends TestCase
             'hijri'      => [HijriUmmAlQuraView::class, 1447],
             'hijriCivil' => [HijriCivilView::class, 1447],
         ];
-        foreach (['en', 'fa', 'fa-AF', 'ar'] as $locale) {
+        foreach (['en', 'fa', 'fa-AF', 'ar', 'ps', 'ur', 'tr'] as $locale) {
             foreach ($views as $method => [$class, $year]) {
                 if ($locale === 'ar' && $method === 'jalali') {
                     continue; // Arabic ships no Jalali month names.
