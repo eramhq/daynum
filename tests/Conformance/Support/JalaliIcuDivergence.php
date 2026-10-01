@@ -24,6 +24,9 @@ use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
  *   and Daynum matches the Node side.
  *
  * Any other mismatch is preserved as a hard failure.
+ *
+ * The Node fixture is gitignored and only exists where the oracle workflow
+ * (or a developer) generated it. Without it, only the baseline rule applies.
  */
 final class JalaliIcuDivergence
 {
@@ -83,31 +86,58 @@ final class JalaliIcuDivergence
         }
         self::$bootstrapped = true;
 
-        if (!is_file(self::PHP_FIXTURE) || !is_file(self::NODE_FIXTURE)) {
-            self::$unexpectedRows[] = 'Missing Jalali ICU fixtures; regenerate tests/fixtures/jalali*.jsonl.gz.';
+        if (!is_file(self::PHP_FIXTURE)) {
+            self::$unexpectedRows[] = 'Missing Jalali ICU fixture; regenerate tests/fixtures/jalali.jsonl.gz.';
             return;
         }
+        $hasNode = is_file(self::NODE_FIXTURE);
 
         $php = gzopen(self::PHP_FIXTURE, 'r');
-        $node = gzopen(self::NODE_FIXTURE, 'r');
+        $node = $hasNode ? gzopen(self::NODE_FIXTURE, 'r') : null;
         if ($php === false || $node === false) {
             self::$unexpectedRows[] = 'Unable to open Jalali ICU fixtures.';
             return;
         }
 
         gzgets($php);
-        gzgets($node);
+        if ($node !== null) {
+            gzgets($node);
+        }
 
         $calendar = JalaliCalendar::instance();
         $line = 1;
 
         while (true) {
             $phpLine = gzgets($php);
-            $nodeLine = gzgets($node);
+            $nodeLine = $node !== null ? gzgets($node) : false;
             $line++;
 
-            if ($phpLine === false && $nodeLine === false) {
+            if ($phpLine === false && ($node === null || $nodeLine === false)) {
                 break;
+            }
+
+            if ($node === null) {
+                $phpRow = json_decode(trim((string) $phpLine), true);
+                if (!is_array($phpRow)) {
+                    self::$unexpectedRows[] = sprintf('invalid Jalali fixture JSON at line %d', $line);
+                    break;
+                }
+                $jdn = $phpRow['jdn'];
+                $actual = $calendar->fromJdn($jdn);
+                if ($actual === $phpRow['j']) {
+                    continue;
+                }
+                if (self::isBaselineJdn($jdn)) {
+                    self::$skipMap[$jdn] = true;
+                    continue;
+                }
+                self::$unexpectedRows[] = sprintf(
+                    'jdn=%d: Jalali fixture disagrees with Daynum outside the baseline allow-list (php=%s actual=%s; no Node fixture to cross-check)',
+                    $jdn,
+                    self::encode($phpRow['j']),
+                    self::encode($actual),
+                );
+                continue;
             }
 
             if ($phpLine === false || $nodeLine === false) {
@@ -154,7 +184,9 @@ final class JalaliIcuDivergence
         }
 
         gzclose($php);
-        gzclose($node);
+        if ($node !== null) {
+            gzclose($node);
+        }
     }
 
     /**
