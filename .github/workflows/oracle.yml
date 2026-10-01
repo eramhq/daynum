@@ -39,7 +39,9 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          # relative-time.jsonl.gz is committed and Node-generated; pin the
+          # major it was built with so its ICU strings don't drift.
+          node-version: '24'
 
       - name: Record ICU versions
         run: |
@@ -64,7 +66,9 @@ jobs:
           php tools/generate-format-tokens.php
 
       - name: Regenerate Node-side fixtures
-        run: node tools/generate-fixtures-node.mjs
+        run: |
+          node tools/generate-fixtures-node.mjs
+          node tools/generate-relative-time-node.mjs
 
       - name: Verify PHP and Node ICU fixtures agree
         run: php tools/verify-oracles-agree.php

@@ -95,4 +95,48 @@ final class ArabicLocale extends AbstractTableLocale
     {
         return [WeekDay::Friday, WeekDay::Saturday];
     }
+
+    /**
+     * Noun phrases per unit and CLDR plural category (`%d` = the number).
+     * Arabic counts take different noun forms: dual (يومين), plural after
+     * 3–10 (٣ أيام), accusative singular after 11–99 (١١ يومًا).
+     */
+    private const RELATIVE_PHRASES = [
+        'second' => ['zero' => '%d ثانية', 'one' => 'ثانية واحدة', 'two' => 'ثانيتين', 'few' => '%d ثوانٍ',  'many' => '%d ثانية',   'other' => '%d ثانية'],
+        'minute' => ['zero' => '%d دقيقة', 'one' => 'دقيقة واحدة', 'two' => 'دقيقتين', 'few' => '%d دقائق', 'many' => '%d دقيقة',   'other' => '%d دقيقة'],
+        'hour'   => ['zero' => '%d ساعة',  'one' => 'ساعة واحدة',  'two' => 'ساعتين',  'few' => '%d ساعات', 'many' => '%d ساعة',    'other' => '%d ساعة'],
+        'day'    => ['zero' => '%d يوم',   'one' => 'يوم واحد',    'two' => 'يومين',   'few' => '%d أيام',  'many' => '%d يومًا',   'other' => '%d يوم'],
+        'week'   => ['zero' => '%d أسبوع', 'one' => 'أسبوع واحد',  'two' => 'أسبوعين', 'few' => '%d أسابيع', 'many' => '%d أسبوعًا', 'other' => '%d أسبوع'],
+        'month'  => ['zero' => '%d شهر',   'one' => 'شهر واحد',    'two' => 'شهرين',   'few' => '%d أشهر',  'many' => '%d شهرًا',   'other' => '%d شهر'],
+        'year'   => ['zero' => '%d سنة',   'one' => 'سنة واحدة',   'two' => 'سنتين',   'few' => '%d سنوات', 'many' => '%d سنة',     'other' => '%d سنة'],
+    ];
+
+    public function relativeTime(int $value, string $unit, bool $future): string
+    {
+        self::assertRelativeTimeArgs($value, $unit);
+        $category = self::pluralCategory($value);
+        $phrase = self::RELATIVE_PHRASES[$unit][$category];
+        // CLDR spells the past "few" seconds with kasra (ثوانِ) and the
+        // future with kasratan (ثوانٍ); follow it so output matches ICU.
+        if ($unit === 'second' && $category === 'few' && !$future) {
+            $phrase = '%d ثوانِ';
+        }
+        return ($future ? 'خلال ' : 'قبل ') . sprintf($phrase, $value);
+    }
+
+    /**
+     * CLDR plural category for Arabic cardinals.
+     */
+    private static function pluralCategory(int $n): string
+    {
+        $mod100 = $n % 100;
+        return match (true) {
+            $n === 0 => 'zero',
+            $n === 1 => 'one',
+            $n === 2 => 'two',
+            $mod100 >= 3 && $mod100 <= 10 => 'few',
+            $mod100 >= 11 => 'many',
+            default => 'other',
+        };
+    }
 }

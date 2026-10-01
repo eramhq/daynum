@@ -65,6 +65,21 @@ abstract class AbstractTableLocale implements LocaleData
     }
 
     /**
+     * Shared argument check for {@see LocaleData::relativeTime()}.
+     */
+    protected static function assertRelativeTimeArgs(int $value, string $unit): void
+    {
+        if (!in_array($unit, self::RELATIVE_TIME_UNITS, true)) {
+            throw new InvalidArgumentException(
+                "Unknown relative-time unit '{$unit}'; expected one of: " . implode(', ', self::RELATIVE_TIME_UNITS) . '.'
+            );
+        }
+        if ($value < 0) {
+            throw new InvalidArgumentException("Relative-time value must be non-negative; got {$value}.");
+        }
+    }
+
+    /**
      * @param array<string, array<int, string>> $table
      */
     private static function lookupMonth(array $table, string $family, int $month): string

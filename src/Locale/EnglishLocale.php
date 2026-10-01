@@ -131,4 +131,11 @@ final class EnglishLocale extends AbstractTableLocale
     {
         return [WeekDay::Saturday, WeekDay::Sunday];
     }
+
+    public function relativeTime(int $value, string $unit, bool $future): string
+    {
+        self::assertRelativeTimeArgs($value, $unit);
+        $phrase = $value . ' ' . $unit . ($value === 1 ? '' : 's');
+        return $future ? "in {$phrase}" : "{$phrase} ago";
+    }
 }

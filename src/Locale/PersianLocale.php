@@ -122,4 +122,20 @@ final class PersianLocale extends AbstractTableLocale
     {
         return [WeekDay::Friday];
     }
+
+    private const RELATIVE_UNITS = [
+        'second' => 'ثانیه', 'minute' => 'دقیقه', 'hour' => 'ساعت',
+        'day'    => 'روز',   'week'   => 'هفته',  'month' => 'ماه', 'year' => 'سال',
+    ];
+
+    /**
+     * Persian nouns don't inflect after a number. Future days use `دیگر`
+     * ("3 days from now") and every other unit `بعد` ("after"), matching CLDR.
+     */
+    public function relativeTime(int $value, string $unit, bool $future): string
+    {
+        self::assertRelativeTimeArgs($value, $unit);
+        $suffix = !$future ? 'پیش' : ($unit === 'day' ? 'دیگر' : 'بعد');
+        return $value . ' ' . self::RELATIVE_UNITS[$unit] . ' ' . $suffix;
+    }
 }

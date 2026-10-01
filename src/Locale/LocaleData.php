@@ -16,6 +16,9 @@ use Eram\Daynum\WeekDay;
  */
 interface LocaleData
 {
+    /** Units accepted by {@see relativeTime()}, smallest first. */
+    public const RELATIVE_TIME_UNITS = ['second', 'minute', 'hour', 'day', 'week', 'month', 'year'];
+
     /**
      * BCP 47 language tag such as "en" or "fa".
      */
@@ -78,4 +81,19 @@ interface LocaleData
      * @return list<WeekDay>
      */
     public function weekendDays(): array;
+
+    /**
+     * A relative-time phrase such as "3 days ago" or "in 2 hours", with
+     * Latin digits (views transliterate them to their digit script).
+     * Matches `Intl.RelativeTimeFormat` with `numeric: 'always'`, minus
+     * digit grouping for values of 1000 and above.
+     *
+     * @param int    $value  non-negative count
+     * @param string $unit   one of {@see RELATIVE_TIME_UNITS}
+     * @param bool   $future true for "in 3 days", false for "3 days ago"
+     *
+     * @throws \Eram\Daynum\Exception\InvalidArgumentException on an unknown
+     *         unit or a negative value
+     */
+    public function relativeTime(int $value, string $unit, bool $future): string;
 }

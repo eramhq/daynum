@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the view locale's first day instead of always Monday. The default `en`
   locale still uses Monday; `withLocale('fa')` views now use Saturday and
   `withLocale('ar')` views Sunday. Custom `LocaleData` implementations must
-  add `firstDayOfWeek()` and `weekendDays()`.
+  add `firstDayOfWeek()`, `weekendDays()` and `relativeTime()`.
 
 ### Added
 - Timestamps: `CivilDateTime::fromTimestamp(int $ts, string $tz = 'UTC')` and
@@ -33,6 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Locale-aware weeks: `LocaleData::firstDayOfWeek()` and `weekendDays()`
   (en: Monday / Sat–Sun, fa: Saturday / Fri, ar: Sunday / Fri–Sat), and view
   methods `weekDay(): WeekDay`, `isWeekend()`, `isWeekday()`.
+- Relative time: view methods `diffForHumans(CivilDateTime $other)` and
+  `ago()` ("3 days ago", "in 2 hours", "۳ روز پیش", "قبل ٣ أيام"), using
+  the largest whole unit and counting months/years in the view's calendar.
+  Backed by `LocaleData::relativeTime()`, with Arabic plural forms, and
+  conformance-tested against `Intl.RelativeTimeFormat` via a new Node oracle
+  (`tools/generate-relative-time-node.mjs`).
 - `CivilDateTime::compare()` (a `usort` callback), `min()`, `max()`,
   `between($a, $b, bool $inclusive = true)` and `isSameDay()`.
 
@@ -55,7 +61,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - CI runs PHPStan through `composer phpstan` (same memory limit as local runs)
-  and adds PHP 8.5 to the test matrix.
+  and adds PHP 8.5 to the test matrix. The oracle workflow uses Node 24, the
+  version the committed relative-time fixture was generated with.
 
 ### Docs
 - Rewrote the `morilog/jalali` migration guide as an explicit before/after

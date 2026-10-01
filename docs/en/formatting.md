@@ -130,6 +130,26 @@ $d->jalali()->withLocale('fa')->format('l j F Y');
 
 `withLocale()` returns a new view (immutability). v1 ships `en`, `fa`, and `ar`; see [localization.md](localization.md).
 
+## Relative time
+
+```php
+$now  = CivilDateTime::fromJalali(1405, 1, 19, 12, 0, 0, 'Asia/Tehran');
+$past = $now->subDays(3);
+
+$past->jalali()->diffForHumans($now);                                   // "3 days ago"
+$now->addHours(2)->jalali()->diffForHumans($now);                       // "in 2 hours"
+$past->jalali()->withLocale('fa')->withDigits('persian')->diffForHumans($now);  // "۳ روز پیش"
+$past->hijri()->withLocale('ar')->withDigits('arab')->diffForHumans($now);      // "قبل ٣ أيام"
+
+$comment->createdAt->jalali()->withLocale('fa')->ago();                 // against now()
+```
+
+`diffForHumans($other)` treats `$other` as "now"; `ago()` uses `CivilDateTime::now()` in the value's own timezone. Both pick the **largest whole unit**: year, month, week, day, hour, minute, second. The count is truncated, so 13 days is "1 week ago".
+
+Years and months are counted in the **view's calendar**, with the same rule as [`diffInMonths`](arithmetic.md#diffinmonths--diffinyears--on-the-view): 29 days after 8 April 2026 is "in 4 weeks" in a Gregorian view but "in 1 month" in a Hijri view, because the Hijri month was only 29 days long. Smaller units use wall-clock time (not DST-aware).
+
+Phrases match `Intl.RelativeTimeFormat` with `numeric: 'always'` (`"0 seconds ago"`, never `"now"` or `"yesterday"`), including Arabic dual and plural forms (`يومين`, `٣ أيام`, `١١ يومًا`). Digits follow `withDigits()` like every other output. Numbers of 1000 and above are not digit-grouped.
+
 ## See also
 
 - [parsing.md](parsing.md) — which tokens can be parsed back (not all)

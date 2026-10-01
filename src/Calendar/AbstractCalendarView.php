@@ -969,6 +969,51 @@ abstract class AbstractCalendarView implements CalendarView
         return $years;
     }
 
+    // ─── Relative time ────────────────────────────────────────────────
+
+    public function diffForHumans(CivilDateTime $other): string
+    {
+        $seconds = $this->dateTime->diffInSeconds($other);
+        [$value, $unit] = $this->largestWholeUnit($other, abs($seconds));
+
+        return DigitTransliterator::toScript(
+            $this->locale->relativeTime($value, $unit, $seconds > 0),
+            $this->digitScript,
+        );
+    }
+
+    public function ago(): string
+    {
+        return $this->diffForHumans(CivilDateTime::now($this->dateTime->tzLabel));
+    }
+
+    /**
+     * @return array{int, string} [count, unit]
+     */
+    private function largestWholeUnit(CivilDateTime $other, int $seconds): array
+    {
+        // No calendar's month is shorter than 28 days, so closer dates can
+        // skip the (comparatively costly) calendar diffs.
+        if (abs($this->dateTime->diffInDays($other)) >= 28) {
+            $years = abs($this->diffInYears($other));
+            if ($years > 0) {
+                return [$years, 'year'];
+            }
+            $months = abs($this->diffInMonths($other));
+            if ($months > 0) {
+                return [$months, 'month'];
+            }
+        }
+
+        return match (true) {
+            $seconds >= 86400 * 7 => [intdiv($seconds, 86400 * 7), 'week'],
+            $seconds >= 86400     => [intdiv($seconds, 86400), 'day'],
+            $seconds >= 3600      => [intdiv($seconds, 3600), 'hour'],
+            $seconds >= 60        => [intdiv($seconds, 60), 'minute'],
+            default               => [$seconds, 'second'],
+        };
+    }
+
     // ─── Internals ────────────────────────────────────────────────────
 
     /**

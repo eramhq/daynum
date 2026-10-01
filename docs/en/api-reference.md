@@ -210,6 +210,15 @@ $view->diffInYears(CivilDateTime $other):  int
 
 Calendar-specific, signed, both require reaching the same day-of-month before counting. See [arithmetic.md](arithmetic.md#diffs).
 
+### Relative time
+
+```php
+$view->diffForHumans(CivilDateTime $other): string   // "3 days ago", "in 2 hours"
+$view->ago(): string                                 // diffForHumans(CivilDateTime::now($tzLabel))
+```
+
+Locale- and digit-aware; months and years in the view's calendar. See [formatting.md](formatting.md#relative-time).
+
 ### Range checks
 
 ```php

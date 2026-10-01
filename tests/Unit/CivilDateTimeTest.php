@@ -1068,6 +1068,72 @@ final class CivilDateTimeTest extends TestCase
         $this->assertSame(WeekDay::Friday, CivilDateTime::fromJalali(1405, 1, 21)->jalali()->weekDay());
     }
 
+    // ─── Relative time ──────────────────────────────────────────────
+
+    /**
+     * @return iterable<string, array{int, string}>
+     */
+    public static function relativeTimeProvider(): iterable
+    {
+        yield 'same moment'     => [0, '0 seconds ago'];
+        yield '59 seconds'      => [-59, '59 seconds ago'];
+        yield '60 seconds'      => [-60, '1 minute ago'];
+        yield '1h 59m'          => [-7199, '1 hour ago'];
+        yield '23h 59m 59s'     => [-86399, '23 hours ago'];
+        yield '6 days 23h'      => [-(7 * 86400 - 1), '6 days ago'];
+        yield '13 days'         => [-13 * 86400, '1 week ago'];
+        yield '27 days'         => [-27 * 86400, '3 weeks ago'];
+        yield 'future 2 hours'  => [7200, 'in 2 hours'];
+        yield 'future 1 second' => [1, 'in 1 second'];
+        yield '400 days'        => [-400 * 86400, '1 year ago'];
+        yield 'future 3 years'  => [3 * 366 * 86400, 'in 3 years'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('relativeTimeProvider')]
+    public function testDiffForHumansPicksLargestWholeUnit(int $offsetSeconds, string $expected): void
+    {
+        $now = CivilDateTime::fromGregorian(2026, 4, 8, 12, 0, 0, 'UTC');
+        $this->assertSame($expected, $now->addSeconds($offsetSeconds)->gregorian()->diffForHumans($now));
+    }
+
+    public function testDiffForHumansCountsMonthsInTheViewCalendar(): void
+    {
+        // 29 days: one whole Hijri month (Shawwal 1447 has 29 days), but
+        // not yet a whole Gregorian month (Apr 8 → May 7).
+        $now = CivilDateTime::fromGregorian(2026, 4, 8);
+        $later = $now->addDays(29);
+        $this->assertSame('in 4 weeks', $later->gregorian()->diffForHumans($now));
+        $this->assertSame('in 1 month', $later->hijri()->diffForHumans($now));
+    }
+
+    public function testDiffForHumansMonthUsesCalendarDaysNotElapsedSeconds(): void
+    {
+        // Feb 1 23:00 → Mar 1 00:00 is under 28 × 24h, but a whole month by date.
+        $a = CivilDateTime::fromGregorian(2026, 2, 1, 23, 0, 0);
+        $b = CivilDateTime::fromGregorian(2026, 3, 1);
+        $this->assertSame('in 1 month', $b->gregorian()->diffForHumans($a));
+    }
+
+    public function testDiffForHumansLocalesAndDigits(): void
+    {
+        $now = CivilDateTime::fromJalali(1405, 1, 19);
+        $past = $now->subDays(3);
+        $future = $now->addDays(2);
+
+        $this->assertSame('۳ روز پیش', $past->jalali()->withLocale('fa')->withDigits('persian')->diffForHumans($now));
+        $this->assertSame('3 روز پیش', $past->jalali()->withLocale('fa')->diffForHumans($now));
+        $this->assertSame('۲ روز دیگر', $future->jalali()->withLocale('fa')->withDigits('persian')->diffForHumans($now));
+        $this->assertSame('قبل ٣ أيام', $past->hijri()->withLocale('ar')->withDigits('arab')->diffForHumans($now));
+        $this->assertSame('خلال يومين', $future->hijri()->withLocale('ar')->diffForHumans($now));
+        $this->assertSame('قبل ١١ ساعة', $now->subHours(11)->hijri()->withLocale('ar')->withDigits('arab')->diffForHumans($now));
+    }
+
+    public function testAgoComparesAgainstNowInOwnTimezone(): void
+    {
+        $this->assertSame('5 minutes ago', CivilDateTime::now('Asia/Tehran')->subMinutes(5)->gregorian()->ago());
+        $this->assertSame('in 3 days', CivilDateTime::now('UTC')->addDays(3)->addMinutes(1)->gregorian()->ago());
+    }
+
     // ─── Timestamps ─────────────────────────────────────────────────
 
     public function testFromTimestampDefaultsToUtc(): void

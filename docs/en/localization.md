@@ -49,6 +49,7 @@ Order doesn't matter — both methods return a fresh view, and they compose free
 | Ordinal suffix (`S`) | `st`, `nd`, `rd`, `th` | `""` (empty) | `""` (empty) |
 | First day of week | Monday | Saturday | Sunday |
 | Weekend | Saturday, Sunday | Friday | Friday, Saturday |
+| Relative time | `3 days ago`, `in 3 days` | `3 روز پیش`, `3 روز دیگر` | `قبل 3 أيام`, `خلال 3 أيام` |
 
 Persian and Arabic have no traditional weekday abbreviations or ordinal suffixes, so `D` emits the same string as `l`, and `S` emits an empty string. This matches ICU's behavior and keeps patterns like `jS F Y` from leaving broken `th` residue inside Perso-Arabic text.
 

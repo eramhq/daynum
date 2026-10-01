@@ -28,6 +28,7 @@ Fixture refresh is a deliberate, reviewed action performed by maintainers.
 | `format-tokens-en-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
 | `format-tokens-fa-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
 | `format-tokens-ar-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
+| `relative-time.jsonl.gz`           | ~3,000    | `tools/generate-relative-time-node.mjs` |
 
 There is no `format-tokens-ar-jalali.jsonl.gz`: the Arabic locale intentionally
 omits Jalali month names because ICU's Arabic transliteration is low quality.
@@ -40,10 +41,15 @@ ICU silently falls back to `islamic-civil`, which would make those rows a
 worthless oracle. Use `hijri-civil.jsonl.gz` for far-historical and
 far-future date coverage instead.
 
-Node-generated files (`*.node.jsonl.gz`) are NOT consumed by the conformance
-suite directly — they exist so `tools/verify-oracles-agree.php` can diff them
-against the PHP-generated ones. If Node's ICU and PHP's ICU disagree on any
-row, we want to know before committing.
+Node-generated calendar files (`*.node.jsonl.gz`) are NOT consumed by the
+conformance suite directly — they exist so `tools/verify-oracles-agree.php` can
+diff them against the PHP-generated ones. If Node's ICU and PHP's ICU disagree
+on any row, we want to know before committing.
+
+The exception is `relative-time.jsonl.gz`: PHP's ext-intl has no
+relative-time formatter, so `Intl.RelativeTimeFormat` is the only oracle.
+That file is Node-generated but committed (no `.node` infix, so it is not
+gitignored), and `RelativeTimeConformanceTest` reads it directly.
 
 ## Row formats
 
@@ -88,6 +94,16 @@ row, we want to know before committing.
 Each `expected` map lists the ICU-rendered output for every token Daynum
 claims to support. Daynum's `DateTokenFormatter` must match byte-for-byte.
 
+### `relative-time.jsonl.gz`
+
+```json
+{"meta":{"generator":"generate-relative-time-node.mjs","icuVersion":"77.1","numeric":"always"}}
+{"locale":"ar","unit":"day","value":11,"past":"قبل 11 يومًا","future":"خلال 11 يومًا"}
+```
+
+One row per locale × unit × value (0–130 plus a few values up to 999),
+with `Intl.RelativeTimeFormat(locale, {numeric: 'always'})` output.
+
 ## Refreshing the fixtures
 
 **Do this only when:**
@@ -108,6 +124,7 @@ php tools/generate-format-tokens.php
 
 # 3. Regenerate from Node (requires a recent Node)
 node tools/generate-fixtures-node.mjs
+node tools/generate-relative-time-node.mjs
 
 # 4. Verify PHP ↔ Node agree byte-for-byte
 php tools/verify-oracles-agree.php

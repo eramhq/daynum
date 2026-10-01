@@ -52,6 +52,7 @@ function jalali(CivilDateTime $d): JalaliView
 | `->addDays(3)` / `addMonths` / `addYears` | `->addDays(3)` … — returns a `CivilDateTime`, see below |
 | `->addHours(2)` / `addMinutes` / `addSeconds` | `$d->addHours(2)` (on the `CivilDateTime`, wall-clock) |
 | `->getTimestamp()` | `$d->toTimestamp()` |
+| `->ago()` | `$d->jalali()->withLocale('fa')->ago()` |
 | `->toCarbon()` | `Carbon::instance($d->toDateTimeImmutable())` |
 
 ### strftime tokens → `date()` tokens

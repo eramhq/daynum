@@ -125,4 +125,23 @@ final class EnglishLocaleTest extends TestCase
         $this->assertSame(WeekDay::Monday, $locale->firstDayOfWeek());
         $this->assertSame([WeekDay::Saturday, WeekDay::Sunday], $locale->weekendDays());
     }
+
+    public function testRelativeTime(): void
+    {
+        $locale = new EnglishLocale();
+        $this->assertSame('1 day ago', $locale->relativeTime(1, 'day', false));
+        $this->assertSame('in 3 hours', $locale->relativeTime(3, 'hour', true));
+    }
+
+    public function testRelativeTimeRejectsUnknownUnit(): void
+    {
+        $this->expectException(\Eram\Daynum\Exception\InvalidArgumentException::class);
+        (new EnglishLocale())->relativeTime(1, 'fortnight', false);
+    }
+
+    public function testRelativeTimeRejectsNegativeValue(): void
+    {
+        $this->expectException(\Eram\Daynum\Exception\InvalidArgumentException::class);
+        (new EnglishLocale())->relativeTime(-1, 'day', false);
+    }
 }

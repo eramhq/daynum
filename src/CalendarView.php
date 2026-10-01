@@ -138,6 +138,23 @@ interface CalendarView
     public function diffInYears(CivilDateTime $other): int;
 
     /**
+     * Human-readable difference from `$other`, e.g. "3 days ago" or
+     * "in 2 hours", in the view's locale and digit script. `$other` plays
+     * the role of "now": this date being earlier gives the past form.
+     *
+     * Uses the largest whole unit (year, month, week, day, hour, minute,
+     * second). Years and months are counted in this view's calendar, so a
+     * Jalali view counts Jalali months.
+     */
+    public function diffForHumans(CivilDateTime $other): string;
+
+    /**
+     * {@see diffForHumans()} against `CivilDateTime::now()` in this date's
+     * timezone (PHP's default timezone when tzLabel is null).
+     */
+    public function ago(): string;
+
+    /**
      * Whether this date's JDN falls within the calendar's supported range.
      */
     public function isInSupportedRange(): bool;
