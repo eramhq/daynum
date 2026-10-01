@@ -89,6 +89,26 @@ interface CalendarView
 
     public function subYears(int $years): CivilDateTime;
 
+    /**
+     * Replace some parts of the date-time in this calendar; null keeps the
+     * current value. Throws InvalidDateException instead of clamping.
+     */
+    public function with(
+        ?int $year = null,
+        ?int $month = null,
+        ?int $day = null,
+        ?int $hour = null,
+        ?int $minute = null,
+        ?int $second = null,
+    ): CivilDateTime;
+
+    /** Quarter of the calendar year, 1–4. */
+    public function quarter(): int;
+
+    public function startOfQuarter(): CivilDateTime;
+
+    public function endOfQuarter(): CivilDateTime;
+
     public function startOfMonth(): CivilDateTime;
 
     public function endOfMonth(): CivilDateTime;

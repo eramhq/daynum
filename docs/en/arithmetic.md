@@ -67,6 +67,31 @@ $exact = CivilDateTime::fromTimestamp($d->toTimestamp() + 3600, $d->tzLabel ?? '
 
 See [timezones.md](timezones.md#doing-timezone-math).
 
+## Changing one part: `with()`
+
+`with()` replaces some parts of the date in the view's calendar and keeps the rest. Use named arguments:
+
+```php
+$d = CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0);
+
+$d->jalali()->with(day: 1);                        // 1405/01/01 14:30 — first of the month
+$d->jalali()->with(month: 7, day: 1);              // 1405/07/01 14:30 — 1 Mehr
+$d->jalali()->with(hour: 9, minute: 0, second: 0); // 1405/01/19 09:00
+$d->gregorian()->with(year: 2027);                 // same Gregorian day next year
+```
+
+Unlike `addMonths()`, `with()` does **not** clamp: `with(month: 7)` on Shahrivar 31 throws `InvalidDateException`, because Mehr has 30 days. Set the day too, or use `addMonths()` if you want clamping.
+
+## Quarters
+
+```php
+$view->quarter();          // 1–4; months 1–3 are quarter 1
+$view->startOfQuarter();   // first day of the quarter
+$view->endOfQuarter();     // last day of the quarter
+```
+
+Quarters follow the view's calendar, so `$d->jalali()->quarter()` is the Jalali quarter. In Jalali, quarters are the seasons — see [calendars/jalali.md](calendars/jalali.md#seasons).
+
 ## Month arithmetic clamps the day
 
 When the target month doesn't have the source day, the day clamps to the target month's last day. This matches Carbon, `java.time`, and most mainstream date libraries:

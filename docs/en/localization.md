@@ -49,11 +49,12 @@ Order doesn't matter — both methods return a fresh view, and they compose free
 | Ordinal suffix (`S`) | `st`, `nd`, `rd`, `th` | `""` (empty) | `""` (empty) |
 | First day of week | Monday | Saturday | Sunday |
 | Weekend | Saturday, Sunday | Friday | Friday, Saturday |
-| Relative time | `3 days ago`, `in 3 days` | `3 روز پیش`, `3 روز دیگر` | `قبل 3 أيام`, `خلال 3 أيام` |
+| Relative time | `3 days ago`, `in 3 days`, `now` | `3 روز پیش`, `3 روز دیگر`, `اکنون` | `قبل 3 أيام`, `خلال 3 أيام`, `الآن` |
+| Season names | `Spring` … `Winter` | `بهار`, `تابستان`, `پاییز`, `زمستان` | `الربيع`, `الصيف`, `الخريف`, `الشتاء` |
 
 Persian and Arabic have no traditional weekday abbreviations or ordinal suffixes, so `D` emits the same string as `l`, and `S` emits an empty string. This matches ICU's behavior and keeps patterns like `jS F Y` from leaving broken `th` residue inside Perso-Arabic text.
 
-Dari (`fa-AF`) is identical to `fa` except for its Jalali month names (`حمل`, `ثور`, `جوزا`, …), its Gregorian month names (`جنوری`, `فبروری`, …) and a Thursday–Friday weekend.
+Dari (`fa-AF`) is identical to `fa` except for its Jalali month names (`حمل`, `ثور`, `جوزا`, …), its Gregorian month names (`جنوری`, `فبروری`, …), a Thursday–Friday weekend, and `خزان` for autumn.
 
 The week rows drive `startOfWeek()` / `endOfWeek()` with no argument and `isWeekend()`. See [arithmetic.md](arithmetic.md#weeks).
 
@@ -151,7 +152,7 @@ The shipped Dari locale (`fa-AF`) is built this way: [`DariLocale`](../../src/Lo
 
 ### Writing a locale from scratch
 
-Extend `AbstractTableLocale` and implement the four tables plus `tag()`, `meridiem()`, `ordinalSuffix()`, `firstDayOfWeek()`, `weekendDays()`, `relativeTime()` and `relativeTimeNow()`. Leave a calendar family out of the month tables if your locale has no names for it; formatting `F`/`M` in that calendar then throws, as Arabic does for Jalali. Call `self::assertRelativeTimeArgs($value, $unit)` at the top of `relativeTime()` to get the standard argument checks.
+Extend `AbstractTableLocale` and implement the four tables plus `tag()`, `meridiem()`, `ordinalSuffix()`, `firstDayOfWeek()`, `weekendDays()`, `relativeTime()`, `relativeTimeNow()` and `seasonName()`. Leave a calendar family out of the month tables if your locale has no names for it; formatting `F`/`M` in that calendar then throws, as Arabic does for Jalali. Call `self::assertRelativeTimeArgs($value, $unit)` at the top of `relativeTime()` to get the standard argument checks.
 
 Or implement the `LocaleData` interface directly if your data isn't table-shaped.
 

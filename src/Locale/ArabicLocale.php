@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Locale;
 
+use Eram\Daynum\Season;
 use Eram\Daynum\WeekDay;
 
 /**
@@ -143,5 +144,15 @@ class ArabicLocale extends AbstractTableLocale
     public function relativeTimeNow(): string
     {
         return 'الآن';
+    }
+
+    public function seasonName(Season $season): string
+    {
+        return match ($season) {
+            Season::Spring => 'الربيع',
+            Season::Summer => 'الصيف',
+            Season::Autumn => 'الخريف',
+            Season::Winter => 'الشتاء',
+        };
     }
 }

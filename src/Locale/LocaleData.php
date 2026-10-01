@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Locale;
 
+use Eram\Daynum\Season;
 use Eram\Daynum\WeekDay;
 
 /**
@@ -102,4 +103,7 @@ interface LocaleData
      * e.g. "now". Matches `Intl.RelativeTimeFormat` with `numeric: 'auto'`.
      */
     public function relativeTimeNow(): string;
+
+    /** Name of a season, e.g. "Spring" or "بهار". */
+    public function seasonName(Season $season): string;
 }

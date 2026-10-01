@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Locale;
 
+use Eram\Daynum\Season;
 use Eram\Daynum\WeekDay;
 
 /**
@@ -13,7 +14,8 @@ use Eram\Daynum\WeekDay;
  * - Jalali months use the zodiac names of the Afghan solar calendar
  *   (حمل Hamal, ثور Sawr, جوزا Jawza, … حوت Hut);
  * - Gregorian months use the English-derived spellings (جنوری, فبروری, …);
- * - the weekend is Thursday–Friday.
+ * - the weekend is Thursday–Friday;
+ * - autumn is خزان rather than پاییز.
  *
  * Also serves as the reference example of a custom locale: extend an
  * existing one, override the tables that differ, and register it.
@@ -55,5 +57,10 @@ final class DariLocale extends PersianLocale
     public function weekendDays(): array
     {
         return [WeekDay::Thursday, WeekDay::Friday];
+    }
+
+    public function seasonName(Season $season): string
+    {
+        return $season === Season::Autumn ? 'خزان' : parent::seasonName($season);
     }
 }

@@ -87,6 +87,24 @@ $d->jalali()->isLeapYear();    // false
 $d->jalali()->daysInMonth();   // 31
 ```
 
+## Seasons
+
+Each Jalali season is exactly one quarter: Farvardin–Khordad is spring, Tir–Shahrivar summer, Mehr–Azar autumn and Dey–Esfand winter.
+
+```php
+use Eram\Daynum\Season;
+
+$v = CivilDateTime::fromJalali(1405, 8, 1)->jalali();
+
+$v->season();                          // Season::Autumn
+$v->withLocale('fa')->seasonName();    // "پاییز"
+$v->withLocale('fa-AF')->seasonName(); // "خزان"
+$v->seasonName();                      // "Autumn"
+$v->startOfQuarter();                  // 1405/07/01 — first day of autumn
+```
+
+`season()` exists only on `JalaliView`. Gregorian seasons depend on the hemisphere and the convention (meteorological or astronomical), so Daynum doesn't guess them.
+
 ## Formatting
 
 ```php

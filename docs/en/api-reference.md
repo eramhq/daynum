@@ -157,6 +157,7 @@ $view->minute():       int
 $view->second():       int
 $view->dayOfWeek():    int        // 0..6, Sunday = 0
 $view->dayOfWeekIso(): int        // 1..7, Monday = 1
+$view->quarter():      int        // 1..4, in the view's calendar
 $view->weekDay():      WeekDay
 $view->isWeekend():    bool       // locale weekend: en Sat–Sun, fa Fri, ar Fri–Sat
 $view->isWeekday():    bool
@@ -191,6 +192,9 @@ $view->subMonths(int $n):  CivilDateTime      // clamps day-of-month
 $view->addYears(int $n):   CivilDateTime      // clamps day-of-month
 $view->subYears(int $n):   CivilDateTime      // clamps day-of-month
 
+$view->with(?int $year, ?int $month, ?int $day, ?int $hour, ?int $minute, ?int $second): CivilDateTime  // no clamping
+$view->startOfQuarter():   CivilDateTime
+$view->endOfQuarter():     CivilDateTime
 $view->startOfMonth():     CivilDateTime
 $view->endOfMonth():       CivilDateTime
 $view->startOfYear():      CivilDateTime
@@ -292,6 +296,17 @@ Used as the `$weekStart` argument to `startOfWeek()` / `endOfWeek()` and returne
 
 ---
 
+## `Eram\Daynum\Season` enum
+
+```php
+enum Season: int { case Spring = 1; case Summer = 2; case Autumn = 3; case Winter = 4; }
+
+JalaliView::season(): Season       // the Jalali quarter as a season
+JalaliView::seasonName(): string   // localized: "Autumn", "پاییز", "خزان", "الخريف"
+```
+
+---
+
 ## Exceptions
 
 All implement the marker interface `Eram\Daynum\Exception\DaynumException`.
@@ -336,6 +351,7 @@ $locale->firstDayOfWeek(): WeekDay
 $locale->weekendDays(): list<WeekDay>
 $locale->relativeTime(int $value, string $unit, bool $future): string
 $locale->relativeTimeNow(): string                   // "now"
+$locale->seasonName(Season $season): string          // "Spring", "بهار"
 ```
 
 Built-ins: `EnglishLocale`, `PersianLocale`, `DariLocale`, `ArabicLocale`, all extending `AbstractTableLocale`.

@@ -8,6 +8,7 @@ use Eram\Daynum\Calendar;
 use Eram\Daynum\CalendarView;
 use Eram\Daynum\Exception\DaynumException;
 use Eram\Daynum\Exception\InvalidArgumentException;
+use Eram\Daynum\Exception\InvalidDateException;
 use Eram\Daynum\Exception\ParseException;
 use Eram\Daynum\Exception\WeekAtBoundaryException;
 use Eram\Daynum\Formatter\DateTokenFormatter;
@@ -1085,6 +1086,56 @@ abstract class AbstractCalendarView implements CalendarView
         return $this->dateTime->withJdn(
             $this->calendar()->toJdn($c['year'], $c['month'], $c['daysInMonth'])
         );
+    }
+
+    /**
+     * The same date-time with some parts replaced, in this view's calendar.
+     * Parts left out (null) keep their current value; the result is
+     * validated like a constructor call, so nothing is clamped.
+     *
+     *     $d->jalali()->with(day: 1);            // first of the month
+     *     $d->jalali()->with(month: 7, day: 1);  // 1 Mehr, same year
+     *     $d->gregorian()->with(hour: 9, minute: 0, second: 0);
+     *
+     * @throws InvalidDateException if the resulting date or time is invalid
+     *         (e.g. `with(day: 31)` in a 30-day month)
+     */
+    public function with(
+        ?int $year = null,
+        ?int $month = null,
+        ?int $day = null,
+        ?int $hour = null,
+        ?int $minute = null,
+        ?int $second = null,
+    ): CivilDateTime {
+        $c = $this->components();
+        $jdn = $this->calendar()->toJdn($year ?? $c['year'], $month ?? $c['month'], $day ?? $c['day']);
+
+        return $this->dateTime
+            ->withJdn($jdn)
+            ->withTime($hour ?? $this->hour(), $minute ?? $this->minute(), $second ?? $this->second());
+    }
+
+    /** Quarter of the calendar year, 1–4 (months 1–3 are quarter 1). */
+    public function quarter(): int
+    {
+        return intdiv($this->month() - 1, 3) + 1;
+    }
+
+    /** First day of this quarter, time of day kept (like `startOfMonth()`). */
+    public function startOfQuarter(): CivilDateTime
+    {
+        $firstMonth = ($this->quarter() - 1) * 3 + 1;
+        return $this->dateTime->withJdn($this->calendar()->toJdn($this->year(), $firstMonth, 1));
+    }
+
+    /** Last day of this quarter, time of day kept. */
+    public function endOfQuarter(): CivilDateTime
+    {
+        $year = $this->year();
+        $lastMonth = $this->quarter() * 3;
+        $lastDay = $this->calendar()->daysInMonth($year, $lastMonth);
+        return $this->dateTime->withJdn($this->calendar()->toJdn($year, $lastMonth, $lastDay));
     }
 
     public function startOfYear(): CivilDateTime

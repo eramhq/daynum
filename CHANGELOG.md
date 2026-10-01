@@ -18,8 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the view locale's first day instead of always Monday. The default `en`
   locale still uses Monday; `withLocale('fa')` views now use Saturday and
   `withLocale('ar')` views Sunday. Custom `LocaleData` implementations must
-  add `firstDayOfWeek()`, `weekendDays()`, `relativeTime()` and
-  `relativeTimeNow()`.
+  add `firstDayOfWeek()`, `weekendDays()`, `relativeTime()`,
+  `relativeTimeNow()` and `seasonName()`.
 
 ### Added
 - Timestamps: `CivilDateTime::fromTimestamp(int $ts, string $tz = 'UTC')` and
@@ -52,6 +52,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   parse `F`/`M` (month names, full or short) and `l`/`D` (weekday names,
   checked against the date). Matching ignores Latin case, treats Arabic
   ي/ى/ك as Persian ی/ک and ignores ZWNJ and the ezafe hamza.
+- `with(year:, month:, day:, hour:, minute:, second:)` on views: replace
+  some parts of the date in the view's calendar. Validates instead of
+  clamping.
+- Quarters on views: `quarter()`, `startOfQuarter()`, `endOfQuarter()`.
+- Seasons: `Season` enum, `JalaliView::season()` / `seasonName()` and
+  `LocaleData::seasonName()` (Dari uses خزان for autumn).
 - `CivilDateTime::compare()` (a `usort` callback), `min()`, `max()`,
   `between($a, $b, bool $inclusive = true)` and `isSameDay()`.
 
