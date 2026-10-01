@@ -18,7 +18,7 @@ $d->jalali()->withLocale('ar')->format('j F Y');      // throws on the `F` token
 
 ```php
 $d->jalali()->withDigits('persian')->format('Y/m/d');  // "۱۴۰۵/۰۱/۱۹"
-$d->hijri()->withDigits('arab')->format('Y/m/d');      // "١٤٤٧/١٠/٢١"
+$d->hijri()->withDigits('arab')->format('Y/m/d');      // "١٤٤٧/١٠/٢٠"
 $d->gregorian()->withDigits('latn')->format('Y-m-d');  // "2026-04-08"
 ```
 

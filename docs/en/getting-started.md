@@ -22,7 +22,7 @@ $d = CivilDateTime::fromGregorian(2026, 4, 8);
 
 echo $d->gregorian()->format('Y-m-d'), "\n";     // 2026-04-08
 echo $d->jalali()->format('Y/m/d'), "\n";        // 1405/01/19
-echo $d->hijri()->format('j F Y'), "\n";         // 21 Shawwal 1447
+echo $d->hijri()->format('j F Y'), "\n";         // 20 Shawwal 1447
 ```
 
 One `CivilDateTime`, three calendars, one format syntax.
@@ -94,10 +94,10 @@ $d->jalali()->format('l j F Y');                                       // "Wedne
 $d->jalali()->withLocale('fa')->format('l j F Y');                     // "چهارشنبه 19 فروردین 1405"
 $d->jalali()->withLocale('fa')->withDigits('persian')->format('Y/m/d'); // "۱۴۰۵/۰۱/۱۹"
 $d->jalali()->format('Y/m/d H:i e');                                   // "1405/01/19 14:30 Asia/Tehran"
-$d->hijri()->format('j F Y');                                          // "21 Shawwal 1447"
-$d->hijri()->withLocale('fa')->format('j F Y');                        // "21 شوال 1447"
-$d->hijri()->withLocale('ar')->format('j F Y');                        // "21 شوال 1447"
-$d->hijri()->withLocale('ar')->withDigits('arab')->format('j F Y');    // "٢١ شوال ١٤٤٧"
+$d->hijri()->format('j F Y');                                          // "20 Shawwal 1447"
+$d->hijri()->withLocale('fa')->format('j F Y');                        // "20 شوال 1447"
+$d->hijri()->withLocale('ar')->format('j F Y');                        // "20 شوال 1447"
+$d->hijri()->withLocale('ar')->withDigits('arab')->format('j F Y');    // "٢٠ شوال ١٤٤٧"
 ```
 
 Full token reference: [formatting.md](formatting.md).

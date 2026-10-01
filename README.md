@@ -38,7 +38,7 @@ $d = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
 
 $d->gregorian()->format('Y-m-d');                   // "2026-04-08"
 $d->jalali()->format('Y/m/d');                      // "1405/01/19"
-$d->hijri()->format('j F Y');                       // "21 Shawwal 1447"
+$d->hijri()->format('j F Y');                       // "20 Shawwal 1447"
 
 // Persian locale + Persian digits
 $d->jalali()->withLocale('fa')->withDigits('persian')->format('l j F Y');

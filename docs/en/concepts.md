@@ -24,7 +24,7 @@ Every calendar in Daynum converts to and from the Julian Day Number — the inte
 ```php
 $d = CivilDateTime::fromJalali(1405, 1, 19);
 $d->gregorian()->format('Y-m-d');   // "2026-04-08"
-$d->hijri()->format('j F Y');       // "21 Shawwal 1447"
+$d->hijri()->format('j F Y');       // "20 Shawwal 1447"
 ```
 
 You never touch JDNs directly in normal use — they live on the `CivilDateTime` as `$d->jdn`, but you read dates through calendar *views*.

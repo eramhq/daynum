@@ -11,7 +11,7 @@ $d = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
 
 $d->gregorian()->format('Y-m-d');     // "2026-04-08"
 $d->jalali()->format('Y/m/d');        // "1405/01/19"
-$d->hijri()->format('j F Y');         // "21 Shawwal 1447"
+$d->hijri()->format('j F Y');         // "20 Shawwal 1447"
 ```
 
 Default formats are `Y-m-d` for Gregorian and `Y/m/d` for Jalali/Hijri; `(string) $view` uses them.
@@ -113,7 +113,7 @@ Default output is ASCII digits. Switch with `withDigits()`:
 
 ```php
 $d->jalali()->withDigits('persian')->format('Y/m/d');  // "۱۴۰۵/۰۱/۱۹"  (U+06F0..06F9)
-$d->hijri()->withDigits('arab')->format('Y/m/d');      // "١٤٤٧/١٠/٢١"  (U+0660..0669)
+$d->hijri()->withDigits('arab')->format('Y/m/d');      // "١٤٤٧/١٠/٢٠"  (U+0660..0669)
 $d->gregorian()->withDigits('latn')->format('Y-m-d');  // "2026-04-08"
 ```
 

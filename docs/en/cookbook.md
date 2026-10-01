@@ -39,7 +39,7 @@ printf(
     "%s   |   %s   |   %s\n",
     $d->gregorian()->format('l, F j, Y'),                        // "Wednesday, April 8, 2026"
     $d->jalali()->withLocale('fa')->format('l j F Y'),           // "چهارشنبه 19 فروردین 1405"
-    $d->hijri()->format('j F Y'),                                // "21 Shawwal 1447"
+    $d->hijri()->format('j F Y'),                                // "20 Shawwal 1447"
 );
 ```
 
@@ -166,7 +166,7 @@ function renderHijri(CivilDateTime $d): string
 }
 
 // Modern date: uses UAQ
-renderHijri(CivilDateTime::fromGregorian(2026, 4, 8));      // "21 Shawwal 1447"
+renderHijri(CivilDateTime::fromGregorian(2026, 4, 8));      // "20 Shawwal 1447"
 
 // Historical date: falls back to civil
 renderHijri(CivilDateTime::fromGregorian(1500, 1, 1));      // "5 Shaʻban 905 (civil)"
