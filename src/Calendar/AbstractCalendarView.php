@@ -920,7 +920,7 @@ abstract class AbstractCalendarView implements CalendarView
         [$y1, $m1, $d1] = $calendar->fromJdn($this->instant->jdn);
         [$y2, $m2, $d2] = $calendar->fromJdn($other->jdn);
 
-        $months = ($y1 - $y2) * 12 + ($m1 - $m2);
+        $months = self::monthsBetween($calendar, $y2, $y1) + ($m1 - $m2);
         // Pull back one month if the day-of-month hasn't been reached yet in the
         // trailing direction, so that diffing (e.g.) 2026-03-15 ↔ 2026-04-14
         // returns 0, not 1.
@@ -954,6 +954,21 @@ abstract class AbstractCalendarView implements CalendarView
     }
 
     // ─── Internals ────────────────────────────────────────────────────
+
+    /**
+     * Months from the start of `$fromYear` to the start of `$toYear`
+     * (negative when `$toYear` is earlier). Walks `monthsInYear()` the same
+     * way {@see addMonths()} does, so the two stay inverse for calendars
+     * whose year length varies.
+     */
+    private static function monthsBetween(Calendar $calendar, int $fromYear, int $toYear): int
+    {
+        $total = 0;
+        for ($y = min($fromYear, $toYear); $y < max($fromYear, $toYear); $y++) {
+            $total += $calendar->monthsInYear($y);
+        }
+        return $toYear >= $fromYear ? $total : -$total;
+    }
 
     /**
      * @return array{year:int, month:int, day:int, daysInMonth:int, isLeapYear:bool}

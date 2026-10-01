@@ -2,7 +2,7 @@
 
 Hand-written, grouped by type. For narrative docs see [getting-started.md](getting-started.md), [concepts.md](concepts.md), and the topic pages.
 
-**Jump to:** [`Instant`](#daynuminstant) · [`CalendarView`](#daynumcalendarview) · [`Calendar`](#daynumcalendar) · [`WeekDay`](#daynumweekday-enum) · [Exceptions](#exceptions) · [`LocaleRegistry`](#daynumlocalelocaleregistry) · [`DigitTransliterator`](#daynumformatterdigittransliterator) · [Helpers](#opt-in-helpers-srchelpersphp)
+**Jump to:** [`Instant`](#daynuminstant) · [`CalendarView`](#daynumcalendarview) · [`Calendar`](#daynumcalendar) · [`WeekDay`](#daynumweekday-enum) · [Exceptions](#exceptions) · [`LocaleRegistry`](#daynumlocalelocaleregistry) · [`DigitTransliterator`](#daynumformatterdigittransliterator)
 
 ## `Eram\Daynum\Instant`
 
@@ -295,18 +295,6 @@ DigitTransliterator::isSupported(string $script): bool
 ```
 
 Bidirectional digit mapping between ASCII, Persian extended (`U+06F0..06F9`), and Arabic-Indic (`U+0660..0669`). You normally call `$view->withDigits(...)` instead of touching this directly.
-
----
-
-## Opt-in helpers (`src/helpers.php`)
-
-```php
-gdate(int $y, int $m, int $d, int $h=0, int $min=0, int $s=0, ?string $tz=null): Instant
-jdate(int $y, int $m, int $d, int $h=0, int $min=0, int $s=0, ?string $tz=null): Instant
-hdate(int $y, int $m, int $d, int $h=0, int $min=0, int $s=0, ?string $tz=null): Instant
-```
-
-Thin wrappers around `Instant::fromGregorian`, `fromJalali`, and `fromHijri`. Each is wrapped in `function_exists()` so Daynum will never silently override a name your application already defines. Not autoloaded by default — see [migration-from-morilog-jalali.md](migration-from-morilog-jalali.md) for the `composer.json` opt-in.
 
 ---
 

@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- The opt-in global helpers `gdate()`, `jdate()` and `hdate()` (`src/helpers.php`).
+  Their `jdate(int, int, int)` signature clashed with both `morilog/jalali`'s
+  `jdate($str = null)` and jdf.php's `jdate($format, $timestamp)`, and the
+  `function_exists` guard turned that clash into silent runtime breakage. Call
+  `Instant::fromJalali()` etc. directly, or define a helper in your own namespace.
+
+### Fixed
+- `diffInMonths()` counted 12 months per year regardless of the calendar.
+  It now walks `Calendar::monthsInYear()` the same way `addMonths()` does,
+  so the two stay inverse for days 1–28.
+
+### Changed
+- CI runs PHPStan through `composer phpstan` (same memory limit as local runs)
+  and adds PHP 8.5 to the test matrix.
+
+### Docs
+- Rewrote the `morilog/jalali` migration guide as an explicit before/after
+  table. It previously claimed existing `jdate()` calls keep working unchanged,
+  which was never true.
+
 ## [1.0.0-beta.1] — 2026-04-12
 
 ### Breaking

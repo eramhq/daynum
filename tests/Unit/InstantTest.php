@@ -1021,6 +1021,46 @@ final class InstantTest extends TestCase
         $this->assertSame(15, $j->day());
     }
 
+    // ─── diffInMonths() ─────────────────────────────────────────────
+
+    public function testDiffInMonthsAcrossYears(): void
+    {
+        $a = Instant::fromGregorian(2026, 4, 15);
+        $b = Instant::fromGregorian(2023, 11, 15);
+        $this->assertSame(29, $a->gregorian()->diffInMonths($b));
+        $this->assertSame(-29, $b->gregorian()->diffInMonths($a));
+    }
+
+    public function testDiffInMonthsDayNotReached(): void
+    {
+        $a = Instant::fromGregorian(2026, 4, 14);
+        $b = Instant::fromGregorian(2026, 3, 15);
+        $this->assertSame(0, $a->gregorian()->diffInMonths($b));
+        $this->assertSame(0, $b->gregorian()->diffInMonths($a));
+    }
+
+    public function testDiffInMonthsAfterClampedAddMonthsIsZero(): void
+    {
+        // Jan 31 + 1 month clamps to Feb 28, but Feb 28 has not reached
+        // day 31, so the diff back counts no whole month. Documented.
+        $jan31 = Instant::fromGregorian(2026, 1, 31);
+        $feb28 = $jan31->gregorian()->addMonths(1);
+        $this->assertSame(0, $feb28->gregorian()->diffInMonths($jan31));
+    }
+
+    public function testDiffInMonthsInvertsAddMonthsForEveryCalendar(): void
+    {
+        $start = Instant::fromGregorian(2026, 4, 8);
+        foreach (['gregorian', 'jalali', 'hijri', 'hijriCivil'] as $cal) {
+            foreach ([-250, -13, -1, 0, 1, 12, 37, 400] as $n) {
+                // Day 1..28 of every calendar survives addMonths without clamping.
+                $base = $start->{$cal}()->startOfMonth();
+                $moved = $base->{$cal}()->addMonths($n);
+                $this->assertSame($n, $moved->{$cal}()->diffInMonths($base), "{$cal} {$n}");
+            }
+        }
+    }
+
     // ─── diffInYears() ──────────────────────────────────────────────
 
     public function testDiffInYearsSameDateDifferentYear(): void

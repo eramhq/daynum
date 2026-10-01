@@ -15,7 +15,6 @@ Task-indexed recipes. Each one is copy-pasteable and runs against Daynum as ship
 9. [Do timezone math by escape-hatching to `DateTimeImmutable`](#do-timezone-math-by-escape-hatching-to-datetimeimmutable)
 10. [Convert an `Instant` between timezones](#convert-an-instant-between-timezones)
 11. [Use Daynum in a Laravel request/response](#use-daynum-in-a-laravel-requestresponse)
-12. [Migrate a `jdate()`-heavy codebase without touching call sites](#migrate-a-jdate-heavy-codebase-without-touching-call-sites)
 
 ## Convert a Gregorian date to Jalali (and back)
 
@@ -259,10 +258,6 @@ public function rules(): array
     return ['birthday' => ['required', new ValidJalaliDate()]];
 }
 ```
-
-## Migrate a `jdate()`-heavy codebase without touching call sites
-
-Enable the opt-in `jdate()` / `gdate()` / `hdate()` helpers and existing call sites keep working unchanged, now returning `Eram\Daynum\Instant` values. See [migration-from-morilog-jalali.md](migration-from-morilog-jalali.md) for the one-line `composer.json` edit and full walkthrough.
 
 ## See also
 

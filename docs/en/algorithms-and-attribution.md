@@ -21,7 +21,6 @@ src/
 ├── Calendar.php                    # Calendar interface
 ├── CalendarView.php                # CalendarView interface
 ├── WeekDay.php                     # ISO weekday enum
-├── helpers.php                     # opt-in jdate/gdate/hdate globals
 │
 ├── Exception/
 │   ├── DaynumException.php         # marker interface

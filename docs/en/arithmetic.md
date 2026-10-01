@@ -101,6 +101,16 @@ $a->gregorian()->diffInMonths($c);   // 0  (still in same "month" from $c's POV)
 
 The same logic applies to `diffInYears` — counting requires both month and day-of-month to be reached.
 
+Because `addMonths` clamps and `diffInMonths` waits for the day-of-month, the two are not always inverse at month ends:
+
+```php
+$jan31 = Instant::fromGregorian(2026, 1, 31);
+$feb28 = $jan31->gregorian()->addMonths(1);    // Feb 28 (clamped)
+$feb28->gregorian()->diffInMonths($jan31);      // 0 — day 28 hasn't reached day 31
+```
+
+For days 1–28 they always round-trip: `$v->addMonths($n)` diffed back against `$v` returns `$n`.
+
 Different calendars can give different answers for the same `Instant` pair:
 
 ```php
