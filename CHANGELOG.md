@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.2] — 2026-10-01
+
 ### Breaking
 - `Instant` is renamed to `CivilDateTime`. The old name suggested a UTC
   moment (as in `java.time.Instant` or JS `Temporal.Instant`); the value is a
@@ -74,6 +76,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   night depending on the DST state of the day the code ran. It now always
   resolves to the earlier moment, and also works for years beyond 9999
   reached through arithmetic.
+- CI had been red since beta.1: the test workflow's Jalali conformance
+  check required a gitignored Node fixture, and the oracle workflow
+  compared fixtures byte-for-byte, so the runner's ICU version in each
+  header always failed it. The Jalali check now works without the Node
+  file, the oracle compares data rows only (`tools/check-fixture-drift.php`),
+  and it pins ICU 78.2, the version the fixtures were built with.
 - `diffInMonths()` counted 12 months per year regardless of the calendar.
   It now walks `Calendar::monthsInYear()` the same way `addMonths()` does,
   so the two stay inverse for days 1–28.

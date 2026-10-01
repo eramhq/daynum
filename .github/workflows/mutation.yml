@@ -2,7 +2,7 @@ name: mutation
 
 # Mutation testing with Infection: small deliberate bugs ("mutants") are
 # injected into src/ and the unit + edge-case suites must catch them. The
-# score (MSI) is reported on every push to main; it is not a merge gate.
+# job fails if the covered-code score (MSI) drops below the floor.
 
 on:
   push:
@@ -27,4 +27,5 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Run Infection
-        run: infection --threads=max --no-progress --show-mutations=0
+        # Floor set just under the first measured score (85%) so it can only go up.
+        run: infection --threads=max --no-progress --show-mutations=0 --min-covered-msi=83
