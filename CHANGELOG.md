@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.3] — 2026-10-01
+
 ### Added
 - Pashto (`ps`), Urdu (`ur`) and Turkish (`tr`) locales, with month names
   for all three calendar families, weekday and AM/PM names, week rules and
@@ -19,9 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   AM/PM names as PHP arrays for new locale classes.
 
 ### Changed
-- Name matching also folds Persian and Arabic-Indic digits to ASCII, so a
-  name that contains a digit (Pashto `جماد ۲`) parses after `parseExact()`
-  normalizes the input's digits.
 - `parseExact()` reads AM/PM (`a`/`A`) from the parse locale's
   `meridiem()` markers, so custom locales parse their own. The `am`/`pm`,
   `ق.ظ`/`ب.ظ` and `ص`/`م` markers still work in every locale. Markers now
@@ -30,6 +29,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Name matching folds Latin-1 and Turkish uppercase letters too (`ŞEVVAL`
   matches `Şevval`), and treats `İ`, `I` and `ı` alike. Previously only
   ASCII letters were case-insensitive.
+- Name matching also folds Persian and Arabic-Indic digits to ASCII, so a
+  name that contains a digit (Pashto `جماد ۲`) parses after `parseExact()`
+  normalizes the input's digits.
+- Internal simplifications with identical behaviour: ISO week numbers count
+  from day 1 of the Thursday's year, the Umm al-Qura month walk and the
+  relative-time overshoot check lost dead branches, and digit
+  transliteration uses constant `strtr()` tables instead of lazily built
+  ones.
 - Mutation testing now runs every suite, including the ICU conformance and
   property suites that pin down the calendar math. The mutation job samples
   them through two test-only environment variables: `DAYNUM_FIXTURE_STRIDE`
@@ -44,11 +51,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CivilDateTime::fromArray()` type errors and relative-time thresholds.
   Provably equivalent mutants are listed in `infection.json5`, each with
   its reason.
-- Internal simplifications with identical behaviour: ISO week numbers count
-  from day 1 of the Thursday's year, the Umm al-Qura month walk and the
-  relative-time overshoot check lost dead branches, and digit
-  transliteration uses constant `strtr()` tables instead of lazily built
-  ones.
 
 ## [1.0.0-beta.2] — 2026-10-01
 
