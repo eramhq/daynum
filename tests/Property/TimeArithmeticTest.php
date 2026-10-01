@@ -7,6 +7,7 @@ namespace Eram\Daynum\Tests\Property;
 use Eram\Daynum\CivilDateTime;
 use DateTimeImmutable;
 use DateTimeZone;
+use Eram\Daynum\Tests\Property\Support\Budget;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -24,7 +25,8 @@ final class TimeArithmeticTest extends TestCase
     public function testAddSecondsThenSubtractReturnsOriginal(): void
     {
         $rng = $this->seededRng();
-        for ($i = 0; $i < self::ITERATIONS; $i++) {
+        $iterations = Budget::iterations(self::ITERATIONS);
+        for ($i = 0; $i < $iterations; $i++) {
             $start = new CivilDateTime($rng(2_000_000, 2_600_000), $rng(0, 86399), 'UTC');
             $n = $rng(-400_000_000, 400_000_000);
 
@@ -38,7 +40,8 @@ final class TimeArithmeticTest extends TestCase
     public function testMinutesAndHoursAgreeWithSeconds(): void
     {
         $rng = $this->seededRng();
-        for ($i = 0; $i < self::ITERATIONS; $i++) {
+        $iterations = Budget::iterations(self::ITERATIONS);
+        for ($i = 0; $i < $iterations; $i++) {
             $start = new CivilDateTime($rng(2_000_000, 2_600_000), $rng(0, 86399));
             $n = $rng(-2_000_000, 2_000_000);
 
@@ -52,7 +55,8 @@ final class TimeArithmeticTest extends TestCase
         $rng = $this->seededRng();
         foreach (self::ZONES as $tz) {
             $zone = new DateTimeZone($tz);
-            for ($i = 0; $i < self::ITERATIONS; $i++) {
+            $iterations = Budget::iterations(self::ITERATIONS);
+            for ($i = 0; $i < $iterations; $i++) {
                 $t = $rng(-2_000_000_000, 4_000_000_000);
                 $native = (new DateTimeImmutable('@' . $t))->setTimezone($zone);
 
@@ -77,7 +81,8 @@ final class TimeArithmeticTest extends TestCase
         $rng = $this->seededRng();
         foreach (self::ZONES as $tz) {
             $zone = new DateTimeZone($tz);
-            for ($i = 0; $i < self::ITERATIONS; $i++) {
+            $iterations = Budget::iterations(self::ITERATIONS);
+            for ($i = 0; $i < $iterations; $i++) {
                 $t = $rng(-2_000_000_000, 4_000_000_000);
                 $back = CivilDateTime::fromTimestamp($t, $tz)->toTimestamp();
 

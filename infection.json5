@@ -5,9 +5,10 @@
     "source": {
         "directories": ["src"],
     },
-    // The conformance and property suites replay hundreds of thousands of
-    // rows per mutant; unit + edge-case tests keep a run to minutes.
-    "testFrameworkOptions": "--testsuite=unit,edgecase",
+    // Every suite runs. The conformance and property suites are what pin
+    // down the calendar math, so the workflow samples them instead of
+    // excluding them: DAYNUM_FIXTURE_STRIDE keeps every Nth fixture row and
+    // DAYNUM_PROPERTY_SCALE shrinks the seeded iteration counts.
     "timeout": 30,
     "logs": {
         "text": "infection.log",

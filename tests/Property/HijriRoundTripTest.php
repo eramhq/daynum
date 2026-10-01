@@ -8,6 +8,7 @@ use Eram\Daynum\Calendar\Hijri\HijriCivilCalendar;
 use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
 use Eram\Daynum\Calendar\Hijri\Table;
 use Eram\Daynum\CivilDateTime;
+use Eram\Daynum\Tests\Property\Support\Budget;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -25,7 +26,8 @@ final class HijriRoundTripTest extends TestCase
     public function testGregorianRoundTripsThroughHijriCivil(): void
     {
         $rng = $this->seededRng();
-        for ($i = 0; $i < self::ITERATIONS; $i++) {
+        $iterations = Budget::iterations(self::ITERATIONS);
+        for ($i = 0; $i < $iterations; $i++) {
             $y = $rng(1800, 2200);
             $m = $rng(1, 12);
             $d = $rng(1, 28);
@@ -46,7 +48,8 @@ final class HijriRoundTripTest extends TestCase
     {
         $rng = $this->seededRng();
         $c = HijriCivilCalendar::instance();
-        for ($i = 0; $i < self::ITERATIONS; $i++) {
+        $iterations = Budget::iterations(self::ITERATIONS);
+        for ($i = 0; $i < $iterations; $i++) {
             $y = $rng(1, 2000);
             $m = $rng(1, 12);
             $d = $rng(1, $c->daysInMonth($y, $m));
@@ -68,7 +71,8 @@ final class HijriRoundTripTest extends TestCase
         // 1900..2100 Gregorian sits comfortably inside the bundled UAQ
         // table for any plausible ICU build.
         $rng = $this->seededRng();
-        for ($i = 0; $i < self::ITERATIONS; $i++) {
+        $iterations = Budget::iterations(self::ITERATIONS);
+        for ($i = 0; $i < $iterations; $i++) {
             $y = $rng(1900, 2100);
             $m = $rng(1, 12);
             $d = $rng(1, 28);
@@ -89,7 +93,8 @@ final class HijriRoundTripTest extends TestCase
     {
         $rng = $this->seededRng();
         $c = HijriUmmAlQuraCalendar::instance();
-        for ($i = 0; $i < self::ITERATIONS; $i++) {
+        $iterations = Budget::iterations(self::ITERATIONS);
+        for ($i = 0; $i < $iterations; $i++) {
             $y = $rng(Table::MIN_YEAR, Table::MAX_YEAR);
             $m = $rng(1, 12);
             $d = $rng(1, $c->daysInMonth($y, $m));
@@ -109,7 +114,8 @@ final class HijriRoundTripTest extends TestCase
     public function testHijriCivilOrderingPreservesGregorianOrdering(): void
     {
         $rng = $this->seededRng();
-        for ($i = 0; $i < 1000; $i++) {
+        $iterations = Budget::iterations(1000);
+        for ($i = 0; $i < $iterations; $i++) {
             $y = $rng(1800, 2200);
             $m = $rng(1, 12);
             $d = $rng(1, 28);
@@ -130,7 +136,8 @@ final class HijriRoundTripTest extends TestCase
     public function testDayOfWeekIsViewIndependentAcrossAllFourCalendars(): void
     {
         $rng = $this->seededRng();
-        for ($i = 0; $i < 1000; $i++) {
+        $iterations = Budget::iterations(1000);
+        for ($i = 0; $i < $iterations; $i++) {
             $y = $rng(1900, 2100);
             $m = $rng(1, 12);
             $d = $rng(1, 28);

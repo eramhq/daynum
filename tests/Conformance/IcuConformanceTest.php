@@ -15,7 +15,8 @@ use PHPUnit\Framework\TestCase;
  *
  * Runs pure PHP with no `ext-intl` dependency — the fixtures have been
  * pre-generated and checked in. Every row in `tests/fixtures/{gregorian,jalali}.jsonl.gz`
- * is asserted against Daynum's calendar math.
+ * is asserted against Daynum's calendar math (or a deterministic sample of
+ * them when `DAYNUM_FIXTURE_STRIDE` is set; see {@see FixtureReader}).
  *
  * Daynum's Jalali uses Ahmad Birashk's 33-year cycle, while ICU's Persian
  * calendar can shift at Nowruz boundaries across ICU versions. The Jalali
@@ -35,7 +36,7 @@ final class IcuConformanceTest extends TestCase
         $rows = 0;
         $mismatches = [];
 
-        foreach (FixtureReader::rows(self::GREGORIAN_FIXTURE) as $row) {
+        foreach (FixtureReader::rows(self::GREGORIAN_FIXTURE, FixtureReader::stride()) as $row) {
             $rows++;
             $jdn = $row['jdn'];
             [$gy, $gm, $gd] = $row['g'];
@@ -74,7 +75,7 @@ final class IcuConformanceTest extends TestCase
             }
         }
 
-        $this->assertGreaterThan(200_000, $rows, 'Gregorian fixture appears truncated');
+        $this->assertGreaterThan(intdiv(200_000, FixtureReader::stride()), $rows, 'Gregorian fixture appears truncated');
         $this->assertEmpty($mismatches, "Gregorian mismatches:\n" . implode("\n", $mismatches));
     }
 
@@ -89,7 +90,7 @@ final class IcuConformanceTest extends TestCase
         $skipped = 0;
         $mismatches = [];
 
-        foreach (FixtureReader::rows(self::JALALI_FIXTURE) as $row) {
+        foreach (FixtureReader::rows(self::JALALI_FIXTURE, FixtureReader::stride()) as $row) {
             $rows++;
             $jdn = $row['jdn'];
 
@@ -133,7 +134,7 @@ final class IcuConformanceTest extends TestCase
             }
         }
 
-        $this->assertGreaterThan(200_000, $rows, 'Jalali fixture appears truncated');
+        $this->assertGreaterThan(intdiv(200_000, FixtureReader::stride()), $rows, 'Jalali fixture appears truncated');
         $this->assertSame(
             JalaliIcuDivergence::count(),
             $skipped,
@@ -157,7 +158,7 @@ final class IcuConformanceTest extends TestCase
         $calendar = JalaliCalendar::instance();
         $skipped = 0;
 
-        foreach (FixtureReader::rows(self::JALALI_FIXTURE) as $row) {
+        foreach (FixtureReader::rows(self::JALALI_FIXTURE, FixtureReader::stride()) as $row) {
             if (!JalaliIcuDivergence::contains($row['jdn'])) {
                 continue;
             }
@@ -189,7 +190,7 @@ final class IcuConformanceTest extends TestCase
 
         $rows = 0;
         $mismatches = [];
-        foreach (FixtureReader::rows(self::GREGORIAN_FIXTURE) as $row) {
+        foreach (FixtureReader::rows(self::GREGORIAN_FIXTURE, FixtureReader::stride()) as $row) {
             $rows++;
             $jdn = $row['jdn'];
             $expected = $row['dow'];
@@ -210,7 +211,7 @@ final class IcuConformanceTest extends TestCase
                 }
             }
         }
-        $this->assertGreaterThan(200_000, $rows);
+        $this->assertGreaterThan(intdiv(200_000, FixtureReader::stride()), $rows);
         $this->assertEmpty($mismatches, implode("\n", $mismatches));
     }
 }

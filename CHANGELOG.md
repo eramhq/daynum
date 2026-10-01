@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Mutation testing now runs every suite, including the ICU conformance and
+  property suites that pin down the calendar math. The mutation job samples
+  them through two test-only environment variables: `DAYNUM_FIXTURE_STRIDE`
+  keeps every Nth fixture row (by JDN, so the sample is deterministic) and
+  `DAYNUM_PROPERTY_SCALE` scales the seeded iteration counts. Both default
+  to the full run. The job also uploads `infection.log` as an artifact.
+
 ## [1.0.0-beta.2] — 2026-10-01
 
 ### Breaking

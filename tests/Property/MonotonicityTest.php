@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Eram\Daynum\Tests\Property;
 
 use Eram\Daynum\CivilDateTime;
+use Eram\Daynum\Tests\Property\Support\Budget;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,7 +23,8 @@ final class MonotonicityTest extends TestCase
     public function testGregorianOrderingPreservedInJalali(): void
     {
         mt_srand(self::SEED);
-        for ($i = 0; $i < self::ITERATIONS; $i++) {
+        $iterations = Budget::iterations(self::ITERATIONS);
+        for ($i = 0; $i < $iterations; $i++) {
             $y = mt_rand(1900, 2100);
             $m = mt_rand(1, 12);
             $d = mt_rand(1, 28);
@@ -44,7 +46,8 @@ final class MonotonicityTest extends TestCase
     public function testAddingDaysStepsByOneJdn(): void
     {
         mt_srand(self::SEED + 1);
-        for ($i = 0; $i < self::ITERATIONS; $i++) {
+        $iterations = Budget::iterations(self::ITERATIONS);
+        for ($i = 0; $i < $iterations; $i++) {
             $y = mt_rand(1, 3176);
             $m = mt_rand(1, 12);
             $d = mt_rand(1, 28);
@@ -59,7 +62,8 @@ final class MonotonicityTest extends TestCase
     public function testSubtractingDaysIsInverseOfAdding(): void
     {
         mt_srand(self::SEED + 2);
-        for ($i = 0; $i < self::ITERATIONS; $i++) {
+        $iterations = Budget::iterations(self::ITERATIONS);
+        for ($i = 0; $i < $iterations; $i++) {
             $y = mt_rand(1900, 2100);
             $m = mt_rand(1, 12);
             $d = mt_rand(1, 28);

@@ -29,7 +29,7 @@ final class HijriCivilIcuConformanceTest extends TestCase
         $rows = 0;
         $mismatches = [];
 
-        foreach (FixtureReader::rows(self::FIXTURE) as $row) {
+        foreach (FixtureReader::rows(self::FIXTURE, FixtureReader::stride()) as $row) {
             $rows++;
             $jdn = $row['jdn'];
             [$hy, $hm, $hd] = $row['h'];
@@ -68,7 +68,7 @@ final class HijriCivilIcuConformanceTest extends TestCase
             }
         }
 
-        $this->assertGreaterThan(200_000, $rows, 'Hijri civil fixture appears truncated');
+        $this->assertGreaterThan(intdiv(200_000, FixtureReader::stride()), $rows, 'Hijri civil fixture appears truncated');
         $this->assertEmpty($mismatches, implode("\n", $mismatches));
     }
 }

@@ -6,6 +6,7 @@ namespace Eram\Daynum\Tests\Property;
 
 use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
 use Eram\Daynum\CivilDateTime;
+use Eram\Daynum\Tests\Property\Support\Budget;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -26,7 +27,8 @@ final class RoundTripTest extends TestCase
     public function testGregorianRoundTripThroughJalali(): void
     {
         $rng = $this->seededRng();
-        for ($i = 0; $i < self::ITERATIONS; $i++) {
+        $iterations = Budget::iterations(self::ITERATIONS);
+        for ($i = 0; $i < $iterations; $i++) {
             $y = $rng(1900, 2100);
             $m = $rng(1, 12);
             $d = $rng(1, 28);
@@ -46,7 +48,8 @@ final class RoundTripTest extends TestCase
     public function testJalaliRoundTripThroughGregorian(): void
     {
         $rng = $this->seededRng();
-        for ($i = 0; $i < self::ITERATIONS; $i++) {
+        $iterations = Budget::iterations(self::ITERATIONS);
+        for ($i = 0; $i < $iterations; $i++) {
             $y = $rng(1300, 1500);
             $m = $rng(1, 12);
             $d = $rng(1, JalaliCalendar::instance()->daysInMonth($y, $m));
@@ -67,7 +70,8 @@ final class RoundTripTest extends TestCase
     {
         $calendar = JalaliCalendar::instance();
         $rng = $this->seededRng();
-        for ($i = 0; $i < 1000; $i++) {
+        $iterations = Budget::iterations(1000);
+        for ($i = 0; $i < $iterations; $i++) {
             $y = $rng(JalaliCalendar::MIN_YEAR, JalaliCalendar::MAX_YEAR);
             $m = $rng(1, 12);
             $dim = $calendar->daysInMonth($y, $m);

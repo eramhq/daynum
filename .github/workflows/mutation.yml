@@ -1,8 +1,9 @@
 name: mutation
 
 # Mutation testing with Infection: small deliberate bugs ("mutants") are
-# injected into src/ and the unit + edge-case suites must catch them. The
-# job fails if the covered-code score (MSI) drops below the floor.
+# injected into src/ and the test suites must catch them. The conformance
+# and property suites run on a deterministic sample (env below) so the job
+# stays fast. It fails if the covered-code score (MSI) drops below the floor.
 
 on:
   push:
@@ -12,6 +13,10 @@ on:
 jobs:
   infection:
     runs-on: ubuntu-latest
+    env:
+      # Every 50th ICU fixture row and 5% of the property iterations.
+      DAYNUM_FIXTURE_STRIDE: 50
+      DAYNUM_PROPERTY_SCALE: 0.05
     steps:
       - uses: actions/checkout@v6
 
@@ -29,3 +34,12 @@ jobs:
       - name: Run Infection
         # Floor set just under the first measured score (85%) so it can only go up.
         run: infection --threads=max --no-progress --show-mutations=0 --min-covered-msi=83
+
+      - name: Upload Infection log
+        # Escaped mutants with file paths; GitHub shows only 10 annotations.
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: infection-log
+          path: infection.log
+          if-no-files-found: ignore

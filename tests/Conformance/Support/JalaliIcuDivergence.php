@@ -27,6 +27,9 @@ use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
  *
  * The Node fixture is gitignored and only exists where the oracle workflow
  * (or a developer) generated it. Without it, only the baseline rule applies.
+ *
+ * Honours `DAYNUM_FIXTURE_STRIDE` exactly like {@see FixtureReader::rows()},
+ * so the skip-set only ever holds rows the conformance tests will visit.
  */
 final class JalaliIcuDivergence
 {
@@ -105,6 +108,7 @@ final class JalaliIcuDivergence
         }
 
         $calendar = JalaliCalendar::instance();
+        $stride = FixtureReader::stride();
         $line = 1;
 
         while (true) {
@@ -114,6 +118,15 @@ final class JalaliIcuDivergence
 
             if ($phpLine === false && ($node === null || $nodeLine === false)) {
                 break;
+            }
+
+            // Keep the skip-set in step with the rows FixtureReader yields
+            // at the same stride, and skip decoding everything else.
+            if ($stride > 1 && $phpLine !== false) {
+                $jdn = FixtureReader::jdnOf($phpLine);
+                if ($jdn !== null && !FixtureReader::sampled($jdn, $stride)) {
+                    continue;
+                }
             }
 
             if ($node === null) {
