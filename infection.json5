@@ -16,5 +16,127 @@
     },
     "mutators": {
         "@default": true,
+        // Provably equivalent mutants: the change cannot alter behaviour,
+        // only speed. Each regex must match the whole original source line.
+        // A few equivalent mutants stay unignored on purpose because their
+        // line also holds killable mutants of the same mutator (e.g. the
+        // `+ 3` in GregorianCalendar::fromJdn, the UAQ binary-search
+        // midpoint, Jalali `intdiv(..., 33)`).
+        "AssignCoalesce": {
+            "ignoreSourceCodeByRegex": [
+                // A fresh name cache only recomputes the same names.
+                "\\$cache = self::\\$nameCache \\?\\?= new \\\\WeakMap\\(\\);",
+                // Recomputes the same constant UAQ range bound.
+                "self::\\$(minJdn|maxJdn) \\?\\?= .*",
+            ],
+        },
+        "Coalesce": {
+            "ignoreSourceCodeByRegex": [
+                // An empty cache entry only recomputes the same names.
+                "\\$entry = \\$cache\\[\\$locale\\] \\?\\? \\[\\];",
+            ],
+        },
+        "DecrementInteger": {
+            "ignoreSourceCodeByRegex": [
+                // weekBasedYear() only validates the year; any in-range date of it works.
+                "\\$calendar->toJdn\\(\\$thursdayYear, 1, 4\\);",
+                // Placeholder for an absent token; the formatter never reads it.
+                "\\$(dayOfYear|weekOfYear|weekBasedYear) += str_contains\\(.*\\) \\? \\$this->\\w+\\(\\) : 0;",
+                // jalCal(): always overwritten on the first loop pass.
+                "\\$jump = 0;",
+                // jalCal(): leap is only ever compared with 0 and 1.
+                "\\$leap = 4;",
+                // Arabic: every unit's 'zero' phrase equals its 'other' phrase.
+                "\\$n === 0 => 'zero',",
+            ],
+        },
+        "GreaterThan": {
+            "ignoreSourceCodeByRegex": [
+                // $seconds is never 0 here; that case returned 'now' earlier.
+                "\\$this->locale->relativeTime\\(\\$value, \\$unit, \\$seconds > 0\\),",
+            ],
+        },
+        "GreaterThanOrEqualTo": {
+            "ignoreSourceCodeByRegex": [
+                // 0xC0 is never a valid UTF-8 lead byte.
+                "\\$byte >= 0xC0 => 2,",
+                // addMonths(0) is a no-op on either branch.
+                "if \\(\\$months >= 0\\) \\{",
+                // Equal years give a total of 0, and -0 === 0.
+                "return \\$toYear >= \\$fromYear \\? \\$total : -\\$total;",
+            ],
+        },
+        "IncrementInteger": {
+            "ignoreSourceCodeByRegex": [
+                // weekBasedYear() only validates the year; any in-range date of it works.
+                "\\$calendar->toJdn\\(\\$thursdayYear, 1, 4\\);",
+                // Placeholder for an absent token; the formatter never reads it.
+                "\\$(dayOfYear|weekOfYear|weekBasedYear) += str_contains\\(.*\\) \\? \\$this->\\w+\\(\\) : 0;",
+                // jalCal(): always overwritten on the first loop pass.
+                "\\$jump = 0;",
+                // jalCal(): leap is only ever compared with 0 and 1.
+                "\\$leap = 4;",
+            ],
+        },
+        "LessThan": {
+            "ignoreSourceCodeByRegex": [
+                // Normalizing one character past the longest name changes no match.
+                "while \\(\\$offset < \\$length && strlen\\(\\$normalized\\) < \\$maxLength\\) \\{",
+                // PHP parses -0000 and +0000 as the same year 0.
+                "\\$year < 0 \\? '-' : '\\+',.*",
+                // Hijri civil: what remains after month 11 always fits in month 12.
+                "while \\(\\$month < 12\\) \\{",
+                // UAQ yearLengthFromBits(): every MONTH_LENGTHS word fits in 12 bits.
+                "for \\(\\$m = 0; \\$m < 12; \\$m\\+\\+\\) \\{",
+                // floorDiv(): $r is non-zero by the guard, and $b === 0 throws in intdiv() first.
+                "if \\(\\$r !== 0 && \\(\\$r < 0\\) !== \\(\\$b < 0\\)\\) \\{",
+                // jalCal(): at $jump - $n === 6 both branches give leap 3 for every BREAKS gap.
+                "if \\(\\(\\$jump - \\$n\\) < 6\\) \\{",
+            ],
+        },
+        "LessThanOrEqualTo": {
+            "ignoreSourceCodeByRegex": [
+                // No built-in calendar family has a 13th month name (the bound leaves room for a leap month).
+                "for \\(\\$m = 1; \\$m <= 13; \\$m\\+\\+\\) \\{",
+            ],
+        },
+        "LogicalAnd": {
+            "ignoreSourceCodeByRegex": [
+                // dayOfYear() never throws, so computing it for an escaped \z changes nothing.
+                "\\$dayOfYear += str_contains\\(\\$pattern, 'z'\\) .*",
+            ],
+        },
+        "MatchArmRemoval": {
+            "ignoreSourceCodeByRegex": [
+                // Arabic: every unit's 'zero' phrase equals its 'other' phrase.
+                "\\$n === 0 => 'zero',",
+            ],
+        },
+        "Minus": {
+            "ignoreSourceCodeByRegex": [
+                // The digit run ends at $p, and (int) stops at the first non-digit anyway.
+                "\\$value = \\(int\\) substr\\(\\$text, \\$start, \\$p - \\$start\\);",
+            ],
+        },
+        "ReturnRemoval": {
+            "ignoreSourceCodeByRegex": [
+                // components(): recomputing from the same JDN gives the same array.
+                "return \\$this->cache;",
+                // jalCal(): recomputing gives the identical result.
+                "return \\$this->jalCalCache\\[\\$jy\\];",
+            ],
+        },
+        "UnwrapArrayUnique": {
+            "ignoreSourceCodeByRegex": [
+                // Duplicate names map to the same value, and usort() reindexes.
+                "\\$names = array_values\\(array_unique\\(\\$names, SORT_REGULAR\\)\\);",
+            ],
+        },
+        "UnwrapArrayValues": {
+            "ignoreSourceCodeByRegex": [
+                // Duplicate names map to the same value, and usort() reindexes.
+                "\\$names = array_values\\(array_unique\\(\\$names, SORT_REGULAR\\)\\);",
+            ],
+        },
     },
 }

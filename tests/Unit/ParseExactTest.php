@@ -597,4 +597,95 @@ final class ParseExactTest extends TestCase
         $i = GregorianView::parseExact('2026-04-08 14:30:45-12:00', 'Y-m-d H:i:sP');
         $this->assertSame('-12:00', $i->tzLabel);
     }
+
+    // ─── Exact rejection reasons ────────────────────────────────────
+
+    /**
+     * Each case pins the reason, not just the exception: several bugs
+     * would still throw, only later and with a misleading message.
+     *
+     * @dataProvider rejectionProvider
+     */
+    public function testRejectionReason(string $text, string $format, string $reason): void
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage(sprintf('Cannot parse "%s" with format "%s": %s', $text, $format, $reason));
+        GregorianView::parseExact($text, $format);
+    }
+
+    /** @return iterable<string, array{string, string, string}> */
+    public static function rejectionProvider(): iterable
+    {
+        yield 'year directly before a token needs 4 digits' => [
+            '15.202', 'd.Ym', 'expected year at position 3',
+        ];
+        yield 'token after a 4-digit year hits end of input' => [
+            '15.2024', 'd.Ym', 'expected 2 digits for "m" at position 7, but input is too short',
+        ];
+        yield 'year missing at end of input' => ['15.01.', 'd.m.Y', 'expected year at position 6'];
+        yield '3-digit year' => ['15.01.999', 'd.m.Y', 'expected year at position 6'];
+        yield 'fixed-width token cut short' => [
+            '2024-01-1', 'Y-m-d', 'expected 2 digits for "d" at position 8, but input is too short',
+        ];
+        yield 'fixed-width token not digits' => [
+            '2024-01-xx', 'Y-m-d', 'expected 2 digits for "d" at position 8, got "xx"',
+        ];
+        yield 'trailing input' => ['2026-04-08 extra', 'Y-m-d', 'trailing input after position 10: " extra"'];
+        yield 'no day token' => ['2024-01', 'Y-m', 'format must include at least Y, m/n, and d/j tokens'];
+        yield 'variable-width token at end of input' => [
+            '2024-01-', 'Y-m-j', 'expected 1-2 digits for "j" at position 8',
+        ];
+        yield 'variable-width token not a digit' => [
+            '2024-01-x', 'Y-m-j', 'expected 1-2 digits for "j" at position 8',
+        ];
+        yield 'O does not accept Z' => [
+            '2024-01-15 Z', 'Y-m-d O', 'expected timezone offset (+HHMM) for "O" at position 11',
+        ];
+        yield 'P at end of input' => [
+            '2024-01-15', 'Y-m-dP', 'expected timezone offset (+HH:MM or Z) for "P" at position 10',
+        ];
+        yield 'O +1401' => ['2024-01-15 +1401', 'Y-m-d O', 'expected timezone offset (+HHMM) for "O" at position 11'];
+        yield 'O -1201' => ['2024-01-15 -1201', 'Y-m-d O', 'expected timezone offset (+HHMM) for "O" at position 11'];
+        yield 'O minute 60' => ['2024-01-15 +0060', 'Y-m-d O', 'expected timezone offset (+HHMM) for "O" at position 11'];
+        yield 'P minute 60' => [
+            '2024-01-15+05:60', 'Y-m-dP', 'expected timezone offset (+HH:MM or Z) for "P" at position 10',
+        ];
+        yield 'meridiem later in the text' => ['2024-01-15 10:00 xpm', 'Y-m-d h:i a', 'expected am/pm at position 17'];
+        yield '12-hour value 0' => ['2024-01-15 00:00 am', 'Y-m-d h:i a', '12-hour value 0 out of range 1-12'];
+        yield '12-hour value 13' => ['2024-01-15 13:00 pm', 'Y-m-d h:i a', '12-hour value 13 out of range 1-12'];
+        yield 'second year token disagrees' => ['2024 2025-01-15', 'Y Y-m-d', 'conflicting values for year: 2024 and 2025'];
+    }
+
+    // ─── Accepted edge cases ────────────────────────────────────────
+
+    /**
+     * @dataProvider acceptedProvider
+     * @param array{int, int, int, int, int, int} $expected
+     */
+    public function testAcceptedEdgeCase(string $text, string $format, array $expected, ?string $tz = null): void
+    {
+        $g = GregorianView::parseExact($text, $format)->gregorian();
+        $this->assertSame($expected, [$g->year(), $g->month(), $g->day(), $g->hour(), $g->minute(), $g->second()]);
+        $this->assertSame($tz, $g->dateTime()->tzLabel);
+    }
+
+    /** @return iterable<string, array{0: string, 1: string, 2: array{int, int, int, int, int, int}, 3?: string}> */
+    public static function acceptedProvider(): iterable
+    {
+        yield 'year directly before a token takes 4 digits' => ['15.202403', 'd.Ym', [2024, 3, 15, 0, 0, 0]];
+        yield 'delimited year takes every digit' => ['02024-01-15', 'Y-m-d', [2024, 1, 15, 0, 0, 0]];
+        yield 'negative 5-digit year' => ['-09999-01-01', 'Y-m-d', [-9999, 1, 1, 0, 0, 0]];
+        yield 'variable-width token after a token' => ['0315.2024', 'mj.Y', [2024, 3, 15, 0, 0, 0]];
+        yield 'digit literal after a variable-width token' => ['2024-01-150', 'Y-m-j0', [2024, 1, 15, 0, 0, 0]];
+        yield '1 pm' => ['2024-01-15 1:05 pm', 'Y-m-d g:i a', [2024, 1, 15, 13, 5, 0]];
+        yield '12-hour value 12 pm' => ['2024-01-15 12:00 PM', 'Y-m-d h:i A', [2024, 1, 15, 12, 0, 0]];
+        yield 'trailing backslash is ignored' => ['2024-01-15', 'Y-m-d\\', [2024, 1, 15, 0, 0, 0]];
+        yield 'escaped final character' => ['2024-01-15T', 'Y-m-d\\T', [2024, 1, 15, 0, 0, 0]];
+        yield 'escapes join the literal around them' => ['2024-01-15 at 10:30', 'Y-m-d \\a\\t H:i', [2024, 1, 15, 10, 30, 0]];
+        yield 'c between literals' => ['[2024-01-15T10:20:30+03:30]', '[c]', [2024, 1, 15, 10, 20, 30], '+03:30'];
+        yield 'O +1400' => ['2024-01-15 +1400', 'Y-m-d O', [2024, 1, 15, 0, 0, 0], '+14:00'];
+        yield 'O -1200' => ['2024-01-15 -1200', 'Y-m-d O', [2024, 1, 15, 0, 0, 0], '-12:00'];
+        yield 'O minute 59' => ['2024-01-15 +0559', 'Y-m-d O', [2024, 1, 15, 0, 0, 0], '+05:59'];
+        yield 'P minute 59' => ['2024-01-15+00:59', 'Y-m-dP', [2024, 1, 15, 0, 0, 0], '+00:59'];
+    }
 }

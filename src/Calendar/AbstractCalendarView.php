@@ -142,6 +142,8 @@ abstract class AbstractCalendarView implements CalendarView
         $parts = self::tokenizeFormat($format);
         $pos = 0;
         $fields = [];
+        $isPm = null;
+        $tzOffset = null;
 
         $partCount = count($parts);
         foreach ($parts as $idx => $part) {
@@ -187,7 +189,7 @@ abstract class AbstractCalendarView implements CalendarView
                 if ($extracted === null) {
                     throw ParseException::forFormat($text, $format, "expected am/pm at position {$pos}");
                 }
-                $fields['meridiem'] = $extracted['value'];
+                $isPm = $extracted['value'];
                 $pos = $extracted['end'];
             } elseif ($fieldName === 'weekday' || $token === 'F' || $token === 'M') {
                 $names = $fieldName === 'weekday'
@@ -233,7 +235,7 @@ abstract class AbstractCalendarView implements CalendarView
                 self::setField($fields, $fieldName, $extracted['value'], $text, $format);
                 $pos = $extracted['end'];
             } elseif ($token === 'P' || $token === 'p') {
-                $extracted = self::extractTzOffset($text, $pos, '/^([+-]\d{2}:\d{2})/', allowZ: true);
+                $extracted = self::extractTzOffset($text, $pos, '/^[+-]\d{2}:\d{2}/', allowZ: true);
                 if ($extracted === null) {
                     throw ParseException::forFormat(
                         $text,
@@ -241,10 +243,10 @@ abstract class AbstractCalendarView implements CalendarView
                         sprintf('expected timezone offset (+HH:MM or Z) for "%s" at position %d', $token, $pos),
                     );
                 }
-                $fields['tzOffsetP'] = $extracted['value'];
+                $tzOffset = $extracted['value'];
                 $pos = $extracted['end'];
             } elseif ($token === 'O') {
-                $extracted = self::extractTzOffset($text, $pos, '/^([+-]\d{4})/');
+                $extracted = self::extractTzOffset($text, $pos, '/^[+-]\d{4}/');
                 if ($extracted === null) {
                     throw ParseException::forFormat(
                         $text,
@@ -252,7 +254,7 @@ abstract class AbstractCalendarView implements CalendarView
                         sprintf('expected timezone offset (+HHMM) for "O" at position %d', $pos),
                     );
                 }
-                $fields['tzOffsetO'] = $extracted['value'];
+                $tzOffset = substr_replace($extracted['value'], ':', 3, 0);   // +HHMM → +HH:MM
                 $pos = $extracted['end'];
             } else {
                 // Fixed 2-digit numeric token
@@ -286,7 +288,7 @@ abstract class AbstractCalendarView implements CalendarView
 
         // Resolve 12-hour to 24-hour
         if (isset($fields['hour12'])) {
-            if (!isset($fields['meridiem'])) {
+            if ($isPm === null) {
                 throw ParseException::forFormat(
                     $text,
                     $format,
@@ -297,10 +299,9 @@ abstract class AbstractCalendarView implements CalendarView
             if ($h12 < 1 || $h12 > 12) {
                 throw ParseException::forFormat($text, $format, "12-hour value {$h12} out of range 1-12");
             }
-            $fields['hour'] = self::resolve12Hour((int) $h12, (bool) $fields['meridiem']);
+            $fields['hour'] = self::resolve12Hour($h12, $isPm);
             unset($fields['hour12']);
         }
-        unset($fields['meridiem']);
 
         // Defaults
         $year = $fields['year'] ?? null;
@@ -315,9 +316,9 @@ abstract class AbstractCalendarView implements CalendarView
             );
         }
 
-        $hour = (int) ($fields['hour'] ?? 0);
-        $minute = (int) ($fields['minute'] ?? 0);
-        $second = (int) ($fields['second'] ?? 0);
+        $hour = $fields['hour'] ?? 0;
+        $minute = $fields['minute'] ?? 0;
+        $second = $fields['second'] ?? 0;
 
         if ($hour > 23 || $minute > 59 || $second > 59) {
             throw ParseException::forFormat($text, $format, sprintf(
@@ -328,20 +329,14 @@ abstract class AbstractCalendarView implements CalendarView
             ));
         }
 
-        // Resolve parsed timezone offset — overrides the $tzLabel parameter
-        $parsedTz = $tzLabel;
-        if (isset($fields['tzOffsetP'])) {
-            $parsedTz = (string) $fields['tzOffsetP'];
-        } elseif (isset($fields['tzOffsetO'])) {
-            $o = (string) $fields['tzOffsetO'];
-            $parsedTz = substr($o, 0, 3) . ':' . substr($o, 3, 2);
-        }
+        // A parsed timezone offset overrides the $tzLabel parameter
+        $parsedTz = $tzOffset ?? $tzLabel;
 
         // Validate via the calendar's toJdn (reuses all existing validation)
         $calendar = static::calendarInstance();
 
         try {
-            $jdn = $calendar->toJdn((int) $year, (int) $month, (int) $day);
+            $jdn = $calendar->toJdn($year, $month, $day);
         } catch (DaynumException $e) {
             throw ParseException::forFormat($text, $format, $e->getMessage());
         }
@@ -351,7 +346,7 @@ abstract class AbstractCalendarView implements CalendarView
             if ($actual !== $fields['weekday']) {
                 throw ParseException::forFormat($text, $format, sprintf(
                     'weekday "%s" does not match the date, which is a %s',
-                    $localeData->weekdayName((int) $fields['weekday']),
+                    $localeData->weekdayName($fields['weekday']),
                     $localeData->weekdayName($actual),
                 ));
             }
@@ -452,7 +447,7 @@ abstract class AbstractCalendarView implements CalendarView
      *
      * @return array{value: int, end: int}|null
      */
-    private static function extractYear(string $text, int $pos, bool $fixedWidth = false): ?array
+    private static function extractYear(string $text, int $pos, bool $fixedWidth): ?array
     {
         $negative = false;
         $p = $pos;
@@ -501,10 +496,10 @@ abstract class AbstractCalendarView implements CalendarView
         $remaining = substr($text, $pos);
 
         // Standard am/pm (case-insensitive)
-        if (preg_match('/^(am|pm)/i', $remaining, $m)) {
+        if (preg_match('/^[ap]m/i', $remaining, $m)) {
             return [
-                'value' => strtolower($m[1]) === 'pm',
-                'end' => $pos + strlen($m[1]),
+                'value' => strtolower($m[0]) === 'pm',
+                'end' => $pos + 2,
             ];
         }
 
@@ -557,13 +552,13 @@ abstract class AbstractCalendarView implements CalendarView
             return ['value' => '+00:00', 'end' => $pos + 1];
         }
         if (preg_match($regex, substr($text, $pos), $m)) {
-            $raw = $m[1];
+            $raw = $m[0];
             // Real-world IANA range: -12:00 (Baker Island) to +14:00 (Kiribati)
             $sign = $raw[0];
             $h = (int) substr($raw, 1, 2);
-            $min = (int) substr($raw, strlen($raw) === 6 && $raw[3] === ':' ? 4 : 3, 2);
+            $min = (int) substr($raw, -2);   // +HH:MM and +HHMM both end in MM
             $maxH = $sign === '-' ? 12 : 14;
-            if ($h > $maxH || $min > 59 || ($h === $maxH && $min > 0)) {
+            if ($h > $maxH || $min > 59 || ($h === $maxH && $min !== 0)) {
                 return null;
             }
             return ['value' => $raw, 'end' => $pos + strlen($raw)];
@@ -586,7 +581,7 @@ abstract class AbstractCalendarView implements CalendarView
      * Store a parsed field, rejecting a second token that disagrees with the
      * first (e.g. `F` and `m` naming different months).
      *
-     * @param array<string, int|bool|string> $fields
+     * @param array<string, int> $fields
      */
     private static function setField(array &$fields, string $name, int $value, string $text, string $format): void
     {
@@ -617,7 +612,6 @@ abstract class AbstractCalendarView implements CalendarView
         if (!array_key_exists($family, $entry)) {
             $names = [];
             try {
-                $locale->monthName($family, 1);
                 // 13 leaves room for calendars with a leap month.
                 for ($m = 1; $m <= 13; $m++) {
                     $names[] = [self::normalizeName($locale->monthName($family, $m)), $m];
@@ -692,7 +686,7 @@ abstract class AbstractCalendarView implements CalendarView
         // Normalize the input one UTF-8 character at a time, recording where
         // each normalized length ends in the original text.
         $normalized = '';
-        $endAt = [0 => $pos];
+        $endAt = [];
         $offset = $pos;
         $length = strlen($text);
         while ($offset < $length && strlen($normalized) < $maxLength) {
@@ -715,7 +709,7 @@ abstract class AbstractCalendarView implements CalendarView
                 }
                 // A name must end at a word boundary: "Aprl" is not "Apr" + "l".
                 if ($end < $length
-                    && preg_match('/^\p{L}$/u', substr($text, $end, self::utf8CharLength($text, $end))) === 1
+                    && preg_match('/\p{L}/u', substr($text, $end, self::utf8CharLength($text, $end))) === 1
                 ) {
                     continue;
                 }
@@ -822,9 +816,9 @@ abstract class AbstractCalendarView implements CalendarView
 
     public function weekOfYear(): int
     {
-        // ISO 8601 week number. A week belongs to the year of its Thursday.
-        // Algorithm: offset the JDN to the Thursday of its week, then count
-        // weeks since the Thursday of week 1 of that year.
+        // ISO 8601 week number. A week belongs to the year of its Thursday,
+        // and week 1 is the one holding that year's first Thursday, so the
+        // Thursday's 0-based day of year divided by 7 is the 0-based week.
         $jdn = $this->dateTime->jdn;
         $isoDow = $this->dayOfWeekIso();           // Mon=1..Sun=7
         $thursdayJdn = $jdn - $isoDow + 4;          // JDN of this week's Thursday
@@ -832,8 +826,7 @@ abstract class AbstractCalendarView implements CalendarView
 
         try {
             [$thursdayYear, , ] = $calendar->fromJdn($thursdayJdn);
-            // JDN of Jan 4 of $thursdayYear — always in ISO week 1.
-            $jan4 = $calendar->toJdn($thursdayYear, 1, 4);
+            $yearStart = $calendar->toJdn($thursdayYear, 1, 1);
         } catch (DaynumException $e) {
             // A sentinel `1` would collide with the real week 1 at the MIN
             // edge and be indistinguishable from the current year's week 1
@@ -841,10 +834,7 @@ abstract class AbstractCalendarView implements CalendarView
             throw WeekAtBoundaryException::forJdn($thursdayJdn, $e);
         }
 
-        $jan4Iso = (($jan4 % 7) + 7) % 7 + 1;
-        $firstThursday = $jan4 - $jan4Iso + 4;
-
-        return intdiv($thursdayJdn - $firstThursday, 7) + 1;
+        return intdiv($thursdayJdn - $yearStart, 7) + 1;
     }
 
     public function weekBasedYear(): int
@@ -862,22 +852,19 @@ abstract class AbstractCalendarView implements CalendarView
             throw WeekAtBoundaryException::forJdn($thursdayJdn, $e);
         }
 
-        // Fast path: when the Thursday falls in the view's own year, the
-        // year is known-valid by construction and no probe is needed. This
-        // covers roughly 361/365 days — only early-Jan / late-Dec dates
-        // need to validate a notionally-adjacent year.
-        if ($thursdayYear === $this->components()['year']) {
-            return $thursdayYear;
-        }
-
-        // Closed-form `fromJdn` implementations (HijriCivil, Jalali,
-        // Gregorian) can return a notional out-of-range year that only
-        // `toJdn` would reject. Validate by attempting Jan 4 — any year
-        // ISO week 1 references must itself be a valid year of this calendar.
-        try {
-            $calendar->toJdn($thursdayYear, 1, 4);
-        } catch (DaynumException $e) {
-            throw WeekAtBoundaryException::forYear($thursdayYear, $e);
+        // When the Thursday falls in the view's own year, the year is
+        // known-valid by construction. Only early-Jan / late-Dec dates
+        // (roughly 4/365) name an adjacent year, and closed-form `fromJdn`
+        // implementations (HijriCivil, Jalali, Gregorian) can return a
+        // notional out-of-range one that only `toJdn` would reject. Validate
+        // it by attempting Jan 4: any year ISO week 1 references must itself
+        // be a valid year of this calendar.
+        if ($thursdayYear !== $this->components()['year']) {
+            try {
+                $calendar->toJdn($thursdayYear, 1, 4);
+            } catch (DaynumException $e) {
+                throw WeekAtBoundaryException::forYear($thursdayYear, $e);
+            }
         }
 
         return $thursdayYear;
@@ -946,14 +933,9 @@ abstract class AbstractCalendarView implements CalendarView
         // Lazily construct DateTimeImmutable only when timezone-dependent
         // tokens are present. The DTI is passed through FormatContext so the
         // formatter can delegate timezone math to PHP.
-        $tzTokens = ['U','O','P','p','Z','I','c','r','T'];
-        $dti = null;
-        foreach ($tzTokens as $t) {
-            if (str_contains($pattern, $t) && self::patternContainsUnescaped($pattern, $t)) {
-                $dti = $this->dateTime->toDateTimeImmutable();
-                break;
-            }
-        }
+        $dti = self::patternContainsUnescaped($pattern, self::TZ_TOKENS)
+            ? $this->dateTime->toDateTimeImmutable()
+            : null;
 
         $ctx = new FormatContext(
             locale: $this->locale,
@@ -978,12 +960,16 @@ abstract class AbstractCalendarView implements CalendarView
         return DateTokenFormatter::format($pattern, $ctx);
     }
 
+    /** Format tokens whose output needs a DateTimeImmutable. */
+    private const TZ_TOKENS = 'UOPpZIcrT';
+
     /**
-     * Returns true if `$char` appears unescaped in `$pattern`. A backslash
-     * escapes the next character, so `\W` does not count as a `W`. Runs in
-     * O(n) with no regex — roughly 20 ns per short pattern.
+     * Returns true if any character of `$tokens` appears unescaped in
+     * `$pattern`. A backslash escapes the next character, so `\W` does not
+     * count as a `W`. Runs in O(n) with no regex — roughly 20 ns per short
+     * pattern.
      */
-    private static function patternContainsUnescaped(string $pattern, string $char): bool
+    private static function patternContainsUnescaped(string $pattern, string $tokens): bool
     {
         $len = strlen($pattern);
         for ($i = 0; $i < $len; $i++) {
@@ -991,7 +977,7 @@ abstract class AbstractCalendarView implements CalendarView
                 $i++;
                 continue;
             }
-            if ($pattern[$i] === $char) {
+            if (str_contains($tokens, $pattern[$i])) {
                 return true;
             }
         }
@@ -1301,13 +1287,12 @@ abstract class AbstractCalendarView implements CalendarView
      */
     private function wholeUnitsElapsed(CivilDateTime $other, int $count, string $add): int
     {
-        if ($count === 0) {
-            return 0;
-        }
+        $direction = $count <=> 0;
         $anchor = static::of($other)->{$add}($count);
-        $overshoot = CivilDateTime::compare($anchor, $this->dateTime);
-        if (($count > 0 && $overshoot > 0) || ($count < 0 && $overshoot < 0)) {
-            $count += $count > 0 ? -1 : 1;
+        // Overshooting means the anchor lies past this value in the
+        // direction of travel.
+        if (CivilDateTime::compare($anchor, $this->dateTime) === $direction) {
+            $count -= $direction;
         }
         return abs($count);
     }

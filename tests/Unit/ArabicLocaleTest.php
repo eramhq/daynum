@@ -7,6 +7,7 @@ namespace Eram\Daynum\Tests\Unit;
 use Eram\Daynum\CivilDateTime;
 use Eram\Daynum\Locale\ArabicLocale;
 use Eram\Daynum\Locale\LocaleRegistry;
+use Eram\Daynum\Season;
 use InvalidArgumentException;
 use Eram\Daynum\WeekDay;
 use PHPUnit\Framework\TestCase;
@@ -152,5 +153,82 @@ final class ArabicLocaleTest extends TestCase
         $locale = new ArabicLocale();
         $this->assertSame(WeekDay::Sunday, $locale->firstDayOfWeek());
         $this->assertSame([WeekDay::Friday, WeekDay::Saturday], $locale->weekendDays());
+    }
+
+    // ─── Relative time ────────────────────────────────────────────────
+
+    /**
+     * CLDR Arabic cardinal plural rules: zero = 0; one = 1; two = 2;
+     * few = n % 100 in 3..10; many = n % 100 in 11..99; other otherwise
+     * (so 100–102 and 200 are "other", while 103 and 111 follow their
+     * last two digits). The noun form after the number depends on the
+     * category; the "zero" and "other" forms coincide.
+     *
+     * @dataProvider pluralCategoryCases
+     */
+    public function testRelativeTimeFollowsPluralCategory(int $n, string $category, string $dayPhrase): void
+    {
+        $locale = new ArabicLocale();
+        $this->assertSame('قبل ' . $dayPhrase, $locale->relativeTime($n, 'day', false), "category {$category}");
+        $this->assertSame('خلال ' . $dayPhrase, $locale->relativeTime($n, 'day', true), "category {$category}");
+    }
+
+    /**
+     * @return iterable<string, array{int, string, string}>
+     */
+    public static function pluralCategoryCases(): iterable
+    {
+        yield '0 zero'    => [0, 'zero', '0 يوم'];
+        yield '1 one'     => [1, 'one', 'يوم واحد'];
+        yield '2 two'     => [2, 'two', 'يومين'];
+        yield '3 few'     => [3, 'few', '3 أيام'];
+        yield '10 few'    => [10, 'few', '10 أيام'];
+        yield '11 many'   => [11, 'many', '11 يومًا'];
+        yield '99 many'   => [99, 'many', '99 يومًا'];
+        yield '100 other' => [100, 'other', '100 يوم'];
+        yield '101 other' => [101, 'other', '101 يوم'];
+        yield '102 other' => [102, 'other', '102 يوم'];
+        yield '103 few'   => [103, 'few', '103 أيام'];
+        yield '111 many'  => [111, 'many', '111 يومًا'];
+        yield '200 other' => [200, 'other', '200 يوم'];
+    }
+
+    /** CLDR spells past "few" seconds with kasra and future with kasratan. */
+    public function testFewSecondsDiacriticDependsOnDirection(): void
+    {
+        $locale = new ArabicLocale();
+        $this->assertSame('قبل 5 ثوانِ', $locale->relativeTime(5, 'second', false));
+        $this->assertSame('خلال 5 ثوانٍ', $locale->relativeTime(5, 'second', true));
+        // Other categories and units are direction-independent.
+        $this->assertSame('قبل 11 ثانية', $locale->relativeTime(11, 'second', false));
+        $this->assertSame('قبل 5 دقائق', $locale->relativeTime(5, 'minute', false));
+    }
+
+    public function testRelativeTimeNow(): void
+    {
+        $this->assertSame('الآن', (new ArabicLocale())->relativeTimeNow());
+    }
+
+    public function testRelativeTimeRejectsUnknownUnit(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Unknown relative-time unit 'fortnight'");
+        (new ArabicLocale())->relativeTime(3, 'fortnight', false);
+    }
+
+    public function testRelativeTimeRejectsNegativeValue(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Relative-time value must be non-negative; got -3.');
+        (new ArabicLocale())->relativeTime(-3, 'day', false);
+    }
+
+    public function testSeasonNames(): void
+    {
+        $locale = new ArabicLocale();
+        $this->assertSame('الربيع', $locale->seasonName(Season::Spring));
+        $this->assertSame('الصيف', $locale->seasonName(Season::Summer));
+        $this->assertSame('الخريف', $locale->seasonName(Season::Autumn));
+        $this->assertSame('الشتاء', $locale->seasonName(Season::Winter));
     }
 }

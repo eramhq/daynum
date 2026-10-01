@@ -32,8 +32,9 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Run Infection
-        # Floor set just under the first measured score (85%) so it can only go up.
-        run: infection --threads=max --no-progress --show-mutations=0 --min-covered-msi=83
+        # Covered MSI measured at 99% with the sampled suites; the floor
+        # leaves room for timing-dependent timeouts on shared runners.
+        run: infection --threads=max --no-progress --show-mutations=0 --min-covered-msi=90
 
       - name: Upload Infection log
         # Escaped mutants with file paths; GitHub shows only 10 annotations.

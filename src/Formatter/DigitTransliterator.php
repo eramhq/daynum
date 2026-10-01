@@ -24,15 +24,24 @@ final class DigitTransliterator
     public const PERSIAN = 'persian';
     public const ARAB = 'arab';
 
-    /** @var array<string, array<int, string>> */
-    private const DIGITS = [
-        self::LATN    => ['0','1','2','3','4','5','6','7','8','9'],
-        self::PERSIAN => ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'],
-        self::ARAB    => ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'],
+    /**
+     * ASCII digit → script digit, per non-Latin script. Integer keys are
+     * fine: `strtr()` compares them as the strings '0'..'9'.
+     *
+     * @var array<string, array<int, string>>
+     */
+    private const TO_SCRIPT = [
+        self::PERSIAN => ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'],
+        self::ARAB    => ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'],
     ];
 
-    /** @var array<string, array<int|string, string>> */
-    private static array $toScriptMap = [];
+    /** Persian and Arabic-Indic digit → ASCII digit. */
+    private const TO_LATIN = [
+        '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+        '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+        '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+        '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+    ];
 
     /**
      * Convert all ASCII digits in $text to the digits of $script.
@@ -44,45 +53,24 @@ final class DigitTransliterator
         if ($script === self::LATN) {
             return $text;
         }
-        if (!isset(self::$toScriptMap[$script])) {
-            // Validate inside the populate branch so an unknown script never
-            // poisons the cache with a bad key.
-            if (!isset(self::DIGITS[$script])) {
-                throw new InvalidArgumentException(
-                    "Unknown digit script '{$script}'. Expected one of: latn, persian, arab.",
-                );
-            }
-            $map = [];
-            foreach (self::DIGITS[$script] as $i => $glyph) {
-                $map[(string) $i] = $glyph;
-            }
-            self::$toScriptMap[$script] = $map;
+        if (!isset(self::TO_SCRIPT[$script])) {
+            throw new InvalidArgumentException(
+                "Unknown digit script '{$script}'. Expected one of: latn, persian, arab.",
+            );
         }
-        return strtr($text, self::$toScriptMap[$script]);
+        return strtr($text, self::TO_SCRIPT[$script]);
     }
-
-    /** @var array<string, string>|null */
-    private static ?array $toLatinMap = null;
 
     /**
      * Normalize any Persian or Arabic digits in $text back to ASCII.
      */
     public static function toLatin(string $text): string
     {
-        if (self::$toLatinMap === null) {
-            $map = [];
-            foreach ([self::PERSIAN, self::ARAB] as $script) {
-                foreach (self::DIGITS[$script] as $i => $glyph) {
-                    $map[$glyph] = (string) $i;
-                }
-            }
-            self::$toLatinMap = $map;
-        }
-        return strtr($text, self::$toLatinMap);
+        return strtr($text, self::TO_LATIN);
     }
 
     public static function isSupported(string $script): bool
     {
-        return isset(self::DIGITS[$script]);
+        return $script === self::LATN || isset(self::TO_SCRIPT[$script]);
     }
 }

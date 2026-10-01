@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Tests\Unit;
 
+use Eram\Daynum\Exception\InvalidArgumentException;
 use Eram\Daynum\Locale\PersianLocale;
+use Eram\Daynum\Season;
 use Eram\Daynum\WeekDay;
 use PHPUnit\Framework\TestCase;
 
@@ -80,5 +82,38 @@ final class PersianLocaleTest extends TestCase
         $locale = new PersianLocale();
         $this->assertSame(WeekDay::Saturday, $locale->firstDayOfWeek());
         $this->assertSame([WeekDay::Friday], $locale->weekendDays());
+    }
+
+    public function testRelativeTime(): void
+    {
+        $locale = new PersianLocale();
+        $this->assertSame('3 روز پیش', $locale->relativeTime(3, 'day', false));
+        // Future days take دیگر; every other unit takes بعد.
+        $this->assertSame('3 روز دیگر', $locale->relativeTime(3, 'day', true));
+        $this->assertSame('2 ساعت بعد', $locale->relativeTime(2, 'hour', true));
+        $this->assertSame('1 سال پیش', $locale->relativeTime(1, 'year', false));
+    }
+
+    public function testRelativeTimeRejectsUnknownUnit(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Unknown relative-time unit 'fortnight'");
+        (new PersianLocale())->relativeTime(1, 'fortnight', false);
+    }
+
+    public function testRelativeTimeRejectsNegativeValue(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Relative-time value must be non-negative; got -1.');
+        (new PersianLocale())->relativeTime(-1, 'day', false);
+    }
+
+    public function testSeasonNames(): void
+    {
+        $locale = new PersianLocale();
+        $this->assertSame('بهار', $locale->seasonName(Season::Spring));
+        $this->assertSame('تابستان', $locale->seasonName(Season::Summer));
+        $this->assertSame('پاییز', $locale->seasonName(Season::Autumn));
+        $this->assertSame('زمستان', $locale->seasonName(Season::Winter));
     }
 }

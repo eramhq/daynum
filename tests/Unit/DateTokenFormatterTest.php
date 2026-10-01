@@ -377,6 +377,13 @@ final class DateTokenFormatterTest extends TestCase
         $this->assertSame('Year 2026', $out);
     }
 
+    /** A lone trailing backslash has nothing to escape and is dropped. */
+    public function testTrailingBackslashIsDropped(): void
+    {
+        $this->assertSame('2026', DateTokenFormatter::format('Y\\', $this->sampleContext()));
+        $this->assertSame('', DateTokenFormatter::format('\\', $this->sampleContext()));
+    }
+
     public function testLiteralCharactersPassThrough(): void
     {
         $out = DateTokenFormatter::format('[Y/m/d]', $this->sampleContext());
@@ -624,5 +631,18 @@ final class DateTokenFormatterTest extends TestCase
         $ctx = $this->sampleContext(['tzLabel' => null, 'dateTimeImmutable' => null]);
         $this->assertSame('UOPpZIT', DateTokenFormatter::format('\U\O\P\p\Z\I\T', $ctx));
         $this->assertSame('cre', DateTokenFormatter::format('\c\r\e', $ctx));
+    }
+
+    /**
+     * Only the timezone token's own output is shielded from transliteration:
+     * display digits before, between and after protected segments are
+     * still converted.
+     */
+    public function testDigitsAroundTimezoneTokensAreStillTransliterated(): void
+    {
+        $ctx = $this->jalaliPersianContext(['tzLabel' => '+03:30']);
+        $this->assertSame('۱۴۰۵ +03:30 ۱۹', DateTokenFormatter::format('Y e j', $ctx));
+        $this->assertSame('۱۴۰۵ +0330 ۱۹', DateTokenFormatter::format('Y O j', $ctx));
+        $this->assertSame('+0330 ۱ +03:30 ۱۹ +03:30 ۰۱', DateTokenFormatter::format('O n e j P m', $ctx));
     }
 }

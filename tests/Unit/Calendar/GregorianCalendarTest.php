@@ -57,14 +57,63 @@ final class GregorianCalendarTest extends TestCase
         yield 'year -4 is leap'   => [-4, true];
     }
 
-    public function testDaysInMonth(): void
+    /**
+     * @dataProvider monthLengthsByYear
+     *
+     * @param list<int> $expected
+     */
+    public function testDaysInMonthForEveryMonth(int $year, array $expected): void
     {
         $c = GregorianCalendar::instance();
-        $this->assertSame(31, $c->daysInMonth(2026, 1));
-        $this->assertSame(28, $c->daysInMonth(2026, 2));
-        $this->assertSame(29, $c->daysInMonth(2024, 2));
-        $this->assertSame(30, $c->daysInMonth(2026, 4));
-        $this->assertSame(31, $c->daysInMonth(2026, 12));
+        $actual = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $actual[] = $c->daysInMonth($year, $m);
+        }
+        $this->assertSame($expected, $actual);
+    }
+
+    /**
+     * @return iterable<string, array{int, list<int>}>
+     */
+    public static function monthLengthsByYear(): iterable
+    {
+        $common = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        $leap = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+        yield '1900 (div 100, common)'  => [1900, $common];
+        yield '2000 (div 400, leap)'    => [2000, $leap];
+        yield '2023 (common)'           => [2023, $common];
+        yield '2024 (div 4, leap)'      => [2024, $leap];
+        yield '2100 (div 100, common)'  => [2100, $common];
+        yield '-4 (proleptic leap)'     => [-4, $leap];
+    }
+
+    /**
+     * Every month's last day is accepted by toJdn and the following day is
+     * rejected; cross-checked against PHP's own proleptic Gregorian `t`.
+     *
+     * @dataProvider monthLengthsByYear
+     *
+     * @param list<int> $expected
+     */
+    public function testToJdnAcceptsExactlyTheMonthLength(int $year, array $expected): void
+    {
+        $c = GregorianCalendar::instance();
+        foreach ($expected as $i => $dim) {
+            $month = $i + 1;
+            if ($year > 0) {
+                $php = (int) (new \DateTimeImmutable(sprintf('%04d-%02d-01', $year, $month)))->format('t');
+                $this->assertSame($php, $dim, "{$year}-{$month} vs DateTime");
+            }
+            $jdn = $c->toJdn($year, $month, $dim);
+            $this->assertSame([$year, $month, $dim], $c->fromJdn($jdn));
+            try {
+                $c->toJdn($year, $month, $dim + 1);
+                $this->fail("{$year}-{$month}-" . ($dim + 1) . ' should be rejected');
+            } catch (InvalidDateException $e) {
+                $this->assertStringContainsString("day must be in [1, {$dim}]", $e->getMessage());
+            }
+        }
     }
 
     public function testInvalidDayThrows(): void
@@ -76,7 +125,48 @@ final class GregorianCalendarTest extends TestCase
     public function testInvalidMonthThrows(): void
     {
         $this->expectException(InvalidDateException::class);
+        $this->expectExceptionMessage('month must be in [1, 12]');
         GregorianCalendar::instance()->toJdn(2026, 13, 1);
+    }
+
+    public function testMonthZeroThrows(): void
+    {
+        $this->expectException(InvalidDateException::class);
+        $this->expectExceptionMessage('month must be in [1, 12]');
+        GregorianCalendar::instance()->toJdn(2026, 0, 1);
+    }
+
+    /**
+     * @dataProvider outOfRangeYears
+     */
+    public function testYearOutsideSupportedRangeThrows(int $year): void
+    {
+        $this->expectException(InvalidDateException::class);
+        $this->expectExceptionMessage('year must be in [-9999, 9999]');
+        GregorianCalendar::instance()->toJdn($year, 1, 1);
+    }
+
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function outOfRangeYears(): iterable
+    {
+        yield 'MAX_YEAR + 1' => [GregorianCalendar::MAX_YEAR + 1];
+        yield 'MIN_YEAR - 1' => [GregorianCalendar::MIN_YEAR - 1];
+    }
+
+    public function testSupportedRangeEndpoints(): void
+    {
+        $c = GregorianCalendar::instance();
+        // -9999-01-01 and 9999-12-31 proleptic Gregorian.
+        $this->assertSame([-1930999, 5373484], $c->supportedRange());
+        $this->assertSame([-9999, 1, 1], $c->fromJdn(-1930999));
+        $this->assertSame([9999, 12, 31], $c->fromJdn(5373484));
+    }
+
+    public function testInstanceIsASingleton(): void
+    {
+        $this->assertSame(GregorianCalendar::instance(), GregorianCalendar::instance());
     }
 
     public function testName(): void

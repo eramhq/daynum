@@ -107,15 +107,12 @@ final class HijriUmmAlQuraCalendar implements Calendar
         // Walk months inside $year.
         $remaining = $jdn - Table::YEAR_STARTS[$year];
         $bits = Table::MONTH_LENGTHS[$year];
+        // The range check above guarantees $remaining < the year's length,
+        // so this stops by month 12. Bit m-1 set means month m has 30 days.
         $month = 1;
-        for ($m = 0; $m < 12; $m++) {
-            $dim = 29 + (($bits >> $m) & 1);
-            if ($remaining < $dim) {
-                $month = $m + 1;
-                break;
-            }
+        while ($remaining >= ($dim = 29 + (($bits >> ($month - 1)) & 1))) {
             $remaining -= $dim;
-            $month = $m + 2;
+            $month++;
         }
 
         return [$year, $month, $remaining + 1];

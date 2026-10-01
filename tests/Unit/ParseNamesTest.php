@@ -12,6 +12,8 @@ use Eram\Daynum\Calendar\Jalali\JalaliView;
 use Eram\Daynum\CivilDateTime;
 use Eram\Daynum\Exception\InvalidArgumentException;
 use Eram\Daynum\Exception\ParseException;
+use Eram\Daynum\Locale\EnglishLocale;
+use Eram\Daynum\Locale\LocaleRegistry;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -179,5 +181,84 @@ final class ParseNamesTest extends TestCase
     {
         $this->assertNotNull(HijriUmmAlQuraView::tryParseExact('20 شوال 1447', 'j F Y', null, 'ar'));
         $this->assertNull(HijriUmmAlQuraView::tryParseExact('20 Foo 1447', 'j F Y', null, 'ar'));
+    }
+
+    public function testNameAtEndOfInput(): void
+    {
+        $g = GregorianView::parseExact('15.03.2026 March', 'd.m.Y F')->gregorian();
+        $this->assertSame([2026, 3, 15], [$g->year(), $g->month(), $g->day()]);
+    }
+
+    /**
+     * A name followed by any letter is a different word, whatever the
+     * letter's UTF-8 length: 2-byte é, 3-byte क (lead byte 0xE0) and 4-byte
+     * 𠀀 (lead byte 0xF0).
+     */
+    #[DataProvider('letterAfterNameProvider')]
+    public function testNameFollowedByAnyLetterIsRejected(string $letter): void
+    {
+        $text = "15 March{$letter} 2026";
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage(sprintf(
+            'Cannot parse "%s" with format "j F Y": expected a month name for "F" at position 3',
+            $text,
+        ));
+        GregorianView::parseExact($text, 'j F Y');
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function letterAfterNameProvider(): iterable
+    {
+        yield 'Latin-1 é' => ['é'];
+        yield 'Devanagari क' => ["\u{0915}"];
+        yield 'Hangul 가' => ["\u{AC00}"];
+        yield 'CJK extension B 𠀀' => ["\u{20000}"];
+    }
+
+    public function testNameFollowedByEmojiEndsAtTheEmoji(): void
+    {
+        // An emoji is not a letter, so "March" matches; the 4-byte emoji
+        // then fails the literal space.
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('expected literal " " at position 8');
+        GregorianView::parseExact("15 March\u{1F600} 2026", 'j F Y');
+    }
+
+    /**
+     * Only the one character after a name decides the word boundary: a
+     * symbol followed by a letter still ends the name.
+     */
+    #[DataProvider('symbolThenLetterProvider')]
+    public function testOnlyTheNextCharacterDecidesTheBoundary(string $symbol): void
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('expected literal " " at position 8');
+        GregorianView::parseExact("15 March{$symbol}x 2026", 'j F Y');
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function symbolThenLetterProvider(): iterable
+    {
+        yield '2-byte ×' => ["\u{00D7}"];
+        yield '3-byte €' => ["\u{20AC}"];
+        yield '4-byte 😀' => ["\u{1F600}"];
+    }
+
+    public function testShorterNameIsTriedWhenALongerOneRunsIntoALetter(): void
+    {
+        // A custom locale where one name ("May X", June) extends another
+        // ("May") past a non-letter: in "May Xmas" the longer name runs
+        // into "m", so the shorter one must still be tried.
+        LocaleRegistry::register('qpn', new class extends EnglishLocale {
+            protected function longMonthTable(): array
+            {
+                $table = parent::longMonthTable();
+                $table['gregorian'][6] = 'May X';
+                return $table;
+            }
+        });
+
+        $g = GregorianView::parseExact('15 May Xmas 2026', 'j F X\m\a\s Y', null, 'qpn')->gregorian();
+        $this->assertSame([2026, 5, 15], [$g->year(), $g->month(), $g->day()]);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Eram\Daynum\Tests\Unit;
 
 use Eram\Daynum\Locale\EnglishLocale;
+use Eram\Daynum\Season;
 use InvalidArgumentException;
 use Eram\Daynum\WeekDay;
 use PHPUnit\Framework\TestCase;
@@ -119,6 +120,24 @@ final class EnglishLocaleTest extends TestCase
         }
     }
 
+    /**
+     * The 11/12/13 override works on `% 100`, so it also covers values
+     * past the month range: 111–113 take `th`, while 101–103 and 121
+     * follow the last digit.
+     */
+    public function testOrdinalSuffixBeyondMonthRange(): void
+    {
+        $locale = new EnglishLocale();
+        $this->assertSame('st', $locale->ordinalSuffix(101));
+        $this->assertSame('nd', $locale->ordinalSuffix(102));
+        $this->assertSame('rd', $locale->ordinalSuffix(103));
+        $this->assertSame('th', $locale->ordinalSuffix(111));
+        $this->assertSame('th', $locale->ordinalSuffix(112));
+        $this->assertSame('th', $locale->ordinalSuffix(113));
+        $this->assertSame('st', $locale->ordinalSuffix(121));
+        $this->assertSame('th', $locale->ordinalSuffix(211));
+    }
+
     public function testWeekStartAndWeekend(): void
     {
         $locale = new EnglishLocale();
@@ -136,12 +155,39 @@ final class EnglishLocaleTest extends TestCase
     public function testRelativeTimeRejectsUnknownUnit(): void
     {
         $this->expectException(\Eram\Daynum\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            "Unknown relative-time unit 'fortnight'; expected one of: second, minute, hour, day, week, month, year.",
+        );
         (new EnglishLocale())->relativeTime(1, 'fortnight', false);
     }
 
     public function testRelativeTimeRejectsNegativeValue(): void
     {
         $this->expectException(\Eram\Daynum\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Relative-time value must be non-negative; got -1.');
         (new EnglishLocale())->relativeTime(-1, 'day', false);
+    }
+
+    public function testInvalidWeekdayThrows(): void
+    {
+        $this->expectException(\Eram\Daynum\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid day of week (expected 0..6): 7');
+        (new EnglishLocale())->weekdayName(7);
+    }
+
+    public function testInvalidShortWeekdayThrows(): void
+    {
+        $this->expectException(\Eram\Daynum\Exception\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid day of week (expected 0..6): -1');
+        (new EnglishLocale())->weekdayNameShort(-1);
+    }
+
+    public function testSeasonNames(): void
+    {
+        $locale = new EnglishLocale();
+        $this->assertSame('Spring', $locale->seasonName(Season::Spring));
+        $this->assertSame('Summer', $locale->seasonName(Season::Summer));
+        $this->assertSame('Autumn', $locale->seasonName(Season::Autumn));
+        $this->assertSame('Winter', $locale->seasonName(Season::Winter));
     }
 }

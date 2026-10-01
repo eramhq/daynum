@@ -112,7 +112,13 @@ final class HijriCivilCalendarTest extends TestCase
     public function testMonthOutOfRangeThrows(): void
     {
         $this->expectException(InvalidDateException::class);
+        $this->expectExceptionMessage('month must be in [1, 12]');
         HijriCivilCalendar::instance()->toJdn(1, 13, 1);
+    }
+
+    public function testInstanceIsASingleton(): void
+    {
+        $this->assertSame(HijriCivilCalendar::instance(), HijriCivilCalendar::instance());
     }
 
     public function testMuharramDay31Throws(): void

@@ -113,6 +113,149 @@ final class JalaliCalendarTest extends TestCase
         $this->assertSame([1403, 12, 30], JalaliCalendar::instance()->fromJdn($jdn));
     }
 
+    /**
+     * @dataProvider overflowingDays
+     */
+    public function testDayPastMonthLengthRejected(int $year, int $month, int $day, int $maxDay): void
+    {
+        $this->expectException(InvalidDateException::class);
+        $this->expectExceptionMessage("day must be in [1, {$maxDay}]");
+        JalaliCalendar::instance()->toJdn($year, $month, $day);
+    }
+
+    /**
+     * @return iterable<string, array{int,int,int,int}>
+     */
+    public static function overflowingDays(): iterable
+    {
+        for ($m = 1; $m <= 6; $m++) {
+            yield "1405-{$m}-32" => [1405, $m, 32, 31];
+        }
+        for ($m = 7; $m <= 11; $m++) {
+            yield "1405-{$m}-31" => [1405, $m, 31, 30];
+        }
+        yield 'leap Esfand 31'   => [1403, 12, 31, 30];
+        yield 'common Esfand 30' => [1405, 12, 30, 29];
+    }
+
+    /**
+     * Farvardin 1 and the leap flag on both sides of every Birashk
+     * break-point (the years where jalCal's cycle walk changes segment),
+     * plus the first and last supported years and the three Birashk-vs-ICU
+     * leap disagreements. Values pinned from the jalaali-js algorithm.
+     *
+     * @dataProvider nowruzAnchors
+     */
+    public function testNowruzAndLeapAcrossBreakPoints(int $jy, int $gy, int $gm, int $gd, bool $leap): void
+    {
+        $jal = JalaliCalendar::instance();
+        $jdn = GregorianCalendar::instance()->toJdn($gy, $gm, $gd);
+        $this->assertSame($jdn, $jal->toJdn($jy, 1, 1));
+        $this->assertSame([$jy, 1, 1], $jal->fromJdn($jdn));
+        $this->assertSame([$jy - 1, 12, $jal->daysInMonth($jy - 1, 12)], $jal->fromJdn($jdn - 1));
+        $this->assertSame($leap, $jal->isLeapYear($jy));
+    }
+
+    /**
+     * @return iterable<string, array{int,int,int,int,bool}>
+     */
+    public static function nowruzAnchors(): iterable
+    {
+        yield '1 (MIN_YEAR)' => [1, 622, 3, 22, false];
+        yield '2'            => [2, 623, 3, 22, false];
+        yield '3'            => [3, 624, 3, 21, false];
+        yield '4'            => [4, 625, 3, 21, true];
+        yield '5'            => [5, 626, 3, 22, false];
+        yield '8'            => [8, 629, 3, 21, false];
+        yield '9 (break)'    => [9, 630, 3, 21, true];
+        yield '10'           => [10, 631, 3, 22, false];
+        yield '33'           => [33, 654, 3, 21, true];
+        yield '37'           => [37, 658, 3, 21, false];
+        yield '38 (break)'   => [38, 659, 3, 21, true];
+        yield '198'          => [198, 819, 3, 21, false];
+        yield '199 (break)'  => [199, 820, 3, 20, true];
+        yield '1110'         => [1110, 1731, 3, 21, false];
+        yield '1111 (break)' => [1111, 1732, 3, 20, true];
+        yield '1176'         => [1176, 1797, 3, 20, true];
+        yield '1177'         => [1177, 1798, 3, 21, false];
+        yield '1178'         => [1178, 1799, 3, 21, false];
+        yield '1180'         => [1180, 1801, 3, 21, false];
+        yield '1181 (break)' => [1181, 1802, 3, 21, true];
+        yield '1205'         => [1205, 1826, 3, 21, true];
+        yield '1206'         => [1206, 1827, 3, 22, false];
+        yield '1209'         => [1209, 1830, 3, 21, false];
+        yield '1210 (break)' => [1210, 1831, 3, 21, true];
+        yield '1502'         => [1502, 2123, 3, 21, true];
+        yield '1503'         => [1503, 2124, 3, 21, false];
+        yield '1601'         => [1601, 2222, 3, 21, true];
+        yield '1602'         => [1602, 2223, 3, 22, false];
+        yield '1630'         => [1630, 2251, 3, 21, true];
+        yield '1634'         => [1634, 2255, 3, 21, false];
+        yield '1635 (break)' => [1635, 2256, 3, 20, true];
+        yield '2059'         => [2059, 2680, 3, 20, false];
+        yield '2060 (break)' => [2060, 2681, 3, 20, true];
+        yield '2096'         => [2096, 2717, 3, 21, false];
+        yield '2097 (break)' => [2097, 2718, 3, 21, true];
+        yield '2191'         => [2191, 2812, 3, 20, false];
+        yield '2192 (break)' => [2192, 2813, 3, 20, true];
+        yield '2455'         => [2455, 3076, 3, 20, false];
+        yield '2456 (break)' => [2456, 3077, 3, 20, true];
+        yield '3176'         => [3176, 3797, 3, 20, false];
+        yield '3177 (MAX)'   => [3177, 3798, 3, 20, false];
+    }
+
+    /**
+     * Over the whole supported range, the gap between consecutive
+     * Farvardin 1s must be 366 days exactly when the earlier year is leap.
+     * jalCal derives the leap flag and the Farvardin-1 day independently,
+     * so any slip in either breaks this identity.
+     */
+    public function testYearLengthMatchesLeapFlagForEveryYear(): void
+    {
+        $c = JalaliCalendar::instance();
+        $start = $c->toJdn(JalaliCalendar::MIN_YEAR, 1, 1);
+        for ($y = JalaliCalendar::MIN_YEAR; $y < JalaliCalendar::MAX_YEAR; $y++) {
+            $next = $c->toJdn($y + 1, 1, 1);
+            $this->assertSame($c->isLeapYear($y) ? 366 : 365, $next - $start, "Jalali year {$y}");
+            $start = $next;
+        }
+    }
+
+    public function testSupportedRangeEndpoints(): void
+    {
+        $c = JalaliCalendar::instance();
+        // 1-01-01 AP = 622-03-22 CE; 3177-12-29 AP = 3799-03-19 CE.
+        $this->assertSame([1948321, 3108694], $c->supportedRange());
+        $this->assertSame([1, 1, 1], $c->fromJdn(1948321));
+        $this->assertSame([3177, 12, 29], $c->fromJdn(3108694));
+    }
+
+    public function testMonthsInYear(): void
+    {
+        $this->assertSame(12, JalaliCalendar::instance()->monthsInYear(1405));
+    }
+
+    public function testInstanceIsASingleton(): void
+    {
+        $this->assertSame(JalaliCalendar::instance(), JalaliCalendar::instance());
+    }
+
+    /**
+     * The per-instance jalCal memo only stores the documented year range,
+     * so out-of-range callers (isLeapYear / fromJdn accept any year) can't
+     * grow it without bound.
+     */
+    public function testJalCalCacheHoldsOnlySupportedYears(): void
+    {
+        $c = new JalaliCalendar();
+        foreach ([JalaliCalendar::MIN_YEAR - 1, JalaliCalendar::MIN_YEAR, JalaliCalendar::MAX_YEAR, JalaliCalendar::MAX_YEAR + 1] as $y) {
+            $c->isLeapYear($y);
+        }
+        $cache = (new \ReflectionProperty(JalaliCalendar::class, 'jalCalCache'))->getValue($c);
+        $this->assertIsArray($cache);
+        $this->assertSame([JalaliCalendar::MIN_YEAR, JalaliCalendar::MAX_YEAR], array_keys($cache));
+    }
+
     public function testName(): void
     {
         $this->assertSame('jalali', JalaliCalendar::instance()->name());

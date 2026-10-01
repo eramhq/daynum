@@ -14,6 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keeps every Nth fixture row (by JDN, so the sample is deterministic) and
   `DAYNUM_PROPERTY_SCALE` scales the seeded iteration counts. Both default
   to the full run. The job also uploads `infection.log` as an artifact.
+- Mutation score: covered-code MSI rose from 85% to 99% and the CI floor
+  from 83% to 90%. New unit tests cover the parser's edge cases (offsets at
+  ±14/−12 hours, 5-digit and negative years, escapes around `c`, names
+  followed by multi-byte letters), exact exception messages, every season
+  name, the Arabic plural table, calendar month lengths and range edges,
+  `CivilDateTime::fromArray()` type errors and relative-time thresholds.
+  Provably equivalent mutants are listed in `infection.json5`, each with
+  its reason.
+- Internal simplifications with identical behaviour: ISO week numbers count
+  from day 1 of the Thursday's year, the Umm al-Qura month walk and the
+  relative-time overshoot check lost dead branches, and digit
+  transliteration uses constant `strtr()` tables instead of lazily built
+  ones.
 
 ## [1.0.0-beta.2] — 2026-10-01
 

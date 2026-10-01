@@ -170,4 +170,107 @@ final class HijriUmmAlQuraCalendarTest extends TestCase
         $this->expectException(UmmAlQuraOutOfRangeException::class);
         HijriUmmAlQuraCalendar::instance()->dayOfYear(Table::MAX_YEAR + 1, 1, 1);
     }
+
+    public function testDayOfYearAtMaxYearLastDay(): void
+    {
+        // AH 1600 is a 354-day year ending on a 30-day Dhu al-Hijjah.
+        $this->assertSame(354, HijriUmmAlQuraCalendar::instance()->dayOfYear(1600, 12, 30));
+    }
+
+    /**
+     * First and last JDN of the bundled table, cross-checked against ICU
+     * `islamic-umalqura`: AH 1300-01-01 = 1882-11-12 and AH 1600-12-30 =
+     * 2174-11-25 (Gregorian).
+     */
+    public function testSupportedRangeEndpoints(): void
+    {
+        $this->assertSame([2408762, 2515426], HijriUmmAlQuraCalendar::instance()->supportedRange());
+        $greg = GregorianCalendar::instance();
+        $this->assertSame(2408762, $greg->toJdn(1882, 11, 12));
+        $this->assertSame(2515426, $greg->toJdn(2174, 11, 25));
+    }
+
+    public function testFromJdnAtFirstSupportedDay(): void
+    {
+        $this->assertSame([1300, 1, 1], HijriUmmAlQuraCalendar::instance()->fromJdn(2408762));
+        $this->assertSame(2408762, HijriUmmAlQuraCalendar::instance()->toJdn(1300, 1, 1));
+    }
+
+    public function testFromJdnAtLastSupportedDay(): void
+    {
+        $this->assertSame([1600, 12, 30], HijriUmmAlQuraCalendar::instance()->fromJdn(2515426));
+        $this->assertSame(2515426, HijriUmmAlQuraCalendar::instance()->toJdn(1600, 12, 30));
+    }
+
+    /**
+     * @dataProvider jdnsOutsideTable
+     */
+    public function testFromJdnJustOutsideTableThrows(int $jdn): void
+    {
+        $this->expectException(UmmAlQuraOutOfRangeException::class);
+        HijriUmmAlQuraCalendar::instance()->fromJdn($jdn);
+    }
+
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function jdnsOutsideTable(): iterable
+    {
+        yield 'day before AH 1300-01-01' => [2408761];
+        yield 'day after AH 1600-12-30'  => [2515427];
+    }
+
+    public function testToJdnRejectsDay30InA29DayMonth(): void
+    {
+        // Muharram 1445 has 29 days (see testDaysInMonthForKnownYear).
+        $this->expectException(InvalidDateException::class);
+        $this->expectExceptionMessage('day must be in [1, 29]');
+        HijriUmmAlQuraCalendar::instance()->toJdn(1445, 1, 30);
+    }
+
+    public function testToJdnAcceptsDay30InA30DayMonth(): void
+    {
+        // Safar 1445 has 30 days; Rabi I 1445 follows it.
+        $c = HijriUmmAlQuraCalendar::instance();
+        $this->assertSame($c->toJdn(1445, 3, 1) - 1, $c->toJdn(1445, 2, 30));
+    }
+
+    /**
+     * @dataProvider yearsOutsideTable
+     */
+    public function testIsLeapYearOutsideTableThrows(int $year): void
+    {
+        $this->expectException(UmmAlQuraOutOfRangeException::class);
+        $this->expectExceptionMessage("date {$year}-01-01 is outside");
+        HijriUmmAlQuraCalendar::instance()->isLeapYear($year);
+    }
+
+    /**
+     * @dataProvider yearsOutsideTable
+     */
+    public function testDaysInMonthOutsideTableThrows(int $year): void
+    {
+        $this->expectException(UmmAlQuraOutOfRangeException::class);
+        $this->expectExceptionMessage("date {$year}-05-01 is outside");
+        HijriUmmAlQuraCalendar::instance()->daysInMonth($year, 5);
+    }
+
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function yearsOutsideTable(): iterable
+    {
+        yield 'MIN_YEAR - 1' => [Table::MIN_YEAR - 1];
+        yield 'MAX_YEAR + 1' => [Table::MAX_YEAR + 1];
+    }
+
+    public function testMonthsInYear(): void
+    {
+        $this->assertSame(12, HijriUmmAlQuraCalendar::instance()->monthsInYear(1445));
+    }
+
+    public function testInstanceIsASingleton(): void
+    {
+        $this->assertSame(HijriUmmAlQuraCalendar::instance(), HijriUmmAlQuraCalendar::instance());
+    }
 }

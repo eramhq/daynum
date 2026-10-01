@@ -126,4 +126,31 @@ final class LocaleRegistryTest extends TestCase
         $this->assertSame(WeekDay::Saturday, $dari->firstDayOfWeek());
         $this->assertSame([WeekDay::Thursday, WeekDay::Friday], $dari->weekendDays());
     }
+
+    /**
+     * Runs against an emptied registry (restored afterwards), since other
+     * tests leave their custom tags behind and `tags()` must be pinned
+     * exactly.
+     */
+    public function testTagsAreSortedAndUnique(): void
+    {
+        $locales = new \ReflectionProperty(LocaleRegistry::class, 'locales');
+        $saved = $locales->getValue();
+        try {
+            $locales->setValue(null, []);
+            $this->assertSame(['ar', 'en', 'fa', 'fa-af'], LocaleRegistry::tags());
+
+            // Resolving a built-in caches it under the same tag; it must not be listed twice.
+            LocaleRegistry::get('en-US');
+            LocaleRegistry::register('fa-AF', new DariLocale());
+            $this->assertSame(['ar', 'en', 'fa', 'fa-af'], LocaleRegistry::tags());
+
+            LocaleRegistry::register('zu', new EnglishLocale());
+            LocaleRegistry::register('am', new EnglishLocale());
+            $this->assertSame(['am', 'ar', 'en', 'fa', 'fa-af', 'zu'], LocaleRegistry::tags());
+        } finally {
+            $locales->setValue(null, $saved);
+        }
+        $this->assertFalse(LocaleRegistry::has('zu'));
+    }
 }
