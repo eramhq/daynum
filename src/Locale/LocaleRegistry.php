@@ -73,7 +73,11 @@ final class LocaleRegistry
         ));
     }
 
-    /** Whether {@see get()} would resolve this tag. */
+    /**
+     * Whether {@see get()} would resolve this tag.
+     *
+     * @phpstan-impure the answer changes as locales are registered
+     */
     public static function has(string $tag): bool
     {
         try {
@@ -88,6 +92,7 @@ final class LocaleRegistry
      * Normalized tags of every built-in and registered locale.
      *
      * @return list<string>
+     * @phpstan-impure the list grows as locales are registered
      */
     public static function tags(): array
     {

@@ -138,19 +138,23 @@ final class LocaleRegistryTest extends TestCase
         $saved = $locales->getValue();
         try {
             $locales->setValue(null, []);
-            $this->assertSame(['ar', 'en', 'fa', 'fa-af'], LocaleRegistry::tags());
+            $builtInsOnly = LocaleRegistry::tags();
 
             // Resolving a built-in caches it under the same tag; it must not be listed twice.
             LocaleRegistry::get('en-US');
             LocaleRegistry::register('fa-AF', new DariLocale());
-            $this->assertSame(['ar', 'en', 'fa', 'fa-af'], LocaleRegistry::tags());
+            $withCachedBuiltIns = LocaleRegistry::tags();
 
             LocaleRegistry::register('zu', new EnglishLocale());
             LocaleRegistry::register('am', new EnglishLocale());
-            $this->assertSame(['am', 'ar', 'en', 'fa', 'fa-af', 'zu'], LocaleRegistry::tags());
+            $withCustom = LocaleRegistry::tags();
         } finally {
             $locales->setValue(null, $saved);
         }
+
+        $this->assertSame(['ar', 'en', 'fa', 'fa-af'], $builtInsOnly);
+        $this->assertSame(['ar', 'en', 'fa', 'fa-af'], $withCachedBuiltIns);
+        $this->assertSame(['am', 'ar', 'en', 'fa', 'fa-af', 'zu'], $withCustom);
         $this->assertFalse(LocaleRegistry::has('zu'));
     }
 }
