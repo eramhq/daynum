@@ -28,6 +28,8 @@ Fixture refresh is a deliberate, reviewed action performed by maintainers.
 | `format-tokens-en-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
 | `format-tokens-fa-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
 | `format-tokens-ar-hijri.jsonl.gz`   | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-fa-af.jsonl.gz`      | ~1,000    | `tools/generate-format-tokens.php`   |
+| `format-tokens-fa-af-jalali.jsonl.gz` | ~1,000  | `tools/generate-format-tokens.php`   |
 | `relative-time.jsonl.gz`           | ~3,000    | `tools/generate-relative-time-node.mjs` |
 
 There is no `format-tokens-ar-jalali.jsonl.gz`: the Arabic locale intentionally

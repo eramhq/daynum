@@ -164,5 +164,10 @@ interface CalendarView
      *
      * @see \Eram\Daynum\Calendar\AbstractCalendarView::parseExact()
      */
-    public static function tryParseExact(string $text, string $format, ?string $tzLabel = null): ?CivilDateTime;
+    public static function tryParseExact(
+        string $text,
+        string $format,
+        ?string $tzLabel = null,
+        ?string $locale = null,
+    ): ?CivilDateTime;
 }

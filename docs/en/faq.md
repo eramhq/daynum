@@ -77,13 +77,13 @@ Re-entering the view is one extra method call and keeps the model clean. See [co
 
 See [calendars/hijri-civil.md](calendars/hijri-civil.md#why-not-other-islamic-variants).
 
-## Why isn't parsing locale-aware?
+## How locale-aware is parsing?
 
-`parseExact` is strict: it doesn't try to match month names or weekday names, even though the formatter writes them. Locale-aware parsing is a can of worms — "Farvardin" vs. "فروردین" vs. "farvardin" vs. "FARVARDIN" vs. "fâr" vs. "far" — with no clean answer.
+`parseExact` matches month and weekday names (`F M l D`) in **one** locale you name — it does not guess the language. Within that locale it forgives the differences that come from keyboards and fonts (Arabic `ي`/`ك` for Persian `ی`/`ک`, a missing ZWNJ or ezafe, Latin letter case) and nothing else: no abbreviations beyond the locale's own short names, no transliterations ("fâr"), no fuzzy matching.
 
-For structured input, use numeric tokens (`Y m d`) which parse unambiguously. For free-form input, fall back to `DateTimeImmutable` + `CivilDateTime::fromDateTime()`, then validate.
+For machine-generated input, numeric tokens (`Y m d`) are still the most robust choice. For free-form input, fall back to `DateTimeImmutable` + `CivilDateTime::fromDateTime()`, then validate.
 
-See [parsing.md](parsing.md).
+See [parsing.md](parsing.md#month-and-weekday-names).
 
 ## Why does `diffInDays` live on `CivilDateTime` but `diffInMonths` on the view?
 

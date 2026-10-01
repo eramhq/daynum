@@ -14,7 +14,7 @@ use Eram\Daynum\WeekDay;
  * locale's human-facing week starts on Saturday, but the indexing is kept
  * uniform so every calendar uses the same underlying integer.
  */
-final class PersianLocale extends AbstractTableLocale
+class PersianLocale extends AbstractTableLocale
 {
     /**
      * Long form emits the Persian *ezafe* hamzeh (U+0654) on Gregorian month

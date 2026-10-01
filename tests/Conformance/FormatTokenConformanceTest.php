@@ -35,6 +35,8 @@ final class FormatTokenConformanceTest extends TestCase
         yield 'en hijri-civil' => [$dir . '/format-tokens-en-hijri.jsonl.gz',  'en', 'hijri-civil'];
         yield 'fa hijri-civil' => [$dir . '/format-tokens-fa-hijri.jsonl.gz',  'fa', 'hijri-civil'];
         yield 'ar hijri-civil' => [$dir . '/format-tokens-ar-hijri.jsonl.gz',  'ar', 'hijri-civil'];
+        yield 'fa-AF gregorian' => [$dir . '/format-tokens-fa-af.jsonl.gz',        'fa-AF', 'gregorian'];
+        yield 'fa-AF jalali'    => [$dir . '/format-tokens-fa-af-jalali.jsonl.gz', 'fa-AF', 'jalali'];
     }
 
     /**

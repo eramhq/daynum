@@ -15,7 +15,7 @@ use Eram\Daynum\WeekDay;
  * readers who need Jalali should use `withLocale('fa')` — Persian month
  * names render in the same Perso-Arabic script.
  */
-final class ArabicLocale extends AbstractTableLocale
+class ArabicLocale extends AbstractTableLocale
 {
     private const LONG_MONTHS = [
         'gregorian' => [

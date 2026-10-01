@@ -75,12 +75,16 @@ abstract class AbstractCalendarView implements CalendarView
      *
      * Fixed-width tokens (m, d, H, h, i, s) consume exactly 2 digits.
      * Variable-width tokens (n, j, G, g) consume 1-2 digits greedily.
-     * Locale-dependent tokens (F, M, l, D) are excluded — format only.
+     * Name tokens (F, M, l, D) match the parse locale's month/weekday names.
      */
     private const PARSE_TOKENS = [
         'Y' => 'year',
         'm' => 'month',
         'n' => 'month',
+        'F' => 'month',
+        'M' => 'month',
+        'l' => 'weekday',
+        'D' => 'weekday',
         'd' => 'day',
         'j' => 'day',
         'H' => 'hour',
@@ -104,19 +108,34 @@ abstract class AbstractCalendarView implements CalendarView
      * `H`/`G` (hour 24h), `h`/`g` (hour 12h), `i` (minute),
      * `s` (second), `a`/`A` (am/pm meridiem),
      * `P`/`p` (UTC offset `+HH:MM` or `Z`), `O` (UTC offset `+HHMM`),
-     * `c` (ISO 8601 composite: `Y-m-d\TH:i:sP`).
+     * `c` (ISO 8601 composite: `Y-m-d\TH:i:sP`),
+     * `F`/`M` (month name, full or short, in `$locale`),
+     * `l`/`D` (weekday name, full or short, in `$locale`; must agree with
+     * the parsed date).
      *
      * Variable-width tokens (`n`, `j`, `G`, `g`) consume 1-2 digits
      * greedily and must be followed by a literal separator, not another
      * token.
      *
      * Digits in any script (Persian U+06F0, Arabic-Indic U+0660) are
-     * normalized to ASCII before parsing.
+     * normalized to ASCII before parsing. Names match case-insensitively
+     * (Latin letters) and treat Arabic ي/ك as Persian ی/ک, ignoring ZWNJ
+     * and the ezafe hamza (ٔ).
+     *
+     * @param ?string $locale tag whose month/weekday names `F M l D` match;
+     *                        defaults to `en`, like views
      *
      * @throws ParseException on format mismatch, unsupported tokens, or invalid date
+     * @throws InvalidArgumentException on an unknown locale tag
      */
-    public static function parseExact(string $text, string $format, ?string $tzLabel = null): CivilDateTime
-    {
+    public static function parseExact(
+        string $text,
+        string $format,
+        ?string $tzLabel = null,
+        ?string $locale = null,
+    ): CivilDateTime {
+        $localeData = LocaleRegistry::get($locale ?? 'en');
+
         // Normalize non-Latin digits to ASCII
         $text = DigitTransliterator::toLatin($text);
 
@@ -160,7 +179,7 @@ abstract class AbstractCalendarView implements CalendarView
                 if ($extracted === null) {
                     throw ParseException::forFormat($text, $format, "expected year at position {$pos}");
                 }
-                $fields['year'] = $extracted['value'];
+                self::setField($fields, 'year', $extracted['value'], $text, $format);
                 $pos = $extracted['end'];
             } elseif ($token === 'a' || $token === 'A') {
                 // Meridiem: 2-char (am/pm/AM/PM) or locale-specific
@@ -169,6 +188,28 @@ abstract class AbstractCalendarView implements CalendarView
                     throw ParseException::forFormat($text, $format, "expected am/pm at position {$pos}");
                 }
                 $fields['meridiem'] = $extracted['value'];
+                $pos = $extracted['end'];
+            } elseif ($fieldName === 'weekday' || $token === 'F' || $token === 'M') {
+                $names = $fieldName === 'weekday'
+                    ? self::weekdayNames($localeData)
+                    : self::monthNames($localeData, static::calendarInstance()->localeFamily());
+                if ($names === null) {
+                    throw ParseException::forFormat($text, $format, sprintf(
+                        'locale "%s" has no %s month names',
+                        $localeData->tag(),
+                        static::calendarInstance()->localeFamily(),
+                    ));
+                }
+                $extracted = self::extractName($text, $pos, $names);
+                if ($extracted === null) {
+                    throw ParseException::forFormat($text, $format, sprintf(
+                        'expected a %s name for "%s" at position %d',
+                        $fieldName === 'weekday' ? 'weekday' : 'month',
+                        $token,
+                        $pos,
+                    ));
+                }
+                self::setField($fields, $fieldName, $extracted['value'], $text, $format);
                 $pos = $extracted['end'];
             } elseif ($token === 'n' || $token === 'j' || $token === 'G' || $token === 'g') {
                 // Variable-width (1-2 digit) tokens
@@ -183,7 +224,7 @@ abstract class AbstractCalendarView implements CalendarView
                     throw ParseException::forFormat($text, $format,
                         sprintf('expected 1-2 digits for "%s" at position %d', $token, $pos));
                 }
-                $fields[$fieldName] = $extracted['value'];
+                self::setField($fields, $fieldName, $extracted['value'], $text, $format);
                 $pos = $extracted['end'];
             } elseif ($token === 'P' || $token === 'p') {
                 $extracted = self::extractTzOffset($text, $pos, '/^([+-]\d{2}:\d{2})/', allowZ: true);
@@ -218,7 +259,7 @@ abstract class AbstractCalendarView implements CalendarView
                         sprintf('expected 2 digits for "%s" at position %d, got "%s"', $token, $pos, $digits),
                     );
                 }
-                $fields[$fieldName] = (int) $digits;
+                self::setField($fields, $fieldName, (int) $digits, $text, $format);
                 $pos += 2;
             }
         }
@@ -289,6 +330,17 @@ abstract class AbstractCalendarView implements CalendarView
             $jdn = $calendar->toJdn((int) $year, (int) $month, (int) $day);
         } catch (DaynumException $e) {
             throw ParseException::forFormat($text, $format, $e->getMessage());
+        }
+
+        if (isset($fields['weekday'])) {
+            $actual = (($jdn + 1) % 7 + 7) % 7;   // PHP `w`: Sunday = 0
+            if ($actual !== $fields['weekday']) {
+                throw ParseException::forFormat($text, $format, sprintf(
+                    'weekday "%s" does not match the date, which is a %s',
+                    $localeData->weekdayName((int) $fields['weekday']),
+                    $localeData->weekdayName($actual),
+                ));
+            }
         }
 
         try {
@@ -364,7 +416,6 @@ abstract class AbstractCalendarView implements CalendarView
     /** Tokens recognized by the formatter but NOT supported for parsing. */
     private const FORMAT_ONLY_TOKENS = [
         'y' => true, 'z' => true,
-        'D' => true, 'l' => true, 'F' => true, 'M' => true,
         'N' => true, 'w' => true,
         'W' => true, 'o' => true, 't' => true, 'L' => true,
         'T' => true, 'e' => true, 'S' => true,
@@ -518,16 +569,173 @@ abstract class AbstractCalendarView implements CalendarView
     }
 
     /**
+     * Store a parsed field, rejecting a second token that disagrees with the
+     * first (e.g. `F` and `m` naming different months).
+     *
+     * @param array<string, int|bool|string> $fields
+     */
+    private static function setField(array &$fields, string $name, int $value, string $text, string $format): void
+    {
+        if (isset($fields[$name]) && $fields[$name] !== $value) {
+            throw ParseException::forFormat($text, $format, sprintf(
+                'conflicting values for %s: %d and %d',
+                $name,
+                $fields[$name],
+                $value,
+            ));
+        }
+        $fields[$name] = $value;
+    }
+
+    /** @var \WeakMap<LocaleData, array<string, list<array{string, int}>|null>>|null */
+    private static ?\WeakMap $nameCache = null;
+
+    /**
+     * Long and short month names of a locale family as [normalized name,
+     * month] pairs, longest first; null when the locale lacks the family.
+     *
+     * @return list<array{string, int}>|null
+     */
+    private static function monthNames(LocaleData $locale, string $family): ?array
+    {
+        $cache = self::$nameCache ??= new \WeakMap();
+        $entry = $cache[$locale] ?? [];
+        if (!array_key_exists($family, $entry)) {
+            $names = [];
+            try {
+                $locale->monthName($family, 1);
+                // 13 leaves room for calendars with a leap month.
+                for ($m = 1; $m <= 13; $m++) {
+                    $names[] = [self::normalizeName($locale->monthName($family, $m)), $m];
+                    $names[] = [self::normalizeName($locale->monthNameShort($family, $m)), $m];
+                }
+            } catch (InvalidArgumentException) {
+                // Unknown family (first call) or past the last month.
+            }
+            $entry[$family] = $names === [] ? null : self::longestFirst($names);
+            $cache[$locale] = $entry;
+        }
+        return $entry[$family];
+    }
+
+    /**
+     * Long and short weekday names as [normalized name, PHP `w`] pairs.
+     *
+     * @return list<array{string, int}>
+     */
+    private static function weekdayNames(LocaleData $locale): array
+    {
+        $cache = self::$nameCache ??= new \WeakMap();
+        $entry = $cache[$locale] ?? [];
+        if (!isset($entry["\0weekday"])) {
+            $names = [];
+            for ($w = 0; $w <= 6; $w++) {
+                $names[] = [self::normalizeName($locale->weekdayName($w)), $w];
+                $names[] = [self::normalizeName($locale->weekdayNameShort($w)), $w];
+            }
+            $entry["\0weekday"] = self::longestFirst($names);
+            $cache[$locale] = $entry;
+        }
+        return $entry["\0weekday"];
+    }
+
+    /**
+     * @param list<array{string, int}> $names
+     * @return list<array{string, int}>
+     */
+    private static function longestFirst(array $names): array
+    {
+        $names = array_values(array_unique($names, SORT_REGULAR));
+        usort($names, static fn (array $a, array $b): int => strlen($b[0]) <=> strlen($a[0]));
+        return $names;
+    }
+
+    /** Characters that differ between Arabic and Persian keyboards, or carry no meaning for matching. */
+    private const NAME_NORMALIZATION = [
+        "\u{064A}" => "\u{06CC}",   // ARABIC YEH → FARSI YEH (ي → ی)
+        "\u{0643}" => "\u{06A9}",   // ARABIC KAF → KEHEH (ك → ک)
+        "\u{200C}" => '',            // ZERO WIDTH NON-JOINER
+        "\u{0654}" => '',            // HAMZA ABOVE (Persian ezafe: ژانویهٔ)
+    ];
+
+    private static function normalizeName(string $name): string
+    {
+        return strtolower(strtr($name, self::NAME_NORMALIZATION));
+    }
+
+    /**
+     * Match the longest name at `$pos` that ends at a word boundary,
+     * comparing normalized forms and mapping the match back to a byte
+     * offset in the original text.
+     *
+     * @param list<array{string, int}> $names normalized, longest first
+     * @return array{value: int, end: int}|null
+     */
+    private static function extractName(string $text, int $pos, array $names): ?array
+    {
+        $maxLength = strlen($names[0][0] ?? '');
+        // Normalize the input one UTF-8 character at a time, recording where
+        // each normalized length ends in the original text.
+        $normalized = '';
+        $endAt = [0 => $pos];
+        $offset = $pos;
+        $length = strlen($text);
+        while ($offset < $length && strlen($normalized) < $maxLength) {
+            $charLength = self::utf8CharLength($text, $offset);
+            $normalized .= self::normalizeName(substr($text, $offset, $charLength));
+            $offset += $charLength;
+            $endAt[strlen($normalized)] = $offset;
+        }
+
+        foreach ($names as [$name, $value]) {
+            if ($name !== '' && str_starts_with($normalized, $name) && isset($endAt[strlen($name)])) {
+                $end = $endAt[strlen($name)];
+                // Swallow trailing characters that normalize away (ZWNJ, ezafe).
+                while ($end < $length) {
+                    $charLength = self::utf8CharLength($text, $end);
+                    if (self::normalizeName(substr($text, $end, $charLength)) !== '') {
+                        break;
+                    }
+                    $end += $charLength;
+                }
+                // A name must end at a word boundary: "Aprl" is not "Apr" + "l".
+                if ($end < $length
+                    && preg_match('/^\p{L}$/u', substr($text, $end, self::utf8CharLength($text, $end))) === 1
+                ) {
+                    continue;
+                }
+                return ['value' => $value, 'end' => $end];
+            }
+        }
+        return null;
+    }
+
+    private static function utf8CharLength(string $text, int $offset): int
+    {
+        $byte = ord($text[$offset]);
+        return match (true) {
+            $byte >= 0xF0 => 4,
+            $byte >= 0xE0 => 3,
+            $byte >= 0xC0 => 2,
+            default => 1,
+        };
+    }
+
+    /**
      * Try to parse the given text; return null instead of throwing.
      *
      * Catches {@see ParseException} only — this covers all failure modes
      * because {@see parseExact()} already wraps calendar-level exceptions
      * (InvalidDateException, UmmAlQuraOutOfRangeException) in ParseException.
      */
-    public static function tryParseExact(string $text, string $format, ?string $tzLabel = null): ?CivilDateTime
-    {
+    public static function tryParseExact(
+        string $text,
+        string $format,
+        ?string $tzLabel = null,
+        ?string $locale = null,
+    ): ?CivilDateTime {
         try {
-            return static::parseExact($text, $format, $tzLabel);
+            return static::parseExact($text, $format, $tzLabel, $locale);
         } catch (ParseException) {
             return null;
         }

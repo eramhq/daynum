@@ -1,6 +1,6 @@
 # Parsing
 
-Daynum parses strict format strings — no relative dates (`"next Monday"`), no fuzzy input, no locale-name matching. The parser is a mirror of the formatter: same tokens, same grammar, strict literal matching.
+Daynum parses strict format strings — no relative dates (`"next Monday"`), no fuzzy input. The parser is a mirror of the formatter: same tokens, same grammar, strict literal matching, and month/weekday names in a locale you choose.
 
 ## `parseExact` and `tryParseExact`
 
@@ -14,12 +14,18 @@ use Eram\Daynum\Calendar\Hijri\HijriCivilView;
 
 GregorianView::parseExact('2026-04-08', 'Y-m-d');
 JalaliView::parseExact('1405/01/19', 'Y/m/d');
-HijriUmmAlQuraView::parseExact('1447/10/21', 'Y/m/d');
+HijriUmmAlQuraView::parseExact('1447/10/20', 'Y/m/d');
 HijriCivilView::parseExact('0001/1/1', 'Y/n/j');    // Y still requires 4+ digits
+
+// Month and weekday names, in the locale passed as the 4th argument
+JalaliView::parseExact('چهارشنبه ۱۹ فروردین ۱۴۰۵', 'l j F Y', null, 'fa');
+GregorianView::parseExact('Wed, 8 Apr 2026', 'D, j M Y');            // locale defaults to 'en'
 
 // Safe variant — returns null instead of throwing
 JalaliView::tryParseExact('not-a-date', 'Y/m/d');   // null
 ```
+
+The full signature is `parseExact(string $text, string $format, ?string $tzLabel = null, ?string $locale = null)`.
 
 Both return a `CivilDateTime` (not a view) on success. On failure, `parseExact` throws `ParseException`, `tryParseExact` returns `null`.
 
@@ -42,12 +48,36 @@ Both return a `CivilDateTime` (not a view) on success. On failure, `parseExact` 
 | `P` / `p` | tz offset | `+HH:MM` or `Z` |
 | `O` | tz offset | `+HHMM` |
 | `c` | ISO 8601 composite | expands to `Y-m-d\TH:i:sP` |
+| `F` / `M` | month | month name, full **or** short, in the parse locale |
+| `l` / `D` | weekday | weekday name, full or short; must match the parsed date |
 
 ### Format-only tokens (cannot be parsed)
 
-`y`, `z`, `D`, `l`, `F`, `M`, `N`, `w`, `W`, `o`, `t`, `L`, `S`, `T`, `e`, `U`, `Z`, `I`, `r`, `u`, `v`.
+`y`, `z`, `N`, `w`, `W`, `o`, `t`, `L`, `S`, `T`, `e`, `U`, `Z`, `I`, `r`, `u`, `v`.
 
-Locale-dependent tokens (`F`, `M`, `l`, `D`) are format-only because Daynum does not ship a locale-aware name-matcher — it would add complexity and ambiguity without improving the common case.
+## Month and weekday names
+
+`F`, `M`, `l` and `D` match the names of the locale passed as `parseExact`'s fourth argument (default `en`), for the view's calendar: `JalaliView` matches Jalali month names, `HijriCivilView` Hijri ones.
+
+```php
+JalaliView::parseExact('19 Farvardin 1405', 'j F Y');                    // en
+JalaliView::parseExact('۱۹ فروردین ۱۴۰۵', 'j F Y', null, 'fa');           // fa
+JalaliView::parseExact('3 سنبله 1405', 'j F Y', null, 'fa-AF');           // Dari month names
+HijriUmmAlQuraView::parseExact('20 شوال 1447', 'j F Y', null, 'ar');
+```
+
+Matching is forgiving where keyboards and fonts differ, and strict everywhere else:
+
+- `F` and `M` both accept the full and the short name (`April` or `Apr`); `l` and `D` likewise. The longest name wins, so `June` is never read as `Jun` + `e`.
+- A name must end at a word boundary: `Aprl` fails rather than matching `Apr`.
+- Latin letters are case-insensitive (`APRIL`, `april`).
+- Arabic `ي` and `ك` match Persian `ی` and `ک`, so text typed on an Arabic keyboard parses as Persian.
+- The zero-width non-joiner (ZWNJ) and the ezafe hamza (`ٔ`) are optional: `سهشنبه` matches `سه‌شنبه`, and `ژانویه` matches `ژانویهٔ`.
+- A space is not a ZWNJ: `سه شنبه` does not match.
+- A weekday must agree with the date: `Monday 8 April 2026` throws, because 8 April 2026 is a Wednesday.
+- Two tokens for the same field must agree: `F Y-m-d` throws if the name and the number name different months.
+
+Calendars without names in the locale throw `ParseException` — the Arabic locale has no Jalali month names. An unknown locale tag throws `InvalidArgumentException`, since it is a programming error rather than bad input.
 
 ## The variable-width rule
 
@@ -117,6 +147,8 @@ GregorianView::parseExact('2026-04-08', 'Y-m-d')
 
 - Format / input mismatch (literal doesn't match, wrong number of digits)
 - Unsupported token in the format string
+- Unknown month or weekday name, or a weekday that doesn't match the date
+- Two tokens giving different values for the same field
 - Trailing input after the last token
 - Out-of-range time components (`hour > 23`, etc.)
 - 12-hour / meridiem ambiguity

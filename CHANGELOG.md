@@ -39,6 +39,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Backed by `LocaleData::relativeTime()`, with Arabic plural forms, and
   conformance-tested against `Intl.RelativeTimeFormat` via a new Node oracle
   (`tools/generate-relative-time-node.mjs`).
+- Custom locales: `LocaleRegistry::register()`, `has()`, `tags()` and
+  `normalize()`. Tags are case-insensitive, treat `_` as `-` and fall back
+  from region to language (`fa-IR` → `fa`). `EnglishLocale`, `PersianLocale`
+  and `ArabicLocale` are no longer `final`, so they can be extended.
+- Dari (`fa-AF`) locale: Afghan Jalali month names (حمل, ثور, جوزا, …),
+  `fa-AF` Gregorian month names and a Thursday–Friday weekend, ICU-tested
+  through new `format-tokens-fa-af*.jsonl.gz` fixtures.
+- `parseExact()` / `tryParseExact()` take a `?string $locale` argument and
+  parse `F`/`M` (month names, full or short) and `l`/`D` (weekday names,
+  checked against the date). Matching ignores Latin case, treats Arabic
+  ي/ك as Persian ی/ک and ignores ZWNJ and the ezafe hamza.
 - `CivilDateTime::compare()` (a `usort` callback), `min()`, `max()`,
   `between($a, $b, bool $inclusive = true)` and `isSameDay()`.
 
@@ -60,6 +71,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   so the two stay inverse for days 1–28.
 
 ### Changed
+- `parseExact()` now rejects formats whose tokens give one field two
+  different values (e.g. `F` and `m` naming different months); previously
+  the last token silently won.
+- `LocaleRegistry::get()`'s unknown-locale message lists all available tags.
 - CI runs PHPStan through `composer phpstan` (same memory limit as local runs)
   and adds PHP 8.5 to the test matrix. The oracle workflow uses Node 24, the
   version the committed relative-time fixture was generated with.

@@ -20,7 +20,7 @@ use Eram\Daynum\WeekDay;
  * `Rab. I`, etc.) and uses U+02BB MODIFIER LETTER TURNED COMMA (`ʻ`) for
  * transliterated ʿayn and hamza rather than the more common `ʾ` or `'`.
  */
-final class EnglishLocale extends AbstractTableLocale
+class EnglishLocale extends AbstractTableLocale
 {
     private const LONG_MONTHS = [
         'gregorian' => [

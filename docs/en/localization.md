@@ -1,6 +1,6 @@
 # Localization
 
-v1 ships three locales — `en`, `fa`, `ar` — and three digit scripts — `latn`, `persian`, `arab`. Locales and digit scripts are independent dimensions: you can format in Persian with ASCII digits, or in English with Arabic-Indic digits.
+Daynum ships four locales — `en`, `fa`, `fa-AF` (Dari), `ar` — and three digit scripts — `latn`, `persian`, `arab`. Locales and digit scripts are independent dimensions: you can format in Persian with ASCII digits, or in English with Arabic-Indic digits.
 
 ## Switching locale
 
@@ -12,7 +12,7 @@ $d->jalali()->withLocale('fa')->format('l j F Y');    // "چهارشنبه 19 ف
 $d->jalali()->withLocale('ar')->format('j F Y');      // throws on the `F` token
 ```
 
-`withLocale()` returns a new view. Accepted tags: `en`, `en-us`, `fa`, `fa-ir`, `ar`, `ar-sa` (case-insensitive). Unknown tags throw `InvalidArgumentException` — no silent fallback.
+`withLocale()` returns a new view. Tags are case-insensitive and fall back from region to language (`en-US` → `en`, `fa-IR` → `fa`, `ar-SA` → `ar`); `fa-AF` is its own locale. Unknown languages throw `InvalidArgumentException` — no silent fallback to English. Add your own with [`LocaleRegistry::register()`](#custom-locales).
 
 ## Switching digit script
 
@@ -52,6 +52,8 @@ Order doesn't matter — both methods return a fresh view, and they compose free
 | Relative time | `3 days ago`, `in 3 days` | `3 روز پیش`, `3 روز دیگر` | `قبل 3 أيام`, `خلال 3 أيام` |
 
 Persian and Arabic have no traditional weekday abbreviations or ordinal suffixes, so `D` emits the same string as `l`, and `S` emits an empty string. This matches ICU's behavior and keeps patterns like `jS F Y` from leaving broken `th` residue inside Perso-Arabic text.
+
+Dari (`fa-AF`) is identical to `fa` except for its Jalali month names (`حمل`, `ثور`, `جوزا`, …), its Gregorian month names (`جنوری`, `فبروری`, …) and a Thursday–Friday weekend.
 
 The week rows drive `startOfWeek()` / `endOfWeek()` with no argument and `isWeekend()`. See [arithmetic.md](arithmetic.md#weeks).
 
@@ -95,18 +97,67 @@ $d->jalali()->withDigits('persian')->format('Y/m/d H:i P');
 
 ## Parsing with locale
 
-Parsing is **not** locale-aware — locale tokens (`F`, `M`, `l`, `D`) can't be parsed. Digit scripts are normalized automatically, so Persian or Arabic-Indic digits always parse correctly regardless of the calling view:
+Pass a locale tag as `parseExact`'s fourth argument to parse month and weekday names. Digit scripts are normalized automatically, whatever the locale:
 
 ```php
-JalaliView::parseExact('۱۴۰۵/۰۱/۱۹', 'Y/m/d');  // works — Persian digits
-JalaliView::parseExact('١٤٠٥/٠١/١٩', 'Y/m/d');  // works — Arabic-Indic digits
+JalaliView::parseExact('۱۹ فروردین ۱۴۰۵', 'j F Y', null, 'fa');
+JalaliView::parseExact('١٤٠٥/٠١/١٩', 'Y/m/d');  // Arabic-Indic digits
 ```
 
-See [parsing.md](parsing.md).
+See [parsing.md](parsing.md#month-and-weekday-names).
+
+## Custom locales
+
+`LocaleRegistry::register()` adds a locale, or replaces a built-in one. Do it once at boot (for example in a Laravel service provider):
+
+```php
+use Eram\Daynum\Locale\EnglishLocale;
+use Eram\Daynum\Locale\LocaleRegistry;
+use Eram\Daynum\WeekDay;
+
+// US English: Sunday-start weeks, everything else as `en`.
+final class UsEnglishLocale extends EnglishLocale
+{
+    public function tag(): string
+    {
+        return 'en-US';
+    }
+
+    public function firstDayOfWeek(): WeekDay
+    {
+        return WeekDay::Sunday;
+    }
+}
+
+LocaleRegistry::register('en-US', new UsEnglishLocale());
+
+$d->gregorian()->withLocale('en-US')->startOfWeek();   // Sunday
+```
+
+Tags are case-insensitive, `_` equals `-`, and a regional tag falls back to its language: `withLocale('en-GB')` uses `en` unless `en-GB` is registered. That is how `fa-IR` and `ar-SA` resolve. Registering an existing tag replaces it, so you can also override `en`, `fa` or `ar` wholesale.
+
+### Extending a built-in locale
+
+`EnglishLocale`, `PersianLocale` and `ArabicLocale` are open for extension. Their name tables are protected methods, keyed by the calendar's locale family (`gregorian`, `jalali`, `hijri`) and then by 1-based month:
+
+```php
+protected function longMonthTable(): array;      // F
+protected function shortMonthTable(): array;     // M
+protected function longWeekdayTable(): array;    // l, indexed Sunday = 0
+protected function shortWeekdayTable(): array;   // D
+```
+
+The shipped Dari locale (`fa-AF`) is built this way: [`DariLocale`](../../src/Locale/DariLocale.php) extends `PersianLocale`, swaps in the Afghan Jalali month names (حمل, ثور, جوزا, …) and Gregorian spellings (جنوری, فبروری, …), and moves the weekend to Thursday–Friday.
+
+### Writing a locale from scratch
+
+Extend `AbstractTableLocale` and implement the four tables plus `tag()`, `meridiem()`, `ordinalSuffix()`, `firstDayOfWeek()`, `weekendDays()` and `relativeTime()`. Leave a calendar family out of the month tables if your locale has no names for it; formatting `F`/`M` in that calendar then throws, as Arabic does for Jalali. Call `self::assertRelativeTimeArgs($value, $unit)` at the top of `relativeTime()` to get the standard argument checks.
+
+Or implement the `LocaleData` interface directly if your data isn't table-shaped.
 
 ## See also
 
 - [formatting.md](formatting.md) — token reference
 - [parsing.md](parsing.md) — which tokens parse and how digits normalize
 - [calendars/jalali.md](calendars/jalali.md) — Jalali month names per locale
-- [faq.md](faq.md) — why no Arabic Jalali, why no locale-aware parsing
+- [faq.md](faq.md) — why no Arabic Jalali, how locale-aware parsing is

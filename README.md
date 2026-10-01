@@ -4,11 +4,11 @@
 
 Daynum is a clean, single-package replacement for the 3–4 libraries PHP developers currently glue together to get Gregorian + Jalali (Shamsi) + Hijri support. It targets PHP 8.1+, requires no `ext-intl` at runtime, pulls no transitive dependencies, and is differentially tested against ICU on ~220,000 dates per calendar per CI build.
 
-v1 ships **Gregorian**, **Jalali**, and **Hijri** (Saudi Umm al-Qura + tabular civil), with **English**, **Persian**, and **Arabic** locales.
+v1 ships **Gregorian**, **Jalali**, and **Hijri** (Saudi Umm al-Qura + tabular civil), with **English**, **Persian**, **Dari**, and **Arabic** locales — and you can register your own.
 
 ## What Daynum is (and isn't)
 
-**Daynum IS:** multi-calendar date conversion + formatting, immutable arithmetic, locale-aware formatting with PHP `date()` tokens, a zero-dependency ICU-tested replacement for `morilog/jalali`.
+**Daynum IS:** multi-calendar date conversion + formatting, immutable arithmetic, locale-aware formatting and parsing with PHP `date()` tokens, relative time ("3 days ago"), a zero-dependency ICU-tested alternative to `morilog/jalali`.
 
 **Daynum is NOT:** a timezone library (use `toDateTimeImmutable()` for DST math), a relative-date parser ("next Monday"), a Carbon replacement (Carbon covers Gregorian + timezones; Daynum covers multi-calendar + correctness), or a framework bridge.
 
@@ -48,9 +48,18 @@ $d->jalali()->withLocale('fa')->withDigits('persian')->format('l j F Y');
 $next = $d->jalali()->addMonths(1);                 // CivilDateTime
 $next->jalali()->format('Y/m/d');                   // "1405/02/19"
 
-// Strict parsing — digits in any script are normalized
+// Strict parsing — digits in any script are normalized, names in a chosen locale
 JalaliView::parseExact('۱۴۰۵/۰۱/۱۹', 'Y/m/d');     // CivilDateTime
+JalaliView::parseExact('۱۹ فروردین ۱۴۰۵', 'j F Y', null, 'fa');
 JalaliView::tryParseExact('nope', 'Y/m/d');         // null
+
+// Relative time and locale-aware weeks
+$d->subDays(3)->jalali()->withLocale('fa')->diffForHumans($d);   // "3 روز پیش"
+$d->jalali()->withLocale('fa')->startOfWeek();                   // Saturday
+
+// Timestamps and wall-clock time math
+CivilDateTime::fromTimestamp(1775642400, 'Asia/Tehran');
+$d->addHours(3)->toTimestamp();
 
 // JSON round-trip contract
 json_encode($d);

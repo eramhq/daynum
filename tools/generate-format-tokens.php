@@ -24,6 +24,8 @@ declare(strict_types=1);
  *   tests/fixtures/format-tokens-en-hijri.jsonl.gz
  *   tests/fixtures/format-tokens-fa-hijri.jsonl.gz
  *   tests/fixtures/format-tokens-ar-hijri.jsonl.gz
+ *   tests/fixtures/format-tokens-fa-af.jsonl.gz
+ *   tests/fixtures/format-tokens-fa-af-jalali.jsonl.gz
  *
  * No `format-tokens-ar-jalali.jsonl.gz` is emitted: Arabic does not ship
  * Jalali month names (ICU's transliteration is low quality), so there is
@@ -95,6 +97,9 @@ foreach ([
     ['en-h', 'format-tokens-en-hijri.jsonl.gz',    'en-US-u-ca-islamic-civil-nu-latn', 'islamic-civil'],
     ['fa-h', 'format-tokens-fa-hijri.jsonl.gz',    'fa-IR-u-ca-islamic-civil-nu-latn', 'islamic-civil'],
     ['ar-h', 'format-tokens-ar-hijri.jsonl.gz',    'ar-SA-u-ca-islamic-civil-nu-latn', 'islamic-civil'],
+    // Dari: only the tables that differ from `fa` (Hijri names are shared).
+    ['fa-af',   'format-tokens-fa-af.jsonl.gz',        'fa-AF-u-ca-gregory-nu-latn', 'gregorian'],
+    ['fa-af-j', 'format-tokens-fa-af-jalali.jsonl.gz', 'fa-AF-u-ca-persian-nu-latn', 'persian'],
 ] as [$tag, $filename, $icuLocale, $calendar]) {
     $path = FIXTURE_DIR . '/' . $filename;
     $out = fopen('compress.zlib://' . $path, 'w');

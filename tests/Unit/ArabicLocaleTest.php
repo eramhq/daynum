@@ -91,9 +91,8 @@ final class ArabicLocaleTest extends TestCase
             LocaleRegistry::get('de');
             $this->fail('Expected InvalidArgumentException');
         } catch (InvalidArgumentException $e) {
-            $this->assertStringContainsString("'en'", $e->getMessage());
-            $this->assertStringContainsString("'fa'", $e->getMessage());
-            $this->assertStringContainsString("'ar'", $e->getMessage());
+            // Other tests may register extra locales; the shipped ones must be listed.
+            $this->assertMatchesRegularExpression('/Available: ([a-z-]+, )*ar, ([a-z-]+, )*en, ([a-z-]+, )*fa, fa-af[,.]/', $e->getMessage());
         }
     }
 

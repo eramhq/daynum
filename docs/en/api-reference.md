@@ -68,7 +68,7 @@ $dateTime->toTimestamp(): int
 CivilDateTime::now(?string $tzLabel = null):       CivilDateTime   // current date + time
 CivilDateTime::today(?string $tzLabel = null):     CivilDateTime   // today at 00:00:00
 CivilDateTime::tomorrow(?string $tzLabel = null):  CivilDateTime   // tomorrow at 00:00:00
-CivilDateTime::yesterday(?string $tzLabel = null): CivilDateTime   // yesterday at 00:00:00
+CivilDateTime::yesterday(?string $tzLabel = null, ?string $locale = null): CivilDateTime   // yesterday at 00:00:00
 ```
 
 When `$tzLabel` is `null`, resolves from `date_default_timezone_get()` and stores it on the result.
@@ -228,14 +228,14 @@ $view->isInSupportedRange(): bool
 ### Parsing (static)
 
 ```php
-static GregorianView::parseExact    (string $text, string $format, ?string $tzLabel = null): CivilDateTime
-static GregorianView::tryParseExact (string $text, string $format, ?string $tzLabel = null): ?CivilDateTime
-static JalaliView::parseExact       (string $text, string $format, ?string $tzLabel = null): CivilDateTime
-static JalaliView::tryParseExact    (string $text, string $format, ?string $tzLabel = null): ?CivilDateTime
-static HijriUmmAlQuraView::parseExact    (string $text, string $format, ?string $tzLabel = null): CivilDateTime
-static HijriUmmAlQuraView::tryParseExact (string $text, string $format, ?string $tzLabel = null): ?CivilDateTime
-static HijriCivilView::parseExact        (string $text, string $format, ?string $tzLabel = null): CivilDateTime
-static HijriCivilView::tryParseExact     (string $text, string $format, ?string $tzLabel = null): ?CivilDateTime
+static GregorianView::parseExact    (string $text, string $format, ?string $tzLabel = null, ?string $locale = null): CivilDateTime
+static GregorianView::tryParseExact (string $text, string $format, ?string $tzLabel = null, ?string $locale = null): ?CivilDateTime
+static JalaliView::parseExact       (string $text, string $format, ?string $tzLabel = null, ?string $locale = null): CivilDateTime
+static JalaliView::tryParseExact    (string $text, string $format, ?string $tzLabel = null, ?string $locale = null): ?CivilDateTime
+static HijriUmmAlQuraView::parseExact    (string $text, string $format, ?string $tzLabel = null, ?string $locale = null): CivilDateTime
+static HijriUmmAlQuraView::tryParseExact (string $text, string $format, ?string $tzLabel = null, ?string $locale = null): ?CivilDateTime
+static HijriCivilView::parseExact        (string $text, string $format, ?string $tzLabel = null, ?string $locale = null): CivilDateTime
+static HijriCivilView::tryParseExact     (string $text, string $format, ?string $tzLabel = null, ?string $locale = null): ?CivilDateTime
 ```
 
 `parseExact` throws `ParseException` on failure. `tryParseExact` returns `null`. See [parsing.md](parsing.md).
@@ -314,9 +314,30 @@ See [exceptions.md](exceptions.md) for full throw-sites, messages, and recovery 
 
 ```php
 LocaleRegistry::get(string $tag): LocaleData
+LocaleRegistry::register(string $tag, LocaleData $locale): void
+LocaleRegistry::has(string $tag): bool
+LocaleRegistry::tags(): list<string>                 // ['ar', 'en', 'fa', 'fa-af', ...]
+LocaleRegistry::normalize(string $tag): string       // 'fa_AF' → 'fa-af'
 ```
 
-Accepts `en`, `en-us`, `fa`, `fa-ir`, `ar`, `ar-sa` (case-insensitive). Throws `InvalidArgumentException` on unknown tags. You rarely call this directly — use `$view->withLocale($tag)`.
+Ships `en`, `fa`, `fa-AF` (Dari) and `ar`. Tags are case-insensitive, `_` equals `-`, and regional tags fall back to their language (`fa-IR` → `fa`). `get()` throws `InvalidArgumentException` on unknown tags; `register()` throws on malformed ones and replaces existing entries. You rarely call `get()` directly — use `$view->withLocale($tag)`. See [localization.md](localization.md#custom-locales).
+
+### `LocaleData`
+
+```php
+$locale->tag(): string
+$locale->monthName(string $family, int $month): string
+$locale->monthNameShort(string $family, int $month): string
+$locale->weekdayName(int $dayOfWeek): string         // Sunday = 0
+$locale->weekdayNameShort(int $dayOfWeek): string
+$locale->meridiem(bool $isPm, bool $uppercase): string
+$locale->ordinalSuffix(int $day): string
+$locale->firstDayOfWeek(): WeekDay
+$locale->weekendDays(): list<WeekDay>
+$locale->relativeTime(int $value, string $unit, bool $future): string
+```
+
+Built-ins: `EnglishLocale`, `PersianLocale`, `DariLocale`, `ArabicLocale`, all extending `AbstractTableLocale`.
 
 ---
 
