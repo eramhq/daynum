@@ -1,0 +1,30 @@
+name: mutation
+
+# Mutation testing with Infection: small deliberate bugs ("mutants") are
+# injected into src/ and the unit + edge-case suites must catch them. The
+# score (MSI) is reported on every push to main; it is not a merge gate.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  infection:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, xml, zlib, :intl
+          coverage: pcov
+          tools: composer:v2, infection
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run Infection
+        run: infection --threads=max --no-progress --show-mutations=0

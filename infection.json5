@@ -1,0 +1,19 @@
+{
+    // Mutation testing: does the test suite notice when the code is changed?
+    // Run by .github/workflows/mutation.yml (Infection needs PHP 8.3+, so it
+    // is installed there rather than in require-dev).
+    "source": {
+        "directories": ["src"],
+    },
+    // The conformance and property suites replay hundreds of thousands of
+    // rows per mutant; unit + edge-case tests keep a run to minutes.
+    "testFrameworkOptions": "--testsuite=unit,edgecase",
+    "timeout": 30,
+    "logs": {
+        "text": "infection.log",
+        "github": true,
+    },
+    "mutators": {
+        "@default": true,
+    },
+}

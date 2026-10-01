@@ -40,6 +40,23 @@ composer phpstan            # phpstan level 8
 
 All PRs must be clean against the bundled PHPStan configuration.
 
+### Code style
+
+```bash
+composer cs                 # check (PER Coding Style 2.0)
+composer cs:fix             # fix in place
+```
+
+CI runs `composer cs` on PHP 8.1.
+
+### Coverage and mutation testing
+
+CI prints a line-coverage summary on every push, and the `mutation` workflow runs [Infection](https://infection.github.io/) against the unit and edge-case suites. Infection needs PHP 8.3+ and a coverage driver (pcov or Xdebug), so it is not a Composer dependency; to run it locally, install the PHAR and run `infection --threads=max` from the repo root.
+
+### Security
+
+Report vulnerabilities privately — see [SECURITY.md](SECURITY.md).
+
 ## The conformance fixtures
 
 The differential-test fixtures under `tests/fixtures/` are committed as gzipped JSONL. Developers do **not** need `ext-intl` to run the conformance suite — it's pure PHP reading pre-generated oracle output.
@@ -148,6 +165,7 @@ Before opening a PR:
 
 - [ ] `vendor/bin/phpunit` passes
 - [ ] `composer phpstan` passes
+- [ ] `composer cs` passes
 - [ ] New or changed code has tests (unit + edge-case at minimum)
 - [ ] If you touched a calendar: the conformance suite runs green
 - [ ] If you touched public API: docs under `docs/en/` are updated and `docs/en/api-reference.md` reflects the change

@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest a new method, calendar, locale, or format token.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the task, not the solution — e.g. "show 'last Friday' in Persian".
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like the API to look like?
+      render: php
+      placeholder: |
+        $d->jalali()->withLocale('fa')->previous(WeekDay::Friday);
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: How do you do it today?
+      description: Your current workaround, or how another library (Carbon, morilog/jalali, Verta…) does it.

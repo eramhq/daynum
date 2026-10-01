@@ -66,3 +66,43 @@ jobs:
         # Through the composer script so CI uses the same memory limit as a
         # local run (bare `phpstan analyse` exhausts PHP's default 128M).
         run: composer phpstan -- --no-progress
+
+  style:
+    name: Code style
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          # The lowest supported PHP, so the fixer never suggests newer syntax.
+          php-version: '8.1'
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Check code style (PER-CS 2.0)
+        run: composer cs
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, xml, zlib, :intl
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run tests with line coverage
+        run: vendor/bin/phpunit --coverage-text --only-summary-for-coverage-text

@@ -84,6 +84,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the last token silently won.
 - `LocaleRegistry::get()`'s unknown-locale message lists all available tags,
   and malformed tags such as `en-` now throw instead of resolving to `en`.
+- Code style: PER-CS 2.0 via php-cs-fixer (`composer cs`, `composer cs:fix`),
+  checked in CI. The codebase was reformatted once to match.
+- CI also reports line coverage and runs Infection mutation testing.
+- Added SECURITY.md (private reporting through GitHub) and issue templates.
 - CI runs PHPStan through `composer phpstan` (same memory limit as local runs)
   and adds PHP 8.5 to the test matrix. The oracle workflow uses Node 24, the
   version the committed relative-time fixture was generated with.
