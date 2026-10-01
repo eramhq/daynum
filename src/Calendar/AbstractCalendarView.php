@@ -670,7 +670,10 @@ abstract class AbstractCalendarView implements CalendarView
         $endAt = [];
         $offset = $pos;
         $length = strlen($text);
-        while ($offset < $length && strlen($normalized) < $maxLength) {
+        while (
+            $offset < $length
+            && strlen($normalized) < $maxLength
+        ) {
             $charLength = self::utf8CharLength($text, $offset);
             $normalized .= NameNormalizer::normalize(substr($text, $offset, $charLength));
             $offset += $charLength;
@@ -838,11 +841,11 @@ abstract class AbstractCalendarView implements CalendarView
         // (roughly 4/365) name an adjacent year, and closed-form `fromJdn`
         // implementations (HijriCivil, Jalali, Gregorian) can return a
         // notional out-of-range one that only `toJdn` would reject. Validate
-        // it by attempting Jan 4: any year ISO week 1 references must itself
-        // be a valid year of this calendar.
+        // it by attempting its first day: any year an ISO week references
+        // must itself be a valid year of this calendar.
         if ($thursdayYear !== $this->components()['year']) {
             try {
-                $calendar->toJdn($thursdayYear, 1, 4);
+                $calendar->toJdn($thursdayYear, 1, 1);
             } catch (DaynumException $e) {
                 throw WeekAtBoundaryException::forYear($thursdayYear, $e);
             }

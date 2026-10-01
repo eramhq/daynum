@@ -38,10 +38,8 @@
         },
         "DecrementInteger": {
             "ignoreSourceCodeByRegex": [
-                // weekBasedYear() only validates the year; any in-range date of it works.
-                "\\$calendar->toJdn\\(\\$thursdayYear, 1, 4\\);",
                 // Placeholder for an absent token; the formatter never reads it.
-                "\\$(dayOfYear|weekOfYear|weekBasedYear) += str_contains\\(.*\\) \\? \\$this->\\w+\\(\\) : 0;",
+                "\\$(dayOfYear|weekOfYear|weekBasedYear)\\s+= str_contains\\(.*\\) \\? \\$this->\\w+\\(\\) : 0;",
                 // jalCal(): always overwritten on the first loop pass.
                 "\\$jump = 0;",
                 // jalCal(): leap is only ever compared with 0 and 1.
@@ -68,10 +66,10 @@
         },
         "IncrementInteger": {
             "ignoreSourceCodeByRegex": [
-                // weekBasedYear() only validates the year; any in-range date of it works.
-                "\\$calendar->toJdn\\(\\$thursdayYear, 1, 4\\);",
+                // weekBasedYear() only validates the year; Jan 2 or Feb 1 works as well as Jan 1.
+                "\\$calendar->toJdn\\(\\$thursdayYear, 1, 1\\);",
                 // Placeholder for an absent token; the formatter never reads it.
-                "\\$(dayOfYear|weekOfYear|weekBasedYear) += str_contains\\(.*\\) \\? \\$this->\\w+\\(\\) : 0;",
+                "\\$(dayOfYear|weekOfYear|weekBasedYear)\\s+= str_contains\\(.*\\) \\? \\$this->\\w+\\(\\) : 0;",
                 // jalCal(): always overwritten on the first loop pass.
                 "\\$jump = 0;",
                 // jalCal(): leap is only ever compared with 0 and 1.
@@ -81,7 +79,7 @@
         "LessThan": {
             "ignoreSourceCodeByRegex": [
                 // Normalizing one character past the longest name changes no match.
-                "while \\(\\$offset < \\$length && strlen\\(\\$normalized\\) < \\$maxLength\\) \\{",
+                "&& strlen\\(\\$normalized\\) < \\$maxLength",
                 // PHP parses -0000 and +0000 as the same year 0.
                 "\\$year < 0 \\? '-' : '\\+',.*",
                 // Hijri civil: what remains after month 11 always fits in month 12.
@@ -103,19 +101,13 @@
         "LogicalAnd": {
             "ignoreSourceCodeByRegex": [
                 // dayOfYear() never throws, so computing it for an escaped \z changes nothing.
-                "\\$dayOfYear += str_contains\\(\\$pattern, 'z'\\) .*",
+                "\\$dayOfYear\\s+= str_contains\\(\\$pattern, 'z'\\) .*",
             ],
         },
         "MatchArmRemoval": {
             "ignoreSourceCodeByRegex": [
                 // Arabic: every unit's 'zero' phrase equals its 'other' phrase.
                 "\\$n === 0 => 'zero',",
-            ],
-        },
-        "Minus": {
-            "ignoreSourceCodeByRegex": [
-                // The digit run ends at $p, and (int) stops at the first non-digit anyway.
-                "\\$value = \\(int\\) substr\\(\\$text, \\$start, \\$p - \\$start\\);",
             ],
         },
         "ReturnRemoval": {

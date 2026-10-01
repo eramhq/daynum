@@ -76,7 +76,7 @@ final class HijriUmmAlQuraIcuConformanceTest extends TestCase
             }
         }
 
-        $this->assertGreaterThan(intdiv(50_000, FixtureReader::stride()), $rows, 'UAQ fixture appears truncated');
+        $this->assertGreaterThan(intdiv(100_000, FixtureReader::stride()), $rows, 'UAQ fixture appears truncated');
         $this->assertEmpty($mismatches, implode("\n", $mismatches));
     }
 }

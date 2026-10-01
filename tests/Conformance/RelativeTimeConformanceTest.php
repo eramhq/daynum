@@ -52,7 +52,7 @@ final class RelativeTimeConformanceTest extends TestCase
             }
         }
 
-        $this->assertGreaterThan(3900, $rows, 'fixture looks truncated');
+        $this->assertGreaterThan(6900, $rows, 'fixture looks truncated');
         $this->assertSame([], array_slice($mismatches, 0, 20), count($mismatches) . ' mismatches');
     }
 }

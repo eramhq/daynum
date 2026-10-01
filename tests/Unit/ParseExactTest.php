@@ -675,6 +675,8 @@ final class ParseExactTest extends TestCase
         yield 'year directly before a token takes 4 digits' => ['15.202403', 'd.Ym', [2024, 3, 15, 0, 0, 0]];
         yield 'delimited year takes every digit' => ['02024-01-15', 'Y-m-d', [2024, 1, 15, 0, 0, 0]];
         yield 'negative 5-digit year' => ['-09999-01-01', 'Y-m-d', [-9999, 1, 1, 0, 0, 0]];
+        // (int) "2024e1" would be 20240: the year must stop at its last digit.
+        yield 'year followed by e and a digit' => ['15.01.2024e1', 'd.m.Y\\e1', [2024, 1, 15, 0, 0, 0]];
         yield 'variable-width token after a token' => ['0315.2024', 'mj.Y', [2024, 3, 15, 0, 0, 0]];
         yield 'digit literal after a variable-width token' => ['2024-01-150', 'Y-m-j0', [2024, 1, 15, 0, 0, 0]];
         yield '1 pm' => ['2024-01-15 1:05 pm', 'Y-m-d g:i a', [2024, 1, 15, 13, 5, 0]];
