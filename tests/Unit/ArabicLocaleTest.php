@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Tests\Unit;
 
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use Eram\Daynum\Locale\ArabicLocale;
 use Eram\Daynum\Locale\LocaleRegistry;
 use InvalidArgumentException;
@@ -100,7 +100,7 @@ final class ArabicLocaleTest extends TestCase
 
     public function testArabicHijriFormatRamadan1445(): void
     {
-        $d = Instant::fromGregorian(2024, 3, 11);
+        $d = CivilDateTime::fromGregorian(2024, 3, 11);
         $this->assertSame(
             '1 رمضان 1445',
             $d->hijri()->withLocale('ar')->format('j F Y'),
@@ -110,7 +110,7 @@ final class ArabicLocaleTest extends TestCase
     /** Full combo: weekday + day + month + year in Arabic, one call. */
     public function testArabicHijriFullFormatCombo(): void
     {
-        $d = Instant::fromHijri(1445, 9, 1);
+        $d = CivilDateTime::fromHijri(1445, 9, 1);
         $this->assertSame(
             'الاثنين 1 رمضان 1445',
             $d->hijri()->withLocale('ar')->format('l j F Y'),
@@ -119,7 +119,7 @@ final class ArabicLocaleTest extends TestCase
 
     public function testArabicWithArabIndicDigits(): void
     {
-        $d = Instant::fromGregorian(2024, 3, 11);
+        $d = CivilDateTime::fromGregorian(2024, 3, 11);
         $this->assertSame(
             '١ رمضان ١٤٤٥',
             $d->hijri()->withLocale('ar')->withDigits('arab')->format('j F Y'),
@@ -133,7 +133,7 @@ final class ArabicLocaleTest extends TestCase
      */
     public function testArabicJalaliNonMonthTokensWork(): void
     {
-        $d = Instant::fromGregorian(2024, 3, 11); // Monday, 1403-12-21 Jalali
+        $d = CivilDateTime::fromGregorian(2024, 3, 11); // Monday, 1403-12-21 Jalali
         $jalaliAr = $d->jalali()->withLocale('ar');
         $this->assertSame('1402-12-21', $jalaliAr->format('Y-m-d'));
         $this->assertSame('الاثنين', $jalaliAr->format('l'));
@@ -141,7 +141,7 @@ final class ArabicLocaleTest extends TestCase
 
     public function testArabicJalaliMonthTokenThrows(): void
     {
-        $d = Instant::fromGregorian(2024, 3, 11);
+        $d = CivilDateTime::fromGregorian(2024, 3, 11);
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown calendar family: jalali');
         $d->jalali()->withLocale('ar')->format('F');

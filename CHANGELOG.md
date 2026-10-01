@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+- `Instant` is renamed to `CivilDateTime`. The old name suggested a UTC
+  moment (as in `java.time.Instant` or JS `Temporal.Instant`); the value is a
+  wall-clock date-time with an optional timezone label. The rename is
+  mechanical, with no alias: `use Eram\Daynum\Instant` →
+  `use Eram\Daynum\CivilDateTime`. The JSON shape is unchanged.
+- `CalendarView::instant()` is renamed to `CalendarView::dateTime()`.
+
 ### Removed
 - The opt-in global helpers `gdate()`, `jdate()` and `hdate()` (`src/helpers.php`).
   Their `jdate(int, int, int)` signature clashed with both `morilog/jalali`'s

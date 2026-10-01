@@ -135,7 +135,7 @@ final class DateTokenFormatterTest extends TestCase
     {
         // `\W` → literal `W`. Exercises the false-positive path of the
         // `patternContainsUnescaped` guard threaded through
-        // AbstractCalendarView::format — the view-level test in InstantTest
+        // AbstractCalendarView::format — the view-level test in CivilDateTimeTest
         // pins the full path; this test pins the tokenizer half.
         $this->assertSame('W', DateTokenFormatter::format('\W', $this->sampleContext()));
     }

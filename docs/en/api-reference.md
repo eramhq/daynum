@@ -2,9 +2,9 @@
 
 Hand-written, grouped by type. For narrative docs see [getting-started.md](getting-started.md), [concepts.md](concepts.md), and the topic pages.
 
-**Jump to:** [`Instant`](#daynuminstant) · [`CalendarView`](#daynumcalendarview) · [`Calendar`](#daynumcalendar) · [`WeekDay`](#daynumweekday-enum) · [Exceptions](#exceptions) · [`LocaleRegistry`](#daynumlocalelocaleregistry) · [`DigitTransliterator`](#daynumformatterdigittransliterator)
+**Jump to:** [`CivilDateTime`](#eramdaynumcivildatetime) · [`CalendarView`](#eramdaynumcalendarview) · [`Calendar`](#eramdaynumcalendar) · [`WeekDay`](#eramdaynumweekday-enum) · [Exceptions](#exceptions) · [`LocaleRegistry`](#eramdaynumlocalelocaleregistry) · [`DigitTransliterator`](#eramdaynumformatterdigittransliterator)
 
-## `Eram\Daynum\Instant`
+## `Eram\Daynum\CivilDateTime`
 
 The immutable calendar-agnostic core value. Triple of `(jdn, secondsOfDay, tzLabel)`. See [concepts.md](concepts.md).
 
@@ -19,7 +19,7 @@ The immutable calendar-agnostic core value. Triple of `(jdn, secondsOfDay, tzLab
 ### Constructor
 
 ```php
-new Instant(int $jdn, int $secondsOfDay = 0, ?string $tzLabel = null)
+new CivilDateTime(int $jdn, int $secondsOfDay = 0, ?string $tzLabel = null)
 ```
 
 Throws `InvalidDateException` if `secondsOfDay` is out of range.
@@ -27,10 +27,10 @@ Throws `InvalidDateException` if `secondsOfDay` is out of range.
 ### Construction from calendar components
 
 ```php
-Instant::fromGregorian(int $y, int $m, int $d, int $h=0, int $min=0, int $s=0, ?string $tz=null): Instant
-Instant::fromJalali   (int $y, int $m, int $d, int $h=0, int $min=0, int $s=0, ?string $tz=null): Instant
-Instant::fromHijri    (int $y, int $m, int $d, int $h=0, int $min=0, int $s=0, ?string $tz=null): Instant
-Instant::fromHijriCivil(int $y, int $m, int $d, int $h=0, int $min=0, int $s=0, ?string $tz=null): Instant
+CivilDateTime::fromGregorian(int $y, int $m, int $d, int $h=0, int $min=0, int $s=0, ?string $tz=null): CivilDateTime
+CivilDateTime::fromJalali   (int $y, int $m, int $d, int $h=0, int $min=0, int $s=0, ?string $tz=null): CivilDateTime
+CivilDateTime::fromHijri    (int $y, int $m, int $d, int $h=0, int $min=0, int $s=0, ?string $tz=null): CivilDateTime
+CivilDateTime::fromHijriCivil(int $y, int $m, int $d, int $h=0, int $min=0, int $s=0, ?string $tz=null): CivilDateTime
 ```
 
 `fromHijri` is Saudi Umm al-Qura; `fromHijriCivil` is the tabular `islamic-civil` variant. See [calendars/hijri-umm-al-qura.md](calendars/hijri-umm-al-qura.md) and [calendars/hijri-civil.md](calendars/hijri-civil.md).
@@ -38,15 +38,15 @@ Instant::fromHijriCivil(int $y, int $m, int $d, int $h=0, int $min=0, int $s=0, 
 ### Safe construction
 
 ```php
-Instant::tryFromGregorian(...): ?Instant
-Instant::tryFromJalali(...):    ?Instant
-Instant::tryFromHijri(...):     ?Instant
-Instant::tryFromHijriCivil(...): ?Instant
+CivilDateTime::tryFromGregorian(...): ?CivilDateTime
+CivilDateTime::tryFromJalali(...):    ?CivilDateTime
+CivilDateTime::tryFromHijri(...):     ?CivilDateTime
+CivilDateTime::tryFromHijriCivil(...): ?CivilDateTime
 
-Instant::isValidGregorian(int $y, int $m, int $d): bool
-Instant::isValidJalali(int $y, int $m, int $d):    bool
-Instant::isValidHijri(int $y, int $m, int $d):     bool
-Instant::isValidHijriCivil(int $y, int $m, int $d): bool
+CivilDateTime::isValidGregorian(int $y, int $m, int $d): bool
+CivilDateTime::isValidJalali(int $y, int $m, int $d):    bool
+CivilDateTime::isValidHijri(int $y, int $m, int $d):     bool
+CivilDateTime::isValidHijriCivil(int $y, int $m, int $d): bool
 ```
 
 `tryFrom*` return `null` on invalid input instead of throwing. `isValid*` is equivalent to `tryFrom*(...) !== null`.
@@ -54,8 +54,8 @@ Instant::isValidHijriCivil(int $y, int $m, int $d): bool
 ### Interop
 
 ```php
-Instant::fromDateTime(DateTimeInterface $dt): Instant
-$instant->toDateTimeImmutable(): DateTimeImmutable
+CivilDateTime::fromDateTime(DateTimeInterface $dt): CivilDateTime
+$dateTime->toDateTimeImmutable(): DateTimeImmutable
 ```
 
 `fromDateTime` reads the proleptic Gregorian date, time-of-day, and timezone name. `toDateTimeImmutable` is the escape hatch for real timezone math. See [timezones.md](timezones.md).
@@ -63,10 +63,10 @@ $instant->toDateTimeImmutable(): DateTimeImmutable
 ### Current-date helpers
 
 ```php
-Instant::now(?string $tzLabel = null):       Instant   // current date + time
-Instant::today(?string $tzLabel = null):     Instant   // today at 00:00:00
-Instant::tomorrow(?string $tzLabel = null):  Instant   // tomorrow at 00:00:00
-Instant::yesterday(?string $tzLabel = null): Instant   // yesterday at 00:00:00
+CivilDateTime::now(?string $tzLabel = null):       CivilDateTime   // current date + time
+CivilDateTime::today(?string $tzLabel = null):     CivilDateTime   // today at 00:00:00
+CivilDateTime::tomorrow(?string $tzLabel = null):  CivilDateTime   // tomorrow at 00:00:00
+CivilDateTime::yesterday(?string $tzLabel = null): CivilDateTime   // yesterday at 00:00:00
 ```
 
 When `$tzLabel` is `null`, resolves from `date_default_timezone_get()` and stores it on the result.
@@ -74,54 +74,54 @@ When `$tzLabel` is `null`, resolves from `date_default_timezone_get()` and store
 ### Calendar views
 
 ```php
-$instant->gregorian():   GregorianView
-$instant->jalali():      JalaliView
-$instant->hijri():       HijriUmmAlQuraView
-$instant->hijriCivil():  HijriCivilView
+$dateTime->gregorian():   GregorianView
+$dateTime->jalali():      JalaliView
+$dateTime->hijri():       HijriUmmAlQuraView
+$dateTime->hijriCivil():  HijriCivilView
 ```
 
 ### Comparison
 
 ```php
-$a->equals(Instant $b):             bool
-$a->lessThan(Instant $b):           bool
-$a->lessThanOrEqual(Instant $b):    bool
-$a->greaterThan(Instant $b):        bool
-$a->greaterThanOrEqual(Instant $b): bool
-$a->diffInDays(Instant $b):         int   // signed: this - other
+$a->equals(CivilDateTime $b):             bool
+$a->lessThan(CivilDateTime $b):           bool
+$a->lessThanOrEqual(CivilDateTime $b):    bool
+$a->greaterThan(CivilDateTime $b):        bool
+$a->greaterThanOrEqual(CivilDateTime $b): bool
+$a->diffInDays(CivilDateTime $b):         int   // signed: this - other
 ```
 
-All comparison is civil-time. See [concepts.md](concepts.md#instant-is-civil-not-utc).
+All comparison is civil-time. See [concepts.md](concepts.md#civildatetime-is-wall-clock-time).
 
 ### Mutation-as-new
 
 ```php
-$instant->withJdn(int $jdn):              Instant
-$instant->withTime(int $h, int $m, int $s): Instant
-$instant->withTzLabel(?string $tzLabel):  Instant
+$dateTime->withJdn(int $jdn):              CivilDateTime
+$dateTime->withTime(int $h, int $m, int $s): CivilDateTime
+$dateTime->withTzLabel(?string $tzLabel):  CivilDateTime
 ```
 
-Always returns a new `Instant`.
+Always returns a new `CivilDateTime`.
 
 ### Serialization
 
 ```php
-$instant->jsonSerialize(): array{jdn: int, secondsOfDay: int, tzLabel: ?string}
-Instant::fromArray(array $data): Instant
+$dateTime->jsonSerialize(): array{jdn: int, secondsOfDay: int, tzLabel: ?string}
+CivilDateTime::fromArray(array $data): CivilDateTime
 ```
 
-`Instant` implements `JsonSerializable`, so `json_encode($instant)` just works. `fromArray` is the inverse — validates that `jdn` is an int, `secondsOfDay` defaults to `0`, `tzLabel` defaults to `null`. Throws `InvalidArgumentException` on malformed input. See [serialization.md](serialization.md).
+`CivilDateTime` implements `JsonSerializable`, so `json_encode($dateTime)` just works. `fromArray` is the inverse — validates that `jdn` is an int, `secondsOfDay` defaults to `0`, `tzLabel` defaults to `null`. Throws `InvalidArgumentException` on malformed input. See [serialization.md](serialization.md).
 
 ---
 
 ## `Eram\Daynum\CalendarView`
 
-Interface implemented by each calendar-specific view. Views are immutable; mutator-looking methods return new views or new `Instant` values.
+Interface implemented by each calendar-specific view. Views are immutable; mutator-looking methods return new views or new `CivilDateTime` values.
 
 ### Getters
 
 ```php
-$view->instant():      Instant
+$view->dateTime():      CivilDateTime
 $view->calendar():     Calendar
 $view->year():         int
 $view->month():        int        // 1-indexed
@@ -152,22 +152,22 @@ See [formatting.md](formatting.md) and [localization.md](localization.md).
 
 ### Arithmetic
 
-All arithmetic methods return `Instant`, not a view:
+All arithmetic methods return `CivilDateTime`, not a view:
 
 ```php
-$view->addDays(int $n):    Instant
-$view->subDays(int $n):    Instant
-$view->addMonths(int $n):  Instant      // clamps day-of-month
-$view->subMonths(int $n):  Instant      // clamps day-of-month
-$view->addYears(int $n):   Instant      // clamps day-of-month
-$view->subYears(int $n):   Instant      // clamps day-of-month
+$view->addDays(int $n):    CivilDateTime
+$view->subDays(int $n):    CivilDateTime
+$view->addMonths(int $n):  CivilDateTime      // clamps day-of-month
+$view->subMonths(int $n):  CivilDateTime      // clamps day-of-month
+$view->addYears(int $n):   CivilDateTime      // clamps day-of-month
+$view->subYears(int $n):   CivilDateTime      // clamps day-of-month
 
-$view->startOfMonth():     Instant
-$view->endOfMonth():       Instant
-$view->startOfYear():      Instant
-$view->endOfYear():        Instant
-$view->startOfWeek(WeekDay|int $weekStart = WeekDay::Monday): Instant
-$view->endOfWeek(WeekDay|int $weekStart = WeekDay::Monday):   Instant
+$view->startOfMonth():     CivilDateTime
+$view->endOfMonth():       CivilDateTime
+$view->startOfYear():      CivilDateTime
+$view->endOfYear():        CivilDateTime
+$view->startOfWeek(WeekDay|int $weekStart = WeekDay::Monday): CivilDateTime
+$view->endOfWeek(WeekDay|int $weekStart = WeekDay::Monday):   CivilDateTime
 ```
 
 See [arithmetic.md](arithmetic.md).
@@ -175,8 +175,8 @@ See [arithmetic.md](arithmetic.md).
 ### Diffs
 
 ```php
-$view->diffInMonths(Instant $other): int
-$view->diffInYears(Instant $other):  int
+$view->diffInMonths(CivilDateTime $other): int
+$view->diffInYears(CivilDateTime $other):  int
 ```
 
 Calendar-specific, signed, both require reaching the same day-of-month before counting. See [arithmetic.md](arithmetic.md#diffs).
@@ -190,14 +190,14 @@ $view->isInSupportedRange(): bool
 ### Parsing (static)
 
 ```php
-static GregorianView::parseExact    (string $text, string $format, ?string $tzLabel = null): Instant
-static GregorianView::tryParseExact (string $text, string $format, ?string $tzLabel = null): ?Instant
-static JalaliView::parseExact       (string $text, string $format, ?string $tzLabel = null): Instant
-static JalaliView::tryParseExact    (string $text, string $format, ?string $tzLabel = null): ?Instant
-static HijriUmmAlQuraView::parseExact    (string $text, string $format, ?string $tzLabel = null): Instant
-static HijriUmmAlQuraView::tryParseExact (string $text, string $format, ?string $tzLabel = null): ?Instant
-static HijriCivilView::parseExact        (string $text, string $format, ?string $tzLabel = null): Instant
-static HijriCivilView::tryParseExact     (string $text, string $format, ?string $tzLabel = null): ?Instant
+static GregorianView::parseExact    (string $text, string $format, ?string $tzLabel = null): CivilDateTime
+static GregorianView::tryParseExact (string $text, string $format, ?string $tzLabel = null): ?CivilDateTime
+static JalaliView::parseExact       (string $text, string $format, ?string $tzLabel = null): CivilDateTime
+static JalaliView::tryParseExact    (string $text, string $format, ?string $tzLabel = null): ?CivilDateTime
+static HijriUmmAlQuraView::parseExact    (string $text, string $format, ?string $tzLabel = null): CivilDateTime
+static HijriUmmAlQuraView::tryParseExact (string $text, string $format, ?string $tzLabel = null): ?CivilDateTime
+static HijriCivilView::parseExact        (string $text, string $format, ?string $tzLabel = null): CivilDateTime
+static HijriCivilView::tryParseExact     (string $text, string $format, ?string $tzLabel = null): ?CivilDateTime
 ```
 
 `parseExact` throws `ParseException` on failure. `tryParseExact` returns `null`. See [parsing.md](parsing.md).
@@ -206,7 +206,7 @@ static HijriCivilView::tryParseExact     (string $text, string $format, ?string 
 
 ## `Eram\Daynum\Calendar`
 
-Low-level calendar interface — the pure math of `(year, month, day) ↔ JDN`. You rarely touch this directly; use `Instant::from*` and views. Exposed for extensibility.
+Low-level calendar interface — the pure math of `(year, month, day) ↔ JDN`. You rarely touch this directly; use `CivilDateTime::from*` and views. Exposed for extensibility.
 
 ```php
 interface Calendar {
@@ -264,7 +264,7 @@ All implement the marker interface `Eram\Daynum\Exception\DaynumException`.
 | `InvalidDateException` | `\InvalidArgumentException` | invalid Y/M/D components, invalid time-of-day |
 | `ParseException` | `\InvalidArgumentException` | `parseExact` failures (including wrapped calendar errors) |
 | `InvalidTimezoneException` | `\RuntimeException` | `tzLabel` PHP can't resolve |
-| `MissingTimezoneException` | `\RuntimeException` | tz-dependent format token on an `Instant` without `tzLabel` |
+| `MissingTimezoneException` | `\RuntimeException` | tz-dependent format token on a `CivilDateTime` without `tzLabel` |
 | `WeekAtBoundaryException` | `\RuntimeException` | `weekOfYear` / `weekBasedYear` / `W` / `o` at calendar boundaries |
 | `UmmAlQuraOutOfRangeException` | `\OutOfRangeException` | any UAQ operation outside `Table::MIN_YEAR..MAX_YEAR` |
 

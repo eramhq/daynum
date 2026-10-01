@@ -2,13 +2,13 @@
 
 Surprising-but-intentional decisions, gotchas, and the reasoning behind them.
 
-## Why is `Instant` civil, not UTC?
+## Why is `CivilDateTime` wall-clock time, not a UTC moment?
 
 Daynum is a multi-calendar library. Its currency is **wall-clock dates**: "Farvardin 19, 1405" or "21 Shawwal 1447". These are civil concepts — they don't refer to points on the UTC timeline until you pick a timezone.
 
-If `Instant` were UTC, then every calendar operation would need to resolve a timezone first, and every comparison would need a DST table. That's exactly what `DateTimeImmutable` already does, and Daynum has no business re-implementing it.
+If `CivilDateTime` were a UTC moment, then every calendar operation would need to resolve a timezone first, and every comparison would need a DST table. That's exactly what `DateTimeImmutable` already does, and Daynum has no business re-implementing it.
 
-Instead, `Instant` stores `(JDN, time-of-day, timezone label)`. Two `Instant`s with the same JDN and time — regardless of stored zone — compare equal and format to the same string. When you need physical-time math, escape to `DateTimeImmutable` with `$d->toDateTimeImmutable()`. See [concepts.md](concepts.md#instant-is-civil-not-utc).
+Instead, `CivilDateTime` stores `(JDN, time-of-day, timezone label)`. Two `CivilDateTime` values with the same JDN and time — regardless of stored zone — compare equal and format to the same string. When you need physical-time math, escape to `DateTimeImmutable` with `$d->toDateTimeImmutable()`. See [concepts.md](concepts.md#civildatetime-is-wall-clock-time).
 
 ## Why isn't `equals()` timezone-aware?
 
@@ -30,7 +30,7 @@ Two reasons:
 If you need it, use PHP's `strtotime()` or the `DateTimeImmutable` constructor, then import the result:
 
 ```php
-$d = Instant::fromDateTime(new DateTimeImmutable('next Monday'));
+$d = CivilDateTime::fromDateTime(new DateTimeImmutable('next Monday'));
 ```
 
 ## Why no Arabic Jalali month names?
@@ -55,20 +55,20 @@ So Daynum throws a loud `UmmAlQuraOutOfRangeException` and directs you to `fromH
 
 ## Why do I have to re-enter a view after arithmetic?
 
-Because arithmetic returns `Instant`, not another view:
+Because arithmetic returns `CivilDateTime`, not another view:
 
 ```php
-$next = $d->jalali()->addMonths(1);   // Instant, not JalaliView
+$next = $d->jalali()->addMonths(1);   // CivilDateTime, not JalaliView
 $next->jalali()->format('Y/m/d');     // re-enter Jalali view
 ```
 
-`Instant` is calendar-neutral. If `addMonths` returned a view, we'd need one of:
+`CivilDateTime` is calendar-neutral. If `addMonths` returned a view, we'd need one of:
 
-- Glue the last-used calendar onto the `Instant` (breaks calendar-neutrality, bad for storage)
+- Glue the last-used calendar onto the `CivilDateTime` (breaks calendar-neutrality, bad for storage)
 - Make the arithmetic mutate the view in place (not immutable anymore)
 - Return a view with an implicit "current" calendar (confusing when you mix calendars)
 
-Re-entering the view is one extra method call and keeps the model clean. See [concepts.md](concepts.md#instant-vs-view).
+Re-entering the view is one extra method call and keeps the model clean. See [concepts.md](concepts.md#civildatetime-vs-view).
 
 ## Why don't you ship `islamic-tbla` or observational `islamic`?
 
@@ -81,18 +81,18 @@ See [calendars/hijri-civil.md](calendars/hijri-civil.md#why-not-other-islamic-va
 
 `parseExact` is strict: it doesn't try to match month names or weekday names, even though the formatter writes them. Locale-aware parsing is a can of worms — "Farvardin" vs. "فروردین" vs. "farvardin" vs. "FARVARDIN" vs. "fâr" vs. "far" — with no clean answer.
 
-For structured input, use numeric tokens (`Y m d`) which parse unambiguously. For free-form input, fall back to `DateTimeImmutable` + `Instant::fromDateTime()`, then validate.
+For structured input, use numeric tokens (`Y m d`) which parse unambiguously. For free-form input, fall back to `DateTimeImmutable` + `CivilDateTime::fromDateTime()`, then validate.
 
 See [parsing.md](parsing.md).
 
-## Why does `diffInDays` live on `Instant` but `diffInMonths` on the view?
+## Why does `diffInDays` live on `CivilDateTime` but `diffInMonths` on the view?
 
-A "day" is calendar-neutral — `diffInDays` is just a JDN subtraction. It belongs on `Instant`.
+A "day" is calendar-neutral — `diffInDays` is just a JDN subtraction. It belongs on `CivilDateTime`.
 
 A "month" is calendar-specific — Jalali months and Gregorian months have different lengths, and the diff in Jalali months between two dates is not the same as the diff in Gregorian months. So `diffInMonths` must live on a view that picks a calendar.
 
 ```php
-$a->diffInDays($b);                  // on Instant
+$a->diffInDays($b);                  // on CivilDateTime
 $a->jalali()->diffInMonths($b);      // on the view
 $a->gregorian()->diffInMonths($b);   // potentially different answer
 ```
@@ -113,7 +113,7 @@ Because 0-based months are the single most common source of off-by-one bugs in d
 
 ## Is Daynum a Carbon replacement?
 
-No. Carbon covers Gregorian + rich timezone arithmetic + relative parsing; Daynum covers multi-calendar + correctness + a small deterministic API. They solve different problems. You can use both in the same project — `Instant::fromDateTime(Carbon::parse(...))` is a clean bridge.
+No. Carbon covers Gregorian + rich timezone arithmetic + relative parsing; Daynum covers multi-calendar + correctness + a small deterministic API. They solve different problems. You can use both in the same project — `CivilDateTime::fromDateTime(Carbon::parse(...))` is a clean bridge.
 
 Daynum is a replacement for `morilog/jalali`.
 

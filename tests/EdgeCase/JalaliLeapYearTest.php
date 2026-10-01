@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Eram\Daynum\Tests\EdgeCase;
 
 use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -38,7 +38,7 @@ final class JalaliLeapYearTest extends TestCase
     public function testLeapYearsPermitEsfand30(): void
     {
         foreach (self::LEAP_YEARS as $year) {
-            $i = Instant::fromJalali($year, 12, 30);
+            $i = CivilDateTime::fromJalali($year, 12, 30);
             $this->assertSame($year, $i->jalali()->year(), "Round-trip failed for leap year {$year}");
             $this->assertSame(12, $i->jalali()->month());
             $this->assertSame(30, $i->jalali()->day());

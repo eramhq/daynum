@@ -7,14 +7,14 @@ namespace Eram\Daynum\Tests\EdgeCase;
 use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
 use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
 use Eram\Daynum\Exception\InvalidDateException;
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use PHPUnit\Framework\TestCase;
 
 final class BoundaryTest extends TestCase
 {
     public function testJalaliMinimumYearIsValid(): void
     {
-        $i = Instant::fromJalali(JalaliCalendar::MIN_YEAR, 1, 1);
+        $i = CivilDateTime::fromJalali(JalaliCalendar::MIN_YEAR, 1, 1);
         $this->assertSame(JalaliCalendar::MIN_YEAR, $i->jalali()->year());
         $this->assertSame(1, $i->jalali()->month());
         $this->assertSame(1, $i->jalali()->day());
@@ -22,20 +22,20 @@ final class BoundaryTest extends TestCase
 
     public function testJalaliMaximumYearIsValid(): void
     {
-        $i = Instant::fromJalali(JalaliCalendar::MAX_YEAR, 1, 1);
+        $i = CivilDateTime::fromJalali(JalaliCalendar::MAX_YEAR, 1, 1);
         $this->assertSame(JalaliCalendar::MAX_YEAR, $i->jalali()->year());
     }
 
     public function testJalaliBelowMinimumThrows(): void
     {
         $this->expectException(InvalidDateException::class);
-        Instant::fromJalali(JalaliCalendar::MIN_YEAR - 1, 1, 1);
+        CivilDateTime::fromJalali(JalaliCalendar::MIN_YEAR - 1, 1, 1);
     }
 
     public function testJalaliAboveMaximumThrows(): void
     {
         $this->expectException(InvalidDateException::class);
-        Instant::fromJalali(JalaliCalendar::MAX_YEAR + 1, 1, 1);
+        CivilDateTime::fromJalali(JalaliCalendar::MAX_YEAR + 1, 1, 1);
     }
 
     public function testGregorianRangeEndpoints(): void

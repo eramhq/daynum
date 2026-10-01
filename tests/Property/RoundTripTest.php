@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Eram\Daynum\Tests\Property;
 
 use Eram\Daynum\Calendar\Jalali\JalaliCalendar;
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -31,9 +31,9 @@ final class RoundTripTest extends TestCase
             $m = $rng(1, 12);
             $d = $rng(1, 28);
 
-            $instant = Instant::fromGregorian($y, $m, $d);
-            $j = $instant->jalali();
-            $back = Instant::fromJalali($j->year(), $j->month(), $j->day())->gregorian();
+            $dateTime = CivilDateTime::fromGregorian($y, $m, $d);
+            $j = $dateTime->jalali();
+            $back = CivilDateTime::fromJalali($j->year(), $j->month(), $j->day())->gregorian();
 
             $this->assertSame(
                 [$y, $m, $d],
@@ -51,9 +51,9 @@ final class RoundTripTest extends TestCase
             $m = $rng(1, 12);
             $d = $rng(1, JalaliCalendar::instance()->daysInMonth($y, $m));
 
-            $instant = Instant::fromJalali($y, $m, $d);
-            $g = $instant->gregorian();
-            $back = Instant::fromGregorian($g->year(), $g->month(), $g->day())->jalali();
+            $dateTime = CivilDateTime::fromJalali($y, $m, $d);
+            $g = $dateTime->gregorian();
+            $back = CivilDateTime::fromGregorian($g->year(), $g->month(), $g->day())->jalali();
 
             $this->assertSame(
                 [$y, $m, $d],

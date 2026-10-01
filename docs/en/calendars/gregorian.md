@@ -17,21 +17,21 @@ The proleptic Gregorian calendar — no Julian cutover, year 0 exists, negative 
 ## Construction
 
 ```php
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 
-Instant::fromGregorian(2026, 4, 8);
-Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
-Instant::fromGregorian(-44, 3, 15);          // Ides of March, 44 BCE
-Instant::fromGregorian(0, 1, 1);             // year 0 exists
+CivilDateTime::fromGregorian(2026, 4, 8);
+CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
+CivilDateTime::fromGregorian(-44, 3, 15);          // Ides of March, 44 BCE
+CivilDateTime::fromGregorian(0, 1, 1);             // year 0 exists
 
-Instant::tryFromGregorian(2026, 2, 30);      // null — Feb 30 invalid
-Instant::isValidGregorian(2024, 2, 29);      // true — leap year
+CivilDateTime::tryFromGregorian(2026, 2, 30);      // null — Feb 30 invalid
+CivilDateTime::isValidGregorian(2024, 2, 29);      // true — leap year
 ```
 
 ## Viewing
 
 ```php
-$d = Instant::fromGregorian(2026, 4, 8);
+$d = CivilDateTime::fromGregorian(2026, 4, 8);
 
 $d->gregorian()->year();              // 2026
 $d->gregorian()->month();             // 4
@@ -53,9 +53,9 @@ Daynum's Gregorian calendar is **proleptic**: the rules are applied uniformly ba
 - Negative years are permitted all the way to `-9999`.
 
 ```php
-Instant::fromGregorian(1582, 10, 4);    // works — one day before the historical cutover
-Instant::fromGregorian(1582, 10, 5);    // also works — a date that "didn't exist" historically
-Instant::fromGregorian(-4713, 11, 24);  // also fine — deep historical dates
+CivilDateTime::fromGregorian(1582, 10, 4);    // works — one day before the historical cutover
+CivilDateTime::fromGregorian(1582, 10, 5);    // also works — a date that "didn't exist" historically
+CivilDateTime::fromGregorian(-4713, 11, 24);  // also fine — deep historical dates
 ```
 
 If you need the Julian calendar or historical Julian/Gregorian switchover math, Daynum does not provide it.
@@ -75,7 +75,7 @@ So: `2000` is leap, `1900` is not, `2024` is leap, `2100` is not.
 All PHP `date()` tokens work. See [../formatting.md](../formatting.md).
 
 ```php
-$d = Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
+$d = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
 
 $d->gregorian()->format('Y-m-d');                // "2026-04-08"
 $d->gregorian()->format('l, F jS Y');            // "Wednesday, April 8th 2026"

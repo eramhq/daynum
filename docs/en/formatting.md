@@ -4,10 +4,10 @@ Daynum uses PHP `date()` syntax. All tokens work across all calendars — the Ja
 
 ## Calling `format()`
 
-`format()` lives on the calendar view, not the `Instant`. You choose the calendar, then ask for a string:
+`format()` lives on the calendar view, not the `CivilDateTime`. You choose the calendar, then ask for a string:
 
 ```php
-$d = Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
+$d = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
 
 $d->gregorian()->format('Y-m-d');     // "2026-04-08"
 $d->jalali()->format('Y/m/d');        // "1405/01/19"
@@ -70,19 +70,19 @@ $d->gregorian()->format('Y-m-d\T\Z');     // "2026-04-08TZ" (the Z here is liter
 
 ## Composite `c` token
 
-`c` is ISO 8601 and always renders in Gregorian regardless of the calling view — it's an interchange format, not a human-display format. `r` (RFC 2822) is the same way. Both require a timezone label on the `Instant`.
+`c` is ISO 8601 and always renders in Gregorian regardless of the calling view — it's an interchange format, not a human-display format. `r` (RFC 2822) is the same way. Both require a timezone label on the `CivilDateTime`.
 
 ```php
-$d = Instant::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
+$d = CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
 $d->jalali()->format('c');      // "2026-04-08T14:30:00+03:30" — Gregorian!
 ```
 
 ## Timezone-dependent tokens
 
-`T`, `U`, `O`, `P`, `p`, `Z`, `I`, `c`, `r`, and `e` require a timezone label on the `Instant`. Calling them without one raises `MissingTimezoneException`:
+`T`, `U`, `O`, `P`, `p`, `Z`, `I`, `c`, `r`, and `e` require a timezone label on the `CivilDateTime`. Calling them without one raises `MissingTimezoneException`:
 
 ```php
-$d = Instant::fromGregorian(2026, 4, 8);       // no tzLabel
+$d = CivilDateTime::fromGregorian(2026, 4, 8);       // no tzLabel
 $d->gregorian()->format('Y-m-d H:i:s P');
 // → MissingTimezoneException: Format token "P" requires a timezone ...
 ```

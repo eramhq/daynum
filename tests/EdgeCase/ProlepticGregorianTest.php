@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Eram\Daynum\Tests\EdgeCase;
 
 use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -44,7 +44,7 @@ final class ProlepticGregorianTest extends TestCase
         // In the historical Julian→Gregorian cutover, Oct 5–14, 1582 didn't
         // exist. In proleptic Gregorian they do, and every consecutive pair of
         // days is exactly 1 JDN apart.
-        $d = Instant::fromGregorian(1582, 10, 4);
+        $d = CivilDateTime::fromGregorian(1582, 10, 4);
         $this->assertSame('1582-10-05', $d->gregorian()->addDays(1)->gregorian()->format('Y-m-d'));
         $this->assertSame('1582-10-10', $d->gregorian()->addDays(6)->gregorian()->format('Y-m-d'));
         $this->assertSame('1582-10-15', $d->gregorian()->addDays(11)->gregorian()->format('Y-m-d'));
@@ -53,7 +53,7 @@ final class ProlepticGregorianTest extends TestCase
     public function testYearBeforeOneBcIsNegative(): void
     {
         // Going back 1 day from Jan 1 year 0 should give Dec 31 year -1.
-        $jan1Year0 = Instant::fromGregorian(0, 1, 1);
+        $jan1Year0 = CivilDateTime::fromGregorian(0, 1, 1);
         $prev = $jan1Year0->gregorian()->subDays(1);
         $this->assertSame(-1, $prev->gregorian()->year());
         $this->assertSame(12, $prev->gregorian()->month());

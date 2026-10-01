@@ -5,7 +5,7 @@ v1 ships three locales — `en`, `fa`, `ar` — and three digit scripts — `lat
 ## Switching locale
 
 ```php
-$d = Instant::fromJalali(1405, 1, 19);
+$d = CivilDateTime::fromJalali(1405, 1, 19);
 
 $d->jalali()->format('l j F Y');                      // "Wednesday 19 Farvardin 1405"
 $d->jalali()->withLocale('fa')->format('l j F Y');    // "چهارشنبه 19 فروردین 1405"

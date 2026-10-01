@@ -7,7 +7,7 @@ This folder is the deeper documentation: concepts, calendar-specific pages, cook
 ## Learn
 
 - [getting-started.md](getting-started.md) — install, first example, 5-minute tour
-- [concepts.md](concepts.md) — `Instant` is civil (not UTC), views, JDN, immutability, scope
+- [concepts.md](concepts.md) — `CivilDateTime` is civil (not UTC), views, JDN, immutability, scope
 - [cookbook.md](cookbook.md) — task-indexed recipes (convert, parse, persist, integrate)
 - [faq.md](faq.md) — surprising-but-intentional design decisions
 

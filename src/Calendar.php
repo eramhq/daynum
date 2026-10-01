@@ -13,7 +13,7 @@ namespace Eram\Daynum;
  * JDN is the interlingua for the entire library.
  *
  * Implementations MUST NOT touch time-of-day or timezone data; those live on
- * {@see Instant} and flow through untouched.
+ * {@see CivilDateTime} and flow through untouched.
  */
 interface Calendar
 {

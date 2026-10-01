@@ -8,9 +8,9 @@ use Eram\Daynum\Calendar;
 use Eram\Daynum\Calendar\AbstractCalendarView;
 
 /**
- * View of an {@see \Eram\Daynum\Instant} as a Jalali (Shamsi / Solar Hijri) date.
+ * View of an {@see \Eram\Daynum\CivilDateTime} as a Jalali (Shamsi / Solar Hijri) date.
  *
- * Use `$instant->jalali()` to construct; never `new` directly.
+ * Use `$dateTime->jalali()` to construct; never `new` directly.
  */
 final class JalaliView extends AbstractCalendarView
 {

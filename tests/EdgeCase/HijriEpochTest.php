@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Eram\Daynum\Tests\EdgeCase;
 
 use Eram\Daynum\Calendar\Hijri\HijriCivilCalendar;
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -30,9 +30,9 @@ final class HijriEpochTest extends TestCase
     {
         // JDN 0 is a Monday; Daynum's w = (jdn + 1) mod 7 (Sun=0..Sat=6).
         // For JDN 1948440, w = 1948441 mod 7 = 5 → Friday.
-        $instant = Instant::fromHijriCivil(1, 1, 1);
-        $this->assertSame(5, $instant->hijriCivil()->dayOfWeek());
-        $this->assertSame('Friday', $instant->hijriCivil()->format('l'));
+        $dateTime = CivilDateTime::fromHijriCivil(1, 1, 1);
+        $this->assertSame(5, $dateTime->hijriCivil()->dayOfWeek());
+        $this->assertSame('Friday', $dateTime->hijriCivil()->format('l'));
     }
 
     public function testMuharramHas30Days(): void

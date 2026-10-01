@@ -21,9 +21,10 @@ use DateTimeZone;
 use JsonSerializable;
 
 /**
- * The immutable, calendar-agnostic core value type.
+ * The immutable, calendar-agnostic core value type: a wall-clock date and
+ * time-of-day, plus an optional timezone label.
  *
- * An Instant is the triple (JDN, time-of-day in seconds, opaque timezone label).
+ * A CivilDateTime is the triple (JDN, time-of-day in seconds, opaque timezone label).
  * It is not itself "in" any calendar — viewing it in one of the shipped calendars
  * is done via `$i->gregorian()` or `$i->jalali()`.
  *
@@ -33,16 +34,11 @@ use JsonSerializable;
  * `secondsOfDay` and `tzLabel` are pass-through metadata. Calendar conversions
  * never touch them; formatting uses them for time/zone tokens only.
  *
- * ## Naming note
- *
- * Daynum's Instant is NOT a UTC timeline instant (unlike java.time.Instant).
- * It is a calendar-neutral civil datetime: (JDN, time-of-day, timezone label).
- * Two Instants with the same JDN and time but different tzLabels represent
- * different physical moments. Comparison methods (equals, lessThan, etc.)
- * compare wall-clock readings, not physical instants. For timeline-order
- * comparison across timezones, convert to DateTimeImmutable first.
+ * Comparison methods (equals, lessThan, ...) compare wall-clock readings
+ * and ignore tzLabel. For timeline order across timezones, convert with
+ * toDateTimeImmutable().
  */
-final class Instant implements JsonSerializable
+final class CivilDateTime implements JsonSerializable
 {
     public function __construct(
         public readonly int $jdn,
@@ -153,7 +149,7 @@ final class Instant implements JsonSerializable
      * Current date and time.
      *
      * When no timezone is provided, the PHP default timezone is used for
-     * determining the current date/time AND is stored on the Instant (matching
+     * determining the current date/time AND is stored on the CivilDateTime (matching
      * how {@see fromDateTime()} resolves the timezone from a DateTimeInterface).
      *
      * @param ?string $tzLabel Timezone identifier (e.g. 'Asia/Tehran', 'UTC').
@@ -170,7 +166,7 @@ final class Instant implements JsonSerializable
      * Today in the proleptic Gregorian calendar, time = 00:00:00.
      *
      * When no timezone is provided, the PHP default timezone is used for
-     * determining today's date AND is stored on the Instant (matching
+     * determining today's date AND is stored on the CivilDateTime (matching
      * how {@see now()} resolves the timezone).
      *
      * @param ?string $tzLabel Timezone identifier (e.g. 'Asia/Tehran', 'UTC').
@@ -337,27 +333,27 @@ final class Instant implements JsonSerializable
     }
 
     /**
-     * Reconstruct an Instant from a serialized array (inverse of {@see jsonSerialize}).
+     * Reconstruct a CivilDateTime from a serialized array (inverse of {@see jsonSerialize}).
      *
      * @param array<string, mixed> $data
      */
     public static function fromArray(array $data): self
     {
         if (!isset($data['jdn']) || !is_int($data['jdn'])) {
-            throw new Exception\InvalidArgumentException('Instant::fromArray() requires an integer "jdn" key.');
+            throw new Exception\InvalidArgumentException('CivilDateTime::fromArray() requires an integer "jdn" key.');
         }
 
         $secondsOfDay = $data['secondsOfDay'] ?? 0;
         if (!is_int($secondsOfDay)) {
             throw new Exception\InvalidArgumentException(
-                'Instant::fromArray() "secondsOfDay" must be an int; got ' . get_debug_type($secondsOfDay) . '.'
+                'CivilDateTime::fromArray() "secondsOfDay" must be an int; got ' . get_debug_type($secondsOfDay) . '.'
             );
         }
 
         $tzLabel = $data['tzLabel'] ?? null;
         if ($tzLabel !== null && !is_string($tzLabel)) {
             throw new Exception\InvalidArgumentException(
-                'Instant::fromArray() "tzLabel" must be a string or null; got ' . get_debug_type($tzLabel) . '.'
+                'CivilDateTime::fromArray() "tzLabel" must be a string or null; got ' . get_debug_type($tzLabel) . '.'
             );
         }
 
@@ -433,7 +429,7 @@ final class Instant implements JsonSerializable
     /**
      * Signed difference in whole days: other subtracted from this.
      *
-     * `Instant::fromGregorian(2026, 4, 10)->diffInDays(Instant::fromGregorian(2026, 4, 8))`
+     * `CivilDateTime::fromGregorian(2026, 4, 10)->diffInDays(CivilDateTime::fromGregorian(2026, 4, 8))`
      * returns 2.
      */
     public function diffInDays(self $other): int

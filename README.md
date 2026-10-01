@@ -12,8 +12,6 @@ v1 ships **Gregorian**, **Jalali**, and **Hijri** (Saudi Umm al-Qura + tabular c
 
 **Daynum is NOT:** a timezone library (use `toDateTimeImmutable()` for DST math), a relative-date parser ("next Monday"), a Carbon replacement (Carbon covers Gregorian + timezones; Daynum covers multi-calendar + correctness), or a framework bridge.
 
-> **Naming caveat: `Instant` is civil, not UTC.** Unlike `java.time.Instant`, Daynum's `Instant` is a calendar-neutral civil datetime: `(JDN, time-of-day, timezone label)`. Two instants with the same JDN and time but different tzLabels represent different physical moments. See [docs/en/concepts.md](docs/en/concepts.md#instant-is-civil-not-utc).
-
 | Feature | Daynum | Carbon | morilog/jalali | ext-intl |
 |---------|--------|--------|----------------|----------|
 | Jalali | Birashk 33-year | No | Birashk (same) | Borkowski |
@@ -32,11 +30,11 @@ composer require eram/daynum:^1.0@beta
 ## Quick start
 
 ```php
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use Eram\Daynum\Calendar\Jalali\JalaliView;
 
 // Construction — one calendar to pick from, three calendars to read back
-$d = Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
+$d = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
 
 $d->gregorian()->format('Y-m-d');                   // "2026-04-08"
 $d->jalali()->format('Y/m/d');                      // "1405/01/19"
@@ -46,18 +44,18 @@ $d->hijri()->format('j F Y');                       // "21 Shawwal 1447"
 $d->jalali()->withLocale('fa')->withDigits('persian')->format('l j F Y');
 // "چهارشنبه ۱۹ فروردین ۱۴۰۵"
 
-// Immutable arithmetic — returns Instant, re-enter a view to format
-$next = $d->jalali()->addMonths(1);                 // Instant
+// Immutable arithmetic — returns CivilDateTime, re-enter a view to format
+$next = $d->jalali()->addMonths(1);                 // CivilDateTime
 $next->jalali()->format('Y/m/d');                   // "1405/02/19"
 
 // Strict parsing — digits in any script are normalized
-JalaliView::parseExact('۱۴۰۵/۰۱/۱۹', 'Y/m/d');     // Instant
+JalaliView::parseExact('۱۴۰۵/۰۱/۱۹', 'Y/m/d');     // CivilDateTime
 JalaliView::tryParseExact('nope', 'Y/m/d');         // null
 
 // JSON round-trip contract
 json_encode($d);
 // {"jdn":2461139,"secondsOfDay":52200,"tzLabel":"Asia/Tehran"}
-Instant::fromArray(json_decode(json_encode($d), true))->equals($d);   // true
+CivilDateTime::fromArray(json_decode(json_encode($d), true))->equals($d);   // true
 
 // Escape hatch to native PHP for real timezone math
 $d->toDateTimeImmutable();
@@ -67,7 +65,7 @@ $d->toDateTimeImmutable();
 
 **Learn**
 - [Getting Started](docs/en/getting-started.md) — install, first example, 5-minute tour
-- [Concepts](docs/en/concepts.md) — civil vs. UTC, `Instant` vs. view, JDN, immutability
+- [Concepts](docs/en/concepts.md) — civil vs. UTC, `CivilDateTime` vs. view, JDN, immutability
 - [Cookbook](docs/en/cookbook.md) — 10+ task-indexed recipes
 - [FAQ](docs/en/faq.md) — surprising-but-intentional design decisions
 

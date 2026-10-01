@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Tests\EdgeCase;
 
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Calendar conversions must never touch the time-of-day or timezone label
- * carried on an Instant. The same invariant holds for the new Hijri views.
+ * carried on a CivilDateTime. The same invariant holds for the new Hijri views.
  */
 final class HijriTimePreservationTest extends TestCase
 {
     public function testTimeAndTzFlowThroughUaqView(): void
     {
-        $i = Instant::fromGregorian(2024, 3, 11, 14, 30, 0, 'Asia/Riyadh');
+        $i = CivilDateTime::fromGregorian(2024, 3, 11, 14, 30, 0, 'Asia/Riyadh');
         $this->assertSame(14, $i->hijri()->hour());
         $this->assertSame(30, $i->hijri()->minute());
         $this->assertSame(0, $i->hijri()->second());
@@ -27,7 +27,7 @@ final class HijriTimePreservationTest extends TestCase
 
     public function testTimeAndTzFlowThroughCivilView(): void
     {
-        $i = Instant::fromGregorian(2024, 3, 11, 14, 30, 45, 'UTC');
+        $i = CivilDateTime::fromGregorian(2024, 3, 11, 14, 30, 45, 'UTC');
         $this->assertSame(14, $i->hijriCivil()->hour());
         $this->assertSame(30, $i->hijriCivil()->minute());
         $this->assertSame(45, $i->hijriCivil()->second());
@@ -36,7 +36,7 @@ final class HijriTimePreservationTest extends TestCase
 
     public function testFromHijriPreservesTimeAndTz(): void
     {
-        $i = Instant::fromHijri(1445, 9, 1, 9, 15, 30, 'Asia/Riyadh');
+        $i = CivilDateTime::fromHijri(1445, 9, 1, 9, 15, 30, 'Asia/Riyadh');
         $this->assertSame(9 * 3600 + 15 * 60 + 30, $i->secondsOfDay);
         $this->assertSame('Asia/Riyadh', $i->tzLabel);
         // Round-trip through Gregorian preserves time/tz.
@@ -46,7 +46,7 @@ final class HijriTimePreservationTest extends TestCase
 
     public function testArithmeticPreservesTime(): void
     {
-        $i = Instant::fromGregorian(2024, 3, 11, 14, 30, 0, 'Asia/Riyadh');
+        $i = CivilDateTime::fromGregorian(2024, 3, 11, 14, 30, 0, 'Asia/Riyadh');
         $next = $i->hijri()->addDays(7);
         $this->assertSame(14 * 3600 + 30 * 60, $next->secondsOfDay);
         $this->assertSame('Asia/Riyadh', $next->tzLabel);

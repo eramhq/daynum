@@ -1,13 +1,13 @@
 # Arithmetic
 
-Daynum's date arithmetic is calendar-aware, immutable, and returns `Instant` — not views. Month arithmetic clamps; year arithmetic clamps; diffs are signed and calendar-specific.
+Daynum's date arithmetic is calendar-aware, immutable, and returns `CivilDateTime` — not views. Month arithmetic clamps; year arithmetic clamps; diffs are signed and calendar-specific.
 
-## Arithmetic returns `Instant`, not view
+## Arithmetic returns `CivilDateTime`, not view
 
-Since `Instant` is calendar-neutral, every arithmetic method returns a new `Instant`. To format or inspect the result, re-enter a calendar view:
+Since `CivilDateTime` is calendar-neutral, every arithmetic method returns a new `CivilDateTime`. To format or inspect the result, re-enter a calendar view:
 
 ```php
-$next = $d->jalali()->addMonths(1);   // Instant
+$next = $d->jalali()->addMonths(1);   // CivilDateTime
 $next->jalali()->format('Y/m/d');     // re-enter Jalali view
 ```
 
@@ -47,10 +47,10 @@ $view->endOfWeek(\Eram\Daynum\WeekDay::Saturday);
 When the target month doesn't have the source day, the day clamps to the target month's last day. This matches Carbon, `java.time`, and most mainstream date libraries:
 
 ```php
-Instant::fromGregorian(2026, 1, 31)->gregorian()->addMonths(1);
+CivilDateTime::fromGregorian(2026, 1, 31)->gregorian()->addMonths(1);
 // → Feb 28, 2026 (not Feb 31, not an error)
 
-Instant::fromJalali(1405, 6, 31)->jalali()->addMonths(1);
+CivilDateTime::fromJalali(1405, 6, 31)->jalali()->addMonths(1);
 // → Mehr 30, 1405 (Shahrivar is 31 days, Mehr is 30)
 ```
 
@@ -73,29 +73,29 @@ $view->endOfWeek(WeekDay::Saturday);    // 6 days after startOfWeek(Saturday)
 
 ## Diffs
 
-### `diffInDays` — on `Instant`
+### `diffInDays` — on `CivilDateTime`
 
 Signed integer days, `this - other`:
 
 ```php
-$a = Instant::fromGregorian(2026, 4, 10);
-$b = Instant::fromGregorian(2026, 4, 8);
+$a = CivilDateTime::fromGregorian(2026, 4, 10);
+$b = CivilDateTime::fromGregorian(2026, 4, 8);
 $a->diffInDays($b);    //  2
 $b->diffInDays($a);    // -2
 ```
 
-`diffInDays` lives on `Instant` because a "day" is calendar-neutral — it's just the JDN difference.
+`diffInDays` lives on `CivilDateTime` because a "day" is calendar-neutral — it's just the JDN difference.
 
 ### `diffInMonths` / `diffInYears` — on the view
 
 Calendar-aware and signed. A month (or year) is not counted until the same day-of-month is reached in the trailing direction:
 
 ```php
-$a = Instant::fromGregorian(2026, 4, 15);
-$b = Instant::fromGregorian(2026, 3, 14);
+$a = CivilDateTime::fromGregorian(2026, 4, 15);
+$b = CivilDateTime::fromGregorian(2026, 3, 14);
 $a->gregorian()->diffInMonths($b);   // 1  (day-of-month was reached)
 
-$c = Instant::fromGregorian(2026, 3, 16);
+$c = CivilDateTime::fromGregorian(2026, 3, 16);
 $a->gregorian()->diffInMonths($c);   // 0  (still in same "month" from $c's POV)
 ```
 
@@ -104,14 +104,14 @@ The same logic applies to `diffInYears` — counting requires both month and day
 Because `addMonths` clamps and `diffInMonths` waits for the day-of-month, the two are not always inverse at month ends:
 
 ```php
-$jan31 = Instant::fromGregorian(2026, 1, 31);
+$jan31 = CivilDateTime::fromGregorian(2026, 1, 31);
 $feb28 = $jan31->gregorian()->addMonths(1);    // Feb 28 (clamped)
 $feb28->gregorian()->diffInMonths($jan31);      // 0 — day 28 hasn't reached day 31
 ```
 
 For days 1–28 they always round-trip: `$v->addMonths($n)` diffed back against `$v` returns `$n`.
 
-Different calendars can give different answers for the same `Instant` pair:
+Different calendars can give different answers for the same `CivilDateTime` pair:
 
 ```php
 $a->jalali()->diffInMonths($b);      // may differ from the Gregorian count
@@ -119,13 +119,13 @@ $a->jalali()->diffInMonths($b);      // may differ from the Gregorian count
 
 ## UAQ boundary crossing via arithmetic
 
-Arithmetic on a UAQ view produces a calendar-neutral `Instant`. Viewing the result in Hijri Umm al-Qura may throw if the new date is outside the table range (AH 1300–1600). Use `hijriCivil()` as a fallback:
+Arithmetic on a UAQ view produces a calendar-neutral `CivilDateTime`. Viewing the result in Hijri Umm al-Qura may throw if the new date is outside the table range (AH 1300–1600). Use `hijriCivil()` as a fallback:
 
 ```php
 use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
 
-$d = Instant::fromHijri(1600, 12, 29);     // near table edge
-$result = $d->hijri()->addDays(100);        // returns Instant (no error)
+$d = CivilDateTime::fromHijri(1600, 12, 29);     // near table edge
+$result = $d->hijri()->addDays(100);        // returns CivilDateTime (no error)
 
 $result->hijriCivil()->year();              // works — civil has no range limit
 
@@ -156,12 +156,12 @@ $a->greaterThan($b);
 $a->greaterThanOrEqual($b);
 ```
 
-All five are methods on `Instant` — not calendar-specific — because ordering only cares about the JDN and the time-of-day, not which calendar you happened to enter.
+All five are methods on `CivilDateTime` — not calendar-specific — because ordering only cares about the JDN and the time-of-day, not which calendar you happened to enter.
 
-Remember: comparison is civil, not UTC. Two `Instant` objects with the same JDN/time but different `tzLabel` values are `equals()` even though they represent different physical moments. See [concepts.md](concepts.md#instant-is-civil-not-utc).
+Remember: comparison is wall-clock, not UTC. Two `CivilDateTime` objects with the same JDN/time but different `tzLabel` values are `equals()` even though they represent different physical moments. See [concepts.md](concepts.md#civildatetime-is-wall-clock-time).
 
 ## See also
 
-- [concepts.md](concepts.md) — the Instant-vs-view split that makes this work
+- [concepts.md](concepts.md) — the CivilDateTime-vs-view split that makes this work
 - [calendars/hijri-umm-al-qura.md](calendars/hijri-umm-al-qura.md) — boundary handling
 - [cookbook.md](cookbook.md#add-months-at-the-end-of-month) — end-of-month clamping worked example

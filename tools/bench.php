@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use Eram\Daynum\Calendar\Jalali\JalaliView;
 use Eram\Daynum\Calendar\Gregorian\GregorianView;
 
@@ -33,55 +33,55 @@ $iterations = isset($opts['iterations']) && $opts['iterations'] !== false
     : 50000;
 $warmupIterations = 1000;
 
-// Reusable instants — constructed outside the timing loop so the format
+// Reusable values — constructed outside the timing loop so the format
 // benchmarks measure conversion/format paths, not constructor allocation.
-$instant = Instant::fromJalali(1405, 1, 19);
-$instantGreg = Instant::fromGregorian(2026, 4, 8);
-$instantHijri = Instant::fromHijri(1447, 10, 21);
-$instantHijriCivil = Instant::fromHijriCivil(1447, 10, 21);
-$instantJalali2 = Instant::fromJalali(1405, 6, 15); // for diffInMonths (~5 months from $instant)
-$instantSha31 = Instant::fromJalali(1405, 6, 31);   // Shahrivar 31, for day-clamp test
+$dateTime = CivilDateTime::fromJalali(1405, 1, 19);
+$dtGreg = CivilDateTime::fromGregorian(2026, 4, 8);
+$dtHijri = CivilDateTime::fromHijri(1447, 10, 21);
+$dtHijriCivil = CivilDateTime::fromHijriCivil(1447, 10, 21);
+$dtJalali2 = CivilDateTime::fromJalali(1405, 6, 15); // for diffInMonths (~5 months from $dateTime)
+$dtSha31 = CivilDateTime::fromJalali(1405, 6, 31);   // Shahrivar 31, for day-clamp test
 
 /** @var array<string, callable> */
 $benchmarks = [
     'jalali.toJdn.manyYears' => static function () {
         // 256 distinct Jalali years per op, all inside MIN_YEAR..MAX_YEAR.
         for ($i = 0; $i < 256; $i++) {
-            Instant::fromJalali(($i % 2000) + 1000, 1, 1);
+            CivilDateTime::fromJalali(($i % 2000) + 1000, 1, 1);
         }
     },
     'jalali.fromJdn.manyYears' => static function () {
         for ($i = 0; $i < 256; $i++) {
             $jdn = 2200000 + $i * 365;
-            (new Instant($jdn))->jalali()->year();
+            (new CivilDateTime($jdn))->jalali()->year();
         }
     },
     'jalali.toJdn.warm' => static function () {
-        Instant::fromJalali(1405, 1, 19);
+        CivilDateTime::fromJalali(1405, 1, 19);
     },
-    'jalali.fromJdn.warm' => static function () use ($instant) {
-        $instant->jalali()->year();
+    'jalali.fromJdn.warm' => static function () use ($dateTime) {
+        $dateTime->jalali()->year();
     },
-    'jalali.format.numeric' => static function () use ($instant) {
-        $instant->jalali()->format('Y-m-d');
+    'jalali.format.numeric' => static function () use ($dateTime) {
+        $dateTime->jalali()->format('Y-m-d');
     },
-    'jalali.format.textual' => static function () use ($instant) {
-        $instant->jalali()->format('l j F Y');
+    'jalali.format.textual' => static function () use ($dateTime) {
+        $dateTime->jalali()->format('l j F Y');
     },
-    'jalali.format.persianDigits' => static function () use ($instant) {
-        $instant->jalali()->withDigits('persian')->format('Y-m-d');
+    'jalali.format.persianDigits' => static function () use ($dateTime) {
+        $dateTime->jalali()->withDigits('persian')->format('Y-m-d');
     },
-    'jalali.format.arabDigits' => static function () use ($instant) {
-        $instant->jalali()->withDigits('arab')->format('Y-m-d');
+    'jalali.format.arabDigits' => static function () use ($dateTime) {
+        $dateTime->jalali()->withDigits('arab')->format('Y-m-d');
     },
-    'gregorian.format.numeric' => static function () use ($instantGreg) {
-        $instantGreg->gregorian()->format('Y-m-d');
+    'gregorian.format.numeric' => static function () use ($dtGreg) {
+        $dtGreg->gregorian()->format('Y-m-d');
     },
-    'hijriCivil.format.numeric' => static function () use ($instantHijriCivil) {
-        $instantHijriCivil->hijriCivil()->format('Y-m-d');
+    'hijriCivil.format.numeric' => static function () use ($dtHijriCivil) {
+        $dtHijriCivil->hijriCivil()->format('Y-m-d');
     },
-    'hijri.format.numeric' => static function () use ($instantHijri) {
-        $instantHijri->hijri()->format('Y-m-d');
+    'hijri.format.numeric' => static function () use ($dtHijri) {
+        $dtHijri->hijri()->format('Y-m-d');
     },
     'jalali.parseExact.numeric' => static function () {
         JalaliView::parseExact('1405/01/19', 'Y/m/d');
@@ -92,17 +92,17 @@ $benchmarks = [
     'gregorian.parseExact.numeric' => static function () {
         GregorianView::parseExact('2026-04-08', 'Y-m-d');
     },
-    'jalali.addMonths' => static function () use ($instant) {
-        $instant->jalali()->addMonths(1);
+    'jalali.addMonths' => static function () use ($dateTime) {
+        $dateTime->jalali()->addMonths(1);
     },
-    'jalali.addMonths.clamp' => static function () use ($instantSha31) {
-        $instantSha31->jalali()->addMonths(1);
+    'jalali.addMonths.clamp' => static function () use ($dtSha31) {
+        $dtSha31->jalali()->addMonths(1);
     },
-    'jalali.startOfMonth' => static function () use ($instant) {
-        $instant->jalali()->startOfMonth();
+    'jalali.startOfMonth' => static function () use ($dateTime) {
+        $dateTime->jalali()->startOfMonth();
     },
-    'jalali.diffInMonths' => static function () use ($instant, $instantJalali2) {
-        $instant->jalali()->diffInMonths($instantJalali2);
+    'jalali.diffInMonths' => static function () use ($dateTime, $dtJalali2) {
+        $dateTime->jalali()->diffInMonths($dtJalali2);
     },
 ];
 

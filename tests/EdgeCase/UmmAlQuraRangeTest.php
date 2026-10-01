@@ -7,7 +7,7 @@ namespace Eram\Daynum\Tests\EdgeCase;
 use Eram\Daynum\Calendar\Hijri\Table;
 use Eram\Daynum\Exception\DaynumException;
 use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -20,7 +20,7 @@ final class UmmAlQuraRangeTest extends TestCase
 {
     public function testMinYearConstructsAndRoundTrips(): void
     {
-        $i = Instant::fromHijri(Table::MIN_YEAR, 1, 1);
+        $i = CivilDateTime::fromHijri(Table::MIN_YEAR, 1, 1);
         $this->assertSame(Table::MIN_YEAR, $i->hijri()->year());
         $this->assertSame(1, $i->hijri()->month());
         $this->assertSame(1, $i->hijri()->day());
@@ -28,9 +28,9 @@ final class UmmAlQuraRangeTest extends TestCase
 
     public function testMaxYearLastDayConstructsAndRoundTrips(): void
     {
-        $lastDay = Instant::fromHijri(Table::MAX_YEAR, 12, 1)
+        $lastDay = CivilDateTime::fromHijri(Table::MAX_YEAR, 12, 1)
             ->hijri()->daysInMonth();
-        $i = Instant::fromHijri(Table::MAX_YEAR, 12, $lastDay);
+        $i = CivilDateTime::fromHijri(Table::MAX_YEAR, 12, $lastDay);
         $this->assertSame(Table::MAX_YEAR, $i->hijri()->year());
         $this->assertSame(12, $i->hijri()->month());
         $this->assertSame($lastDay, $i->hijri()->day());
@@ -39,19 +39,19 @@ final class UmmAlQuraRangeTest extends TestCase
     public function testYearBelowMinThrows(): void
     {
         $this->expectException(UmmAlQuraOutOfRangeException::class);
-        Instant::fromHijri(Table::MIN_YEAR - 1, 1, 1);
+        CivilDateTime::fromHijri(Table::MIN_YEAR - 1, 1, 1);
     }
 
     public function testYearAboveMaxThrows(): void
     {
         $this->expectException(UmmAlQuraOutOfRangeException::class);
-        Instant::fromHijri(Table::MAX_YEAR + 1, 1, 1);
+        CivilDateTime::fromHijri(Table::MAX_YEAR + 1, 1, 1);
     }
 
     public function testOutOfRangeMessageIsHelpful(): void
     {
         try {
-            Instant::fromHijri(Table::MIN_YEAR - 1, 5, 15);
+            CivilDateTime::fromHijri(Table::MIN_YEAR - 1, 5, 15);
             $this->fail('expected throw');
         } catch (UmmAlQuraOutOfRangeException $e) {
             $msg = $e->getMessage();
@@ -65,7 +65,7 @@ final class UmmAlQuraRangeTest extends TestCase
     public function testCatchableAsDaynumException(): void
     {
         try {
-            Instant::fromHijri(Table::MIN_YEAR - 1, 1, 1);
+            CivilDateTime::fromHijri(Table::MIN_YEAR - 1, 1, 1);
             $this->fail('expected throw');
         } catch (DaynumException $e) {
             $this->assertInstanceOf(UmmAlQuraOutOfRangeException::class, $e);
@@ -75,13 +75,13 @@ final class UmmAlQuraRangeTest extends TestCase
     public function testCivilWorksWhereUaqThrows(): void
     {
         // Same (y, m, d) — UAQ throws, civil succeeds.
-        $civilInstant = Instant::fromHijriCivil(Table::MIN_YEAR - 1, 1, 1);
+        $civilDt = CivilDateTime::fromHijriCivil(Table::MIN_YEAR - 1, 1, 1);
         $this->assertSame(
             Table::MIN_YEAR - 1,
-            $civilInstant->hijriCivil()->year()
+            $civilDt->hijriCivil()->year()
         );
 
         $this->expectException(UmmAlQuraOutOfRangeException::class);
-        Instant::fromHijri(Table::MIN_YEAR - 1, 1, 1);
+        CivilDateTime::fromHijri(Table::MIN_YEAR - 1, 1, 1);
     }
 }

@@ -15,17 +15,17 @@ use Eram\Daynum\Exception\InvalidDateException;
 use Eram\Daynum\Exception\InvalidTimezoneException;
 use Eram\Daynum\Exception\MissingTimezoneException;
 use Eram\Daynum\Exception\WeekAtBoundaryException;
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use Eram\Daynum\WeekDay;
 use DateTimeImmutable;
 use DateTimeZone;
 use PHPUnit\Framework\TestCase;
 
-final class InstantTest extends TestCase
+final class CivilDateTimeTest extends TestCase
 {
     public function testFromGregorianStoresJdnAndTime(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'Asia/Tehran');
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 45, 'Asia/Tehran');
 
         $this->assertSame(2461139, $i->jdn);
         $this->assertSame(14 * 3600 + 30 * 60 + 45, $i->secondsOfDay);
@@ -34,8 +34,8 @@ final class InstantTest extends TestCase
 
     public function testFromJalaliReturnsSameJdnAsEquivalentGregorian(): void
     {
-        $gregorian = Instant::fromGregorian(2026, 4, 8);
-        $jalali = Instant::fromJalali(1405, 1, 19);
+        $gregorian = CivilDateTime::fromGregorian(2026, 4, 8);
+        $jalali = CivilDateTime::fromJalali(1405, 1, 19);
 
         $this->assertSame($gregorian->jdn, $jalali->jdn);
     }
@@ -43,7 +43,7 @@ final class InstantTest extends TestCase
     public function testFromDateTimeRoundTripsThroughGregorian(): void
     {
         $dt = new DateTimeImmutable('2026-04-08 14:30:45', new DateTimeZone('UTC'));
-        $i = Instant::fromDateTime($dt);
+        $i = CivilDateTime::fromDateTime($dt);
 
         $this->assertSame(2026, $i->gregorian()->year());
         $this->assertSame(4, $i->gregorian()->month());
@@ -56,7 +56,7 @@ final class InstantTest extends TestCase
 
     public function testToDateTimeImmutableRoundTripsComponents(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
         $dt = $i->toDateTimeImmutable();
 
         $this->assertSame('2026-04-08 14:30:45', $dt->format('Y-m-d H:i:s'));
@@ -65,9 +65,9 @@ final class InstantTest extends TestCase
 
     public function testEqualsComparesJdnAndTimeOfDay(): void
     {
-        $a = Instant::fromGregorian(2026, 4, 8, 14, 30);
-        $b = Instant::fromGregorian(2026, 4, 8, 14, 30);
-        $c = Instant::fromGregorian(2026, 4, 8, 14, 31);
+        $a = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30);
+        $b = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30);
+        $c = CivilDateTime::fromGregorian(2026, 4, 8, 14, 31);
 
         $this->assertTrue($a->equals($b));
         $this->assertFalse($a->equals($c));
@@ -75,8 +75,8 @@ final class InstantTest extends TestCase
 
     public function testOrdering(): void
     {
-        $earlier = Instant::fromGregorian(2026, 4, 8);
-        $later = Instant::fromGregorian(2026, 4, 9);
+        $earlier = CivilDateTime::fromGregorian(2026, 4, 8);
+        $later = CivilDateTime::fromGregorian(2026, 4, 9);
 
         $this->assertTrue($earlier->lessThan($later));
         $this->assertTrue($later->greaterThan($earlier));
@@ -87,8 +87,8 @@ final class InstantTest extends TestCase
 
     public function testDiffInDaysIsSigned(): void
     {
-        $earlier = Instant::fromGregorian(2026, 4, 8);
-        $later = Instant::fromGregorian(2026, 4, 10);
+        $earlier = CivilDateTime::fromGregorian(2026, 4, 8);
+        $later = CivilDateTime::fromGregorian(2026, 4, 10);
 
         $this->assertSame(2, $later->diffInDays($earlier));
         $this->assertSame(-2, $earlier->diffInDays($later));
@@ -97,31 +97,31 @@ final class InstantTest extends TestCase
     public function testInvalidSecondsOfDayRejected(): void
     {
         $this->expectException(InvalidDateException::class);
-        new Instant(0, 86400);
+        new CivilDateTime(0, 86400);
     }
 
     public function testInvalidTimeComponentsRejected(): void
     {
         $this->expectException(InvalidDateException::class);
-        Instant::fromGregorian(2026, 4, 8, 24, 0, 0);
+        CivilDateTime::fromGregorian(2026, 4, 8, 24, 0, 0);
     }
 
     public function testInvalidGregorianDateRejected(): void
     {
         $this->expectException(InvalidDateException::class);
-        Instant::fromGregorian(2026, 2, 30);
+        CivilDateTime::fromGregorian(2026, 2, 30);
     }
 
     public function testInvalidJalaliMonthRejected(): void
     {
         $this->expectException(InvalidDateException::class);
-        Instant::fromJalali(1405, 13, 1);
+        CivilDateTime::fromJalali(1405, 13, 1);
     }
 
     public function testJalaliOutOfRangeRejected(): void
     {
         $this->expectException(InvalidDateException::class);
-        Instant::fromJalali(4000, 1, 1);
+        CivilDateTime::fromJalali(4000, 1, 1);
     }
 
     public function testGregorianViewDayOfYear(): void
@@ -129,7 +129,7 @@ final class InstantTest extends TestCase
         // 2026-04-08: 31 (Jan) + 28 (Feb) + 31 (Mar) + 8 = 98.
         $this->assertSame(
             98,
-            Instant::fromGregorian(2026, 4, 8)->gregorian()->dayOfYear()
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->dayOfYear()
         );
     }
 
@@ -138,7 +138,7 @@ final class InstantTest extends TestCase
         // 1403 is a leap year, so Esfand 30 is valid and is day 366.
         $this->assertSame(
             366,
-            Instant::fromJalali(1403, 12, 30)->jalali()->dayOfYear()
+            CivilDateTime::fromJalali(1403, 12, 30)->jalali()->dayOfYear()
         );
     }
 
@@ -147,7 +147,7 @@ final class InstantTest extends TestCase
         // AH 2 is leap — Dhu al-Hijjah 30 is the 355th day of the year.
         $this->assertSame(
             355,
-            Instant::fromHijriCivil(2, 12, 30)->hijriCivil()->dayOfYear()
+            CivilDateTime::fromHijriCivil(2, 12, 30)->hijriCivil()->dayOfYear()
         );
     }
 
@@ -161,7 +161,7 @@ final class InstantTest extends TestCase
         }
         $this->assertSame(
             $expected,
-            Instant::fromHijri(1445, 9, 1)->hijri()->dayOfYear()
+            CivilDateTime::fromHijri(1445, 9, 1)->hijri()->dayOfYear()
         );
     }
 
@@ -170,7 +170,7 @@ final class InstantTest extends TestCase
         // 2026-04-08 is the 98th day of 2026; PHP-style z is 97.
         $this->assertSame(
             '97',
-            Instant::fromGregorian(2026, 4, 8)->gregorian()->format('z')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('z')
         );
     }
 
@@ -179,7 +179,7 @@ final class InstantTest extends TestCase
         // 1403 is a leap Jalali year: Esfand 30 is day 366, z = 365.
         $this->assertSame(
             '365',
-            Instant::fromJalali(1403, 12, 30)->jalali()->format('z')
+            CivilDateTime::fromJalali(1403, 12, 30)->jalali()->format('z')
         );
     }
 
@@ -189,7 +189,7 @@ final class InstantTest extends TestCase
         // 355, z = 354.
         $this->assertSame(
             '354',
-            Instant::fromHijriCivil(2, 12, 30)->hijriCivil()->format('z')
+            CivilDateTime::fromHijriCivil(2, 12, 30)->hijriCivil()->format('z')
         );
     }
 
@@ -204,7 +204,7 @@ final class InstantTest extends TestCase
         }
         $this->assertSame(
             (string) $expected,
-            Instant::fromHijri(1445, 9, 1)->hijri()->format('z')
+            CivilDateTime::fromHijri(1445, 9, 1)->hijri()->format('z')
         );
     }
 
@@ -215,23 +215,23 @@ final class InstantTest extends TestCase
         // without it, `\z` would still force a dayOfYear() computation.
         $this->assertSame(
             'z',
-            Instant::fromGregorian(2026, 4, 8)->gregorian()->format('\z')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('\z')
         );
     }
 
     public function testGregorianFormatG(): void
     {
         // Midnight / noon / 1 PM — the load-bearing `% 12 ?: 12` path.
-        $this->assertSame('12', Instant::fromGregorian(2026, 4, 8, 0, 0, 0)->gregorian()->format('g'));
-        $this->assertSame('12', Instant::fromGregorian(2026, 4, 8, 12, 0, 0)->gregorian()->format('g'));
-        $this->assertSame('1',  Instant::fromGregorian(2026, 4, 8, 13, 0, 0)->gregorian()->format('g'));
+        $this->assertSame('12', CivilDateTime::fromGregorian(2026, 4, 8, 0, 0, 0)->gregorian()->format('g'));
+        $this->assertSame('12', CivilDateTime::fromGregorian(2026, 4, 8, 12, 0, 0)->gregorian()->format('g'));
+        $this->assertSame('1',  CivilDateTime::fromGregorian(2026, 4, 8, 13, 0, 0)->gregorian()->format('g'));
     }
 
     public function testGregorianFormatH(): void
     {
-        $this->assertSame('12', Instant::fromGregorian(2026, 4, 8, 0, 0, 0)->gregorian()->format('h'));
-        $this->assertSame('12', Instant::fromGregorian(2026, 4, 8, 12, 0, 0)->gregorian()->format('h'));
-        $this->assertSame('01', Instant::fromGregorian(2026, 4, 8, 13, 0, 0)->gregorian()->format('h'));
+        $this->assertSame('12', CivilDateTime::fromGregorian(2026, 4, 8, 0, 0, 0)->gregorian()->format('h'));
+        $this->assertSame('12', CivilDateTime::fromGregorian(2026, 4, 8, 12, 0, 0)->gregorian()->format('h'));
+        $this->assertSame('01', CivilDateTime::fromGregorian(2026, 4, 8, 13, 0, 0)->gregorian()->format('h'));
     }
 
     public function testGregorianFormatW(): void
@@ -240,7 +240,7 @@ final class InstantTest extends TestCase
         // PHP's `date('W', strtotime('2026-04-08'))`).
         $this->assertSame(
             '15',
-            Instant::fromGregorian(2026, 4, 8)->gregorian()->format('W')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('W')
         );
     }
 
@@ -252,7 +252,7 @@ final class InstantTest extends TestCase
         // from Gregorian's week 15 of 2026 even though the JDN is identical.
         $this->assertSame(
             '03',
-            Instant::fromJalali(1405, 1, 19)->jalali()->format('W')
+            CivilDateTime::fromJalali(1405, 1, 19)->jalali()->format('W')
         );
     }
 
@@ -260,7 +260,7 @@ final class InstantTest extends TestCase
     {
         $this->assertSame(
             '8th April 2026',
-            Instant::fromGregorian(2026, 4, 8)->gregorian()->format('jS F Y')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('jS F Y')
         );
     }
 
@@ -270,7 +270,7 @@ final class InstantTest extends TestCase
         // just the day — no `th` residue inside the Perso-Arabic output.
         $this->assertSame(
             '۱۹ فروردین ۱۴۰۵',
-            Instant::fromJalali(1405, 1, 19)->jalali()->withLocale('fa')->withDigits('persian')->format('jS F Y')
+            CivilDateTime::fromJalali(1405, 1, 19)->jalali()->withLocale('fa')->withDigits('persian')->format('jS F Y')
         );
     }
 
@@ -280,7 +280,7 @@ final class InstantTest extends TestCase
         // Thursday is JDN 1948439 — one day before the epoch.
         $this->expectException(WeekAtBoundaryException::class);
         $this->expectExceptionMessageMatches('/supported year range/');
-        Instant::fromHijriCivil(1, 1, 1)->hijriCivil()->weekOfYear();
+        CivilDateTime::fromHijriCivil(1, 1, 1)->hijriCivil()->weekOfYear();
     }
 
     public function testHijriCivilFormatWAtEpochBoundaryThrows(): void
@@ -289,7 +289,7 @@ final class InstantTest extends TestCase
         // `format('W')` at the calendar boundary is a loud error, not a
         // silent collision with the real week 1.
         $this->expectException(WeekAtBoundaryException::class);
-        Instant::fromHijriCivil(1, 1, 1)->hijriCivil()->format('W');
+        CivilDateTime::fromHijriCivil(1, 1, 1)->hijriCivil()->format('W');
     }
 
     public function testHijriCivilFormatOAtEpochBoundaryThrows(): void
@@ -298,7 +298,7 @@ final class InstantTest extends TestCase
         // week's Thursday drops below MIN_YEAR, so there is no valid
         // week-based year to report.
         $this->expectException(WeekAtBoundaryException::class);
-        Instant::fromHijriCivil(1, 1, 1)->hijriCivil()->format('o');
+        CivilDateTime::fromHijriCivil(1, 1, 1)->hijriCivil()->format('o');
     }
 
     public function testHijriCivilFormatWAtMaxBoundaryThrows(): void
@@ -311,7 +311,7 @@ final class InstantTest extends TestCase
         $lastDay = $cal->daysInMonth(HijriCivilCalendar::MAX_YEAR, 12);
 
         $this->expectException(WeekAtBoundaryException::class);
-        Instant::fromHijriCivil(HijriCivilCalendar::MAX_YEAR, 12, $lastDay)
+        CivilDateTime::fromHijriCivil(HijriCivilCalendar::MAX_YEAR, 12, $lastDay)
             ->hijriCivil()
             ->format('W');
     }
@@ -323,7 +323,7 @@ final class InstantTest extends TestCase
         // without tripping the boundary throw.
         $this->assertSame(
             '01',
-            Instant::fromHijriCivil(1, 1, 4)->hijriCivil()->format('W')
+            CivilDateTime::fromHijriCivil(1, 1, 4)->hijriCivil()->format('W')
         );
     }
 
@@ -334,7 +334,7 @@ final class InstantTest extends TestCase
         // the bundled table's first year. The catch now wraps it in a
         // WeekAtBoundaryException instead of returning a sentinel.
         $this->expectException(WeekAtBoundaryException::class);
-        Instant::fromHijri(Table::MIN_YEAR, 1, 1)->hijri()->format('W');
+        CivilDateTime::fromHijri(Table::MIN_YEAR, 1, 1)->hijri()->format('W');
     }
 
     public function testHijriUmmAlQuraFormatWAtMaxBoundary(): void
@@ -347,7 +347,7 @@ final class InstantTest extends TestCase
         // and the shape is a valid ISO week number.
         $cal = HijriUmmAlQuraCalendar::instance();
         $lastDay = $cal->daysInMonth(Table::MAX_YEAR, 12);
-        $w = Instant::fromHijri(Table::MAX_YEAR, 12, $lastDay)
+        $w = CivilDateTime::fromHijri(Table::MAX_YEAR, 12, $lastDay)
             ->hijri()
             ->format('W');
         $this->assertMatchesRegularExpression('/^(0[1-9]|[1-4][0-9]|5[0-3])$/', $w);
@@ -358,7 +358,7 @@ final class InstantTest extends TestCase
         // Jalali AP 1-01-01 (= 622 CE). MIN_YEAR edge — the containing
         // week's Thursday falls in notional year 0.
         $this->expectException(WeekAtBoundaryException::class);
-        Instant::fromJalali(1, 1, 1)->jalali()->format('W');
+        CivilDateTime::fromJalali(1, 1, 1)->jalali()->format('W');
     }
 
     public function testJalaliFormatWAtMaxBoundaryThrows(): void
@@ -366,7 +366,7 @@ final class InstantTest extends TestCase
         // Jalali AP 3177-12-29 — MAX_YEAR edge. The containing ISO
         // week's Thursday spills into a notional year above MAX_YEAR.
         $this->expectException(WeekAtBoundaryException::class);
-        Instant::fromJalali(JalaliCalendar::MAX_YEAR, 12, 29)->jalali()->format('W');
+        CivilDateTime::fromJalali(JalaliCalendar::MAX_YEAR, 12, 29)->jalali()->format('W');
     }
 
     public function testHijriUmmAlQuraFormatWAtMinBoundaryBareDateThrows(): void
@@ -376,7 +376,7 @@ final class InstantTest extends TestCase
         // below the table's first year. Same outcome as the `format`
         // route, exercised via the direct `weekOfYear()` accessor.
         $this->expectException(WeekAtBoundaryException::class);
-        Instant::fromHijri(Table::MIN_YEAR, 1, 1)->hijri()->weekOfYear();
+        CivilDateTime::fromHijri(Table::MIN_YEAR, 1, 1)->hijri()->weekOfYear();
     }
 
     public function testFormatWBackslashEscape(): void
@@ -385,7 +385,7 @@ final class InstantTest extends TestCase
         // escape-aware `patternContainsUnescaped($pattern, 'W')` guard.
         $this->assertSame(
             'W',
-            Instant::fromGregorian(2026, 4, 8)->gregorian()->format('\W')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('\W')
         );
     }
 
@@ -398,7 +398,7 @@ final class InstantTest extends TestCase
         // patterns are safe at MIN/MAX edges.
         $this->assertSame(
             'W',
-            Instant::fromHijriCivil(1, 1, 1)->hijriCivil()->format('\W')
+            CivilDateTime::fromHijriCivil(1, 1, 1)->hijriCivil()->format('\W')
         );
     }
 
@@ -407,7 +407,7 @@ final class InstantTest extends TestCase
         // Same guarantee for `\o` on a Jalali MIN-edge date.
         $this->assertSame(
             'o',
-            Instant::fromJalali(1, 1, 1)->jalali()->format('\o')
+            CivilDateTime::fromJalali(1, 1, 1)->jalali()->format('\o')
         );
     }
 
@@ -416,7 +416,7 @@ final class InstantTest extends TestCase
         // Mid-year, `o` and `Y` agree — the normal case.
         $this->assertSame(
             '2026',
-            Instant::fromGregorian(2026, 4, 8)->gregorian()->format('o')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('o')
         );
     }
 
@@ -427,7 +427,7 @@ final class InstantTest extends TestCase
         // renders `2025-W01`.
         $this->assertSame(
             '2025-W01',
-            Instant::fromGregorian(2024, 12, 30)->gregorian()->format('o-\WW')
+            CivilDateTime::fromGregorian(2024, 12, 30)->gregorian()->format('o-\WW')
         );
     }
 
@@ -436,7 +436,7 @@ final class InstantTest extends TestCase
         // 2023-01-01 is a Sunday — ISO week 52 of 2022.
         $this->assertSame(
             '2022-W52',
-            Instant::fromGregorian(2023, 1, 1)->gregorian()->format('o-\WW')
+            CivilDateTime::fromGregorian(2023, 1, 1)->gregorian()->format('o-\WW')
         );
     }
 
@@ -446,7 +446,7 @@ final class InstantTest extends TestCase
         // both adjacent — 2024-12-30 → `o=2025`, `Y=2024`.
         $this->assertSame(
             '20252024',
-            Instant::fromGregorian(2024, 12, 30)->gregorian()->format('oY')
+            CivilDateTime::fromGregorian(2024, 12, 30)->gregorian()->format('oY')
         );
     }
 
@@ -457,7 +457,7 @@ final class InstantTest extends TestCase
         // `Y` here since the date is deep inside week 3 of AP 1405.
         $this->assertSame(
             '1405',
-            Instant::fromJalali(1405, 1, 19)->jalali()->format('o')
+            CivilDateTime::fromJalali(1405, 1, 19)->jalali()->format('o')
         );
     }
 
@@ -468,7 +468,7 @@ final class InstantTest extends TestCase
         // str_contains guards compounding.
         $this->assertSame(
             '97 15',
-            Instant::fromGregorian(2026, 4, 8)->gregorian()->format('z W')
+            CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->format('z W')
         );
     }
 
@@ -478,7 +478,7 @@ final class InstantTest extends TestCase
         // and backslash escapes all in one pattern.
         $this->assertSame(
             '02:30 PM, 8th April 2026, Week 15',
-            Instant::fromGregorian(2026, 4, 8, 14, 30)
+            CivilDateTime::fromGregorian(2026, 4, 8, 14, 30)
                 ->gregorian()
                 ->format('h:i A, jS F Y, \W\e\e\k W')
         );
@@ -489,14 +489,14 @@ final class InstantTest extends TestCase
     public function testNowReturnsCurrentDateWithResolvedTimezone(): void
     {
         $before = new DateTimeImmutable('now', new DateTimeZone('UTC'));
-        $instant = Instant::now('UTC');
+        $dateTime = CivilDateTime::now('UTC');
         $after = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 
-        $g = $instant->gregorian();
+        $g = $dateTime->gregorian();
         $this->assertSame((int) $before->format('Y'), $g->year());
-        $this->assertSame('UTC', $instant->tzLabel);
+        $this->assertSame('UTC', $dateTime->tzLabel);
         // secondsOfDay should be non-negative (it always is, but confirms time is captured)
-        $this->assertGreaterThanOrEqual(0, $instant->secondsOfDay);
+        $this->assertGreaterThanOrEqual(0, $dateTime->secondsOfDay);
     }
 
     public function testNowWithoutTimezoneResolvesDefault(): void
@@ -504,8 +504,8 @@ final class InstantTest extends TestCase
         $oldTz = date_default_timezone_get();
         date_default_timezone_set('Asia/Tehran');
         try {
-            $instant = Instant::now();
-            $this->assertSame('Asia/Tehran', $instant->tzLabel);
+            $dateTime = CivilDateTime::now();
+            $this->assertSame('Asia/Tehran', $dateTime->tzLabel);
         } finally {
             date_default_timezone_set($oldTz);
         }
@@ -513,14 +513,14 @@ final class InstantTest extends TestCase
 
     public function testNowCapturesTimeOfDay(): void
     {
-        $instant = Instant::now('UTC');
+        $dateTime = CivilDateTime::now('UTC');
         // now() should capture current time, not midnight
         $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $expectedSeconds = (int) $now->format('G') * 3600
                          + (int) $now->format('i') * 60
                          + (int) $now->format('s');
         // Allow 2 seconds of drift between the two calls
-        $this->assertEqualsWithDelta($expectedSeconds, $instant->secondsOfDay, 2);
+        $this->assertEqualsWithDelta($expectedSeconds, $dateTime->secondsOfDay, 2);
     }
 
     public function testTodayResolvesDefaultTimezone(): void
@@ -528,9 +528,9 @@ final class InstantTest extends TestCase
         $oldTz = date_default_timezone_get();
         date_default_timezone_set('Europe/London');
         try {
-            $instant = Instant::today();
-            $this->assertSame('Europe/London', $instant->tzLabel);
-            $this->assertSame(0, $instant->secondsOfDay);
+            $dateTime = CivilDateTime::today();
+            $this->assertSame('Europe/London', $dateTime->tzLabel);
+            $this->assertSame(0, $dateTime->secondsOfDay);
         } finally {
             date_default_timezone_set($oldTz);
         }
@@ -538,9 +538,9 @@ final class InstantTest extends TestCase
 
     public function testTodayWithExplicitTimezoneStoresIt(): void
     {
-        $instant = Instant::today('UTC');
-        $this->assertSame('UTC', $instant->tzLabel);
-        $this->assertSame(0, $instant->secondsOfDay);
+        $dateTime = CivilDateTime::today('UTC');
+        $this->assertSame('UTC', $dateTime->tzLabel);
+        $this->assertSame(0, $dateTime->secondsOfDay);
     }
 
     // ─── tomorrow() / yesterday() ──────────────────────────────────
@@ -548,32 +548,32 @@ final class InstantTest extends TestCase
     public function testTomorrowIsOneDayAfterToday(): void
     {
         $this->assertSame(
-            Instant::today('UTC')->jdn + 1,
-            Instant::tomorrow('UTC')->jdn,
+            CivilDateTime::today('UTC')->jdn + 1,
+            CivilDateTime::tomorrow('UTC')->jdn,
         );
     }
 
     public function testYesterdayIsOneDayBeforeToday(): void
     {
         $this->assertSame(
-            Instant::today('UTC')->jdn - 1,
-            Instant::yesterday('UTC')->jdn,
+            CivilDateTime::today('UTC')->jdn - 1,
+            CivilDateTime::yesterday('UTC')->jdn,
         );
     }
 
     public function testTomorrowIsMidnight(): void
     {
-        $this->assertSame(0, Instant::tomorrow()->secondsOfDay);
+        $this->assertSame(0, CivilDateTime::tomorrow()->secondsOfDay);
     }
 
     public function testYesterdayIsMidnight(): void
     {
-        $this->assertSame(0, Instant::yesterday()->secondsOfDay);
+        $this->assertSame(0, CivilDateTime::yesterday()->secondsOfDay);
     }
 
     public function testTomorrowResolvesTimezone(): void
     {
-        $this->assertSame('Asia/Tehran', Instant::tomorrow('Asia/Tehran')->tzLabel);
+        $this->assertSame('Asia/Tehran', CivilDateTime::tomorrow('Asia/Tehran')->tzLabel);
     }
 
     public function testYesterdayResolvesDefaultTimezone(): void
@@ -581,7 +581,7 @@ final class InstantTest extends TestCase
         $oldTz = date_default_timezone_get();
         date_default_timezone_set('America/New_York');
         try {
-            $this->assertSame('America/New_York', Instant::yesterday()->tzLabel);
+            $this->assertSame('America/New_York', CivilDateTime::yesterday()->tzLabel);
         } finally {
             date_default_timezone_set($oldTz);
         }
@@ -591,7 +591,7 @@ final class InstantTest extends TestCase
 
     public function testJsonSerializeProducesCalendarNeutralArray(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'Asia/Tehran');
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 45, 'Asia/Tehran');
         $data = $i->jsonSerialize();
 
         $this->assertSame($i->jdn, $data['jdn']);
@@ -601,7 +601,7 @@ final class InstantTest extends TestCase
 
     public function testJsonEncodeProducesExpectedJson(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8, 0, 0, 0, 'UTC');
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 0, 0, 0, 'UTC');
         $json = json_encode($i);
         $this->assertNotFalse($json);
         $decoded = json_decode($json, true);
@@ -613,7 +613,7 @@ final class InstantTest extends TestCase
 
     public function testJsonSerializeWithNullTzLabel(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8);
+        $i = CivilDateTime::fromGregorian(2026, 4, 8);
         $data = $i->jsonSerialize();
 
         $this->assertNull($data['tzLabel']);
@@ -625,8 +625,8 @@ final class InstantTest extends TestCase
 
     public function testFromArrayRoundTrips(): void
     {
-        $original = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'Asia/Tehran');
-        $restored = Instant::fromArray($original->jsonSerialize());
+        $original = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 45, 'Asia/Tehran');
+        $restored = CivilDateTime::fromArray($original->jsonSerialize());
 
         $this->assertTrue($original->equals($restored));
         $this->assertSame($original->tzLabel, $restored->tzLabel);
@@ -634,7 +634,7 @@ final class InstantTest extends TestCase
 
     public function testFromArrayWithMinimalData(): void
     {
-        $i = Instant::fromArray(['jdn' => 2461139]);
+        $i = CivilDateTime::fromArray(['jdn' => 2461139]);
         $this->assertSame(2461139, $i->jdn);
         $this->assertSame(0, $i->secondsOfDay);
         $this->assertNull($i->tzLabel);
@@ -643,15 +643,15 @@ final class InstantTest extends TestCase
     public function testFromArrayRejectsInvalidInput(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        Instant::fromArray(['secondsOfDay' => 0]);
+        CivilDateTime::fromArray(['secondsOfDay' => 0]);
     }
 
     public function testFromArrayJsonRoundTrip(): void
     {
-        $original = Instant::fromJalali(1405, 1, 19, 8, 15, 0, 'Asia/Tehran');
+        $original = CivilDateTime::fromJalali(1405, 1, 19, 8, 15, 0, 'Asia/Tehran');
         $json = json_encode($original);
         $this->assertNotFalse($json);
-        $restored = Instant::fromArray(json_decode($json, true));
+        $restored = CivilDateTime::fromArray(json_decode($json, true));
 
         $this->assertTrue($original->equals($restored));
         $this->assertSame($original->tzLabel, $restored->tzLabel);
@@ -660,64 +660,64 @@ final class InstantTest extends TestCase
     public function testFromArrayRejectsStringSecondsOfDay(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => '0']);
+        CivilDateTime::fromArray(['jdn' => 2461139, 'secondsOfDay' => '0']);
     }
 
     public function testFromArrayRejectsFloatSecondsOfDay(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => 0.0]);
+        CivilDateTime::fromArray(['jdn' => 2461139, 'secondsOfDay' => 0.0]);
     }
 
     public function testFromArrayRejectsBoolSecondsOfDay(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => true]);
+        CivilDateTime::fromArray(['jdn' => 2461139, 'secondsOfDay' => true]);
     }
 
     public function testFromArrayRejectsNonStringTzLabel(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        Instant::fromArray(['jdn' => 2461139, 'tzLabel' => 123]);
+        CivilDateTime::fromArray(['jdn' => 2461139, 'tzLabel' => 123]);
     }
 
     public function testFromArrayRejectsArrayTzLabel(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        Instant::fromArray(['jdn' => 2461139, 'tzLabel' => ['UTC']]);
+        CivilDateTime::fromArray(['jdn' => 2461139, 'tzLabel' => ['UTC']]);
     }
 
     public function testFromArrayRejectsStringJdn(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        Instant::fromArray(['jdn' => '2461139']);
+        CivilDateTime::fromArray(['jdn' => '2461139']);
     }
 
     public function testFromArrayAcceptsExplicitNullTzLabel(): void
     {
-        $i = Instant::fromArray(['jdn' => 2461139, 'tzLabel' => null]);
+        $i = CivilDateTime::fromArray(['jdn' => 2461139, 'tzLabel' => null]);
         $this->assertSame(2461139, $i->jdn);
         $this->assertNull($i->tzLabel);
     }
 
     public function testFromArrayAcceptsExplicitNullSecondsOfDay(): void
     {
-        $i = Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => null]);
+        $i = CivilDateTime::fromArray(['jdn' => 2461139, 'secondsOfDay' => null]);
         $this->assertSame(2461139, $i->jdn);
         $this->assertSame(0, $i->secondsOfDay);
     }
 
     public function testFromArrayIgnoresExtraKeys(): void
     {
-        $i = Instant::fromArray(['jdn' => 2461139, 'extra' => 'junk', 'secondsOfDay' => 3600]);
+        $i = CivilDateTime::fromArray(['jdn' => 2461139, 'extra' => 'junk', 'secondsOfDay' => 3600]);
         $this->assertSame(2461139, $i->jdn);
         $this->assertSame(3600, $i->secondsOfDay);
     }
 
     public function testFromArrayAcceptsBoundarySecondsOfDay(): void
     {
-        $lo = Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => 0]);
-        $hi = Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => 86399]);
+        $lo = CivilDateTime::fromArray(['jdn' => 2461139, 'secondsOfDay' => 0]);
+        $hi = CivilDateTime::fromArray(['jdn' => 2461139, 'secondsOfDay' => 86399]);
         $this->assertSame(0, $lo->secondsOfDay);
         $this->assertSame(86399, $hi->secondsOfDay);
     }
@@ -725,14 +725,14 @@ final class InstantTest extends TestCase
     public function testFromArrayRejectsSecondsOfDayAt86400(): void
     {
         $this->expectException(DaynumException::class);
-        Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => 86400]);
+        CivilDateTime::fromArray(['jdn' => 2461139, 'secondsOfDay' => 86400]);
     }
 
     // ─── View toArray() ──────────────────────────────────────────────
 
     public function testGregorianViewToArray(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
         $arr = $i->gregorian()->toArray();
 
         $this->assertSame(2026, $arr['year']);
@@ -746,7 +746,7 @@ final class InstantTest extends TestCase
 
     public function testJalaliViewToArray(): void
     {
-        $i = Instant::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
+        $i = CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
         $arr = $i->jalali()->toArray();
 
         $this->assertSame(1405, $arr['year']);
@@ -760,7 +760,7 @@ final class InstantTest extends TestCase
 
     public function testHijriViewToArray(): void
     {
-        $i = Instant::fromHijri(1447, 10, 21);
+        $i = CivilDateTime::fromHijri(1447, 10, 21);
         $arr = $i->hijri()->toArray();
 
         $this->assertSame(1447, $arr['year']);
@@ -770,7 +770,7 @@ final class InstantTest extends TestCase
 
     public function testViewToArrayWithNullTimezone(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8);
+        $i = CivilDateTime::fromGregorian(2026, 4, 8);
         $arr = $i->gregorian()->toArray();
 
         $this->assertNull($arr['tzLabel']);
@@ -778,103 +778,103 @@ final class InstantTest extends TestCase
 
     // ─── tryFrom* ────────────────────────────────────────────────────
 
-    public function testTryFromGregorianReturnsInstantForValidDate(): void
+    public function testTryFromGregorianReturnsCivilDateTimeForValidDate(): void
     {
-        $i = Instant::tryFromGregorian(2026, 4, 8, 14, 30);
+        $i = CivilDateTime::tryFromGregorian(2026, 4, 8, 14, 30);
         $this->assertNotNull($i);
         $this->assertSame(2026, $i->gregorian()->year());
     }
 
     public function testTryFromGregorianReturnsNullForInvalidDate(): void
     {
-        $this->assertNull(Instant::tryFromGregorian(2026, 2, 30));
-        $this->assertNull(Instant::tryFromGregorian(2026, 13, 1));
+        $this->assertNull(CivilDateTime::tryFromGregorian(2026, 2, 30));
+        $this->assertNull(CivilDateTime::tryFromGregorian(2026, 13, 1));
     }
 
     public function testTryFromGregorianReturnsNullForInvalidTime(): void
     {
-        $this->assertNull(Instant::tryFromGregorian(2026, 4, 8, 24, 0, 0));
+        $this->assertNull(CivilDateTime::tryFromGregorian(2026, 4, 8, 24, 0, 0));
     }
 
-    public function testTryFromJalaliReturnsInstantForValidDate(): void
+    public function testTryFromJalaliReturnsCivilDateTimeForValidDate(): void
     {
-        $i = Instant::tryFromJalali(1405, 1, 19);
+        $i = CivilDateTime::tryFromJalali(1405, 1, 19);
         $this->assertNotNull($i);
         $this->assertSame(1405, $i->jalali()->year());
     }
 
     public function testTryFromJalaliReturnsNullForInvalidDate(): void
     {
-        $this->assertNull(Instant::tryFromJalali(1405, 13, 1));
-        $this->assertNull(Instant::tryFromJalali(4000, 1, 1));
+        $this->assertNull(CivilDateTime::tryFromJalali(1405, 13, 1));
+        $this->assertNull(CivilDateTime::tryFromJalali(4000, 1, 1));
     }
 
-    public function testTryFromHijriReturnsInstantForValidDate(): void
+    public function testTryFromHijriReturnsCivilDateTimeForValidDate(): void
     {
-        $i = Instant::tryFromHijri(1447, 10, 21);
+        $i = CivilDateTime::tryFromHijri(1447, 10, 21);
         $this->assertNotNull($i);
         $this->assertSame(1447, $i->hijri()->year());
     }
 
     public function testTryFromHijriReturnsNullForInvalidDate(): void
     {
-        $this->assertNull(Instant::tryFromHijri(1447, 13, 1));
+        $this->assertNull(CivilDateTime::tryFromHijri(1447, 13, 1));
     }
 
     public function testTryFromHijriReturnsNullForOutOfRangeYear(): void
     {
         // Catches UmmAlQuraOutOfRangeException, not just InvalidDateException
-        $this->assertNull(Instant::tryFromHijri(1200, 1, 1));
-        $this->assertNull(Instant::tryFromHijri(1700, 1, 1));
+        $this->assertNull(CivilDateTime::tryFromHijri(1200, 1, 1));
+        $this->assertNull(CivilDateTime::tryFromHijri(1700, 1, 1));
     }
 
     public function testTryFromHijriAcceptsBoundaryDates(): void
     {
         // Table boundaries are inclusive
-        $this->assertNotNull(Instant::tryFromHijri(Table::MIN_YEAR, 1, 1));
-        $this->assertNotNull(Instant::tryFromHijri(Table::MAX_YEAR, 12, 29));
+        $this->assertNotNull(CivilDateTime::tryFromHijri(Table::MIN_YEAR, 1, 1));
+        $this->assertNotNull(CivilDateTime::tryFromHijri(Table::MAX_YEAR, 12, 29));
     }
 
-    public function testTryFromHijriCivilReturnsInstantForValidDate(): void
+    public function testTryFromHijriCivilReturnsCivilDateTimeForValidDate(): void
     {
-        $i = Instant::tryFromHijriCivil(1447, 10, 21);
+        $i = CivilDateTime::tryFromHijriCivil(1447, 10, 21);
         $this->assertNotNull($i);
     }
 
     public function testTryFromHijriCivilReturnsNullForInvalidDate(): void
     {
-        $this->assertNull(Instant::tryFromHijriCivil(1447, 13, 1));
+        $this->assertNull(CivilDateTime::tryFromHijriCivil(1447, 13, 1));
     }
 
     // ─── isValid* ────────────────────────────────────────────────────
 
     public function testIsValidGregorian(): void
     {
-        $this->assertTrue(Instant::isValidGregorian(2026, 4, 8));
-        $this->assertTrue(Instant::isValidGregorian(2024, 2, 29)); // leap year
-        $this->assertFalse(Instant::isValidGregorian(2026, 2, 29));
-        $this->assertFalse(Instant::isValidGregorian(2026, 0, 1));
+        $this->assertTrue(CivilDateTime::isValidGregorian(2026, 4, 8));
+        $this->assertTrue(CivilDateTime::isValidGregorian(2024, 2, 29)); // leap year
+        $this->assertFalse(CivilDateTime::isValidGregorian(2026, 2, 29));
+        $this->assertFalse(CivilDateTime::isValidGregorian(2026, 0, 1));
     }
 
     public function testIsValidJalali(): void
     {
-        $this->assertTrue(Instant::isValidJalali(1405, 1, 19));
-        $this->assertTrue(Instant::isValidJalali(1403, 12, 30)); // leap year
-        $this->assertFalse(Instant::isValidJalali(1405, 12, 30));
-        $this->assertFalse(Instant::isValidJalali(1405, 13, 1));
+        $this->assertTrue(CivilDateTime::isValidJalali(1405, 1, 19));
+        $this->assertTrue(CivilDateTime::isValidJalali(1403, 12, 30)); // leap year
+        $this->assertFalse(CivilDateTime::isValidJalali(1405, 12, 30));
+        $this->assertFalse(CivilDateTime::isValidJalali(1405, 13, 1));
     }
 
     public function testIsValidHijri(): void
     {
-        $this->assertTrue(Instant::isValidHijri(1447, 10, 21));
-        $this->assertFalse(Instant::isValidHijri(1200, 1, 1)); // out of range
-        $this->assertFalse(Instant::isValidHijri(1447, 1, 31)); // no month has 31 days
+        $this->assertTrue(CivilDateTime::isValidHijri(1447, 10, 21));
+        $this->assertFalse(CivilDateTime::isValidHijri(1200, 1, 1)); // out of range
+        $this->assertFalse(CivilDateTime::isValidHijri(1447, 1, 31)); // no month has 31 days
     }
 
     public function testIsValidHijriCivil(): void
     {
-        $this->assertTrue(Instant::isValidHijriCivil(1447, 10, 21));
-        $this->assertFalse(Instant::isValidHijriCivil(1447, 13, 1));
+        $this->assertTrue(CivilDateTime::isValidHijriCivil(1447, 10, 21));
+        $this->assertFalse(CivilDateTime::isValidHijriCivil(1447, 13, 1));
     }
 
     // ─── supportsYear() ─────────────────────────────────────────────
@@ -920,16 +920,16 @@ final class InstantTest extends TestCase
 
     public function testIsInSupportedRangeNormalDates(): void
     {
-        $this->assertTrue(Instant::fromGregorian(2026, 4, 8)->gregorian()->isInSupportedRange());
-        $this->assertTrue(Instant::fromJalali(1405, 1, 19)->jalali()->isInSupportedRange());
-        $this->assertTrue(Instant::fromHijri(1447, 10, 21)->hijri()->isInSupportedRange());
+        $this->assertTrue(CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->isInSupportedRange());
+        $this->assertTrue(CivilDateTime::fromJalali(1405, 1, 19)->jalali()->isInSupportedRange());
+        $this->assertTrue(CivilDateTime::fromHijri(1447, 10, 21)->hijri()->isInSupportedRange());
     }
 
     public function testIsInSupportedRangeOutOfRangeUaq(): void
     {
         // A JDN before the UAQ table's first year
         $uaqMinJdn = Table::YEAR_STARTS[Table::MIN_YEAR];
-        $i = new Instant($uaqMinJdn - 1);
+        $i = new CivilDateTime($uaqMinJdn - 1);
         $this->assertFalse($i->hijri()->isInSupportedRange());
     }
 
@@ -938,7 +938,7 @@ final class InstantTest extends TestCase
     public function testStartOfWeekMondayStart(): void
     {
         // 2026-04-08 is Wednesday → Monday start = Apr 6
-        $i = Instant::fromGregorian(2026, 4, 8, 14, 30);
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30);
         $start = $i->gregorian()->startOfWeek(1);
         $g = $start->gregorian();
         $this->assertSame(2026, $g->year());
@@ -952,7 +952,7 @@ final class InstantTest extends TestCase
     public function testEndOfWeekMondayStart(): void
     {
         // 2026-04-08 is Wednesday → Sunday end = Apr 12
-        $i = Instant::fromGregorian(2026, 4, 8, 14, 30);
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30);
         $end = $i->gregorian()->endOfWeek(1);
         $g = $end->gregorian();
         $this->assertSame(2026, $g->year());
@@ -965,7 +965,7 @@ final class InstantTest extends TestCase
     public function testStartOfWeekSaturdayStart(): void
     {
         // 2026-04-08 is Wednesday, Saturday start → Saturday Apr 4
-        $i = Instant::fromGregorian(2026, 4, 8);
+        $i = CivilDateTime::fromGregorian(2026, 4, 8);
         $start = $i->gregorian()->startOfWeek(6);
         $g = $start->gregorian();
         $this->assertSame(4, $g->month());
@@ -975,7 +975,7 @@ final class InstantTest extends TestCase
     public function testEndOfWeekSundayStart(): void
     {
         // 2026-04-08 is Wednesday, Sunday start → end is Saturday Apr 11
-        $i = Instant::fromGregorian(2026, 4, 8);
+        $i = CivilDateTime::fromGregorian(2026, 4, 8);
         $end = $i->gregorian()->endOfWeek(7);
         $g = $end->gregorian();
         $this->assertSame(4, $g->month());
@@ -985,14 +985,14 @@ final class InstantTest extends TestCase
     public function testStartOfWeekOnStartDay(): void
     {
         // 2026-04-06 is Monday, weekStart=1 → same JDN
-        $i = Instant::fromGregorian(2026, 4, 6);
+        $i = CivilDateTime::fromGregorian(2026, 4, 6);
         $start = $i->gregorian()->startOfWeek(1);
         $this->assertSame($i->jdn, $start->jdn);
     }
 
     public function testStartOfWeekPreservesTzLabel(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
         $start = $i->gregorian()->startOfWeek(1);
         $this->assertSame('Asia/Tehran', $start->tzLabel);
     }
@@ -1000,19 +1000,19 @@ final class InstantTest extends TestCase
     public function testStartOfWeekInvalidWeekStartThrows(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        Instant::fromGregorian(2026, 4, 8)->gregorian()->startOfWeek(0);
+        CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->startOfWeek(0);
     }
 
     public function testEndOfWeekInvalidWeekStartThrows(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        Instant::fromGregorian(2026, 4, 8)->gregorian()->endOfWeek(8);
+        CivilDateTime::fromGregorian(2026, 4, 8)->gregorian()->endOfWeek(8);
     }
 
     public function testJalaliStartOfWeekSaturdayStart(): void
     {
         // Iranian convention: Saturday start
-        $i = Instant::fromJalali(1405, 1, 19); // = 2026-04-08 Wednesday
+        $i = CivilDateTime::fromJalali(1405, 1, 19); // = 2026-04-08 Wednesday
         $start = $i->jalali()->startOfWeek(6);
         $j = $start->jalali();
         // Saturday start from Wednesday: goes back to Jalali 1405/01/16
@@ -1025,16 +1025,16 @@ final class InstantTest extends TestCase
 
     public function testDiffInMonthsAcrossYears(): void
     {
-        $a = Instant::fromGregorian(2026, 4, 15);
-        $b = Instant::fromGregorian(2023, 11, 15);
+        $a = CivilDateTime::fromGregorian(2026, 4, 15);
+        $b = CivilDateTime::fromGregorian(2023, 11, 15);
         $this->assertSame(29, $a->gregorian()->diffInMonths($b));
         $this->assertSame(-29, $b->gregorian()->diffInMonths($a));
     }
 
     public function testDiffInMonthsDayNotReached(): void
     {
-        $a = Instant::fromGregorian(2026, 4, 14);
-        $b = Instant::fromGregorian(2026, 3, 15);
+        $a = CivilDateTime::fromGregorian(2026, 4, 14);
+        $b = CivilDateTime::fromGregorian(2026, 3, 15);
         $this->assertSame(0, $a->gregorian()->diffInMonths($b));
         $this->assertSame(0, $b->gregorian()->diffInMonths($a));
     }
@@ -1043,14 +1043,14 @@ final class InstantTest extends TestCase
     {
         // Jan 31 + 1 month clamps to Feb 28, but Feb 28 has not reached
         // day 31, so the diff back counts no whole month. Documented.
-        $jan31 = Instant::fromGregorian(2026, 1, 31);
+        $jan31 = CivilDateTime::fromGregorian(2026, 1, 31);
         $feb28 = $jan31->gregorian()->addMonths(1);
         $this->assertSame(0, $feb28->gregorian()->diffInMonths($jan31));
     }
 
     public function testDiffInMonthsInvertsAddMonthsForEveryCalendar(): void
     {
-        $start = Instant::fromGregorian(2026, 4, 8);
+        $start = CivilDateTime::fromGregorian(2026, 4, 8);
         foreach (['gregorian', 'jalali', 'hijri', 'hijriCivil'] as $cal) {
             foreach ([-250, -13, -1, 0, 1, 12, 37, 400] as $n) {
                 // Day 1..28 of every calendar survives addMonths without clamping.
@@ -1065,53 +1065,53 @@ final class InstantTest extends TestCase
 
     public function testDiffInYearsSameDateDifferentYear(): void
     {
-        $a = Instant::fromGregorian(2026, 4, 8);
-        $b = Instant::fromGregorian(2025, 4, 8);
+        $a = CivilDateTime::fromGregorian(2026, 4, 8);
+        $b = CivilDateTime::fromGregorian(2025, 4, 8);
         $this->assertSame(1, $a->gregorian()->diffInYears($b));
     }
 
     public function testDiffInYearsDayNotReached(): void
     {
-        $a = Instant::fromGregorian(2025, 2, 28);
-        $b = Instant::fromGregorian(2024, 2, 29);
+        $a = CivilDateTime::fromGregorian(2025, 2, 28);
+        $b = CivilDateTime::fromGregorian(2024, 2, 29);
         // Feb 28 hasn't reached Feb 29 yet → 0
         $this->assertSame(0, $a->gregorian()->diffInYears($b));
     }
 
     public function testDiffInYearsLeapDayToMarch1(): void
     {
-        $a = Instant::fromGregorian(2025, 3, 1);
-        $b = Instant::fromGregorian(2024, 2, 29);
+        $a = CivilDateTime::fromGregorian(2025, 3, 1);
+        $b = CivilDateTime::fromGregorian(2024, 2, 29);
         // Month has passed → 1
         $this->assertSame(1, $a->gregorian()->diffInYears($b));
     }
 
     public function testDiffInYearsNegative(): void
     {
-        $a = Instant::fromGregorian(2024, 4, 8);
-        $b = Instant::fromGregorian(2026, 4, 8);
+        $a = CivilDateTime::fromGregorian(2024, 4, 8);
+        $b = CivilDateTime::fromGregorian(2026, 4, 8);
         $this->assertSame(-2, $a->gregorian()->diffInYears($b));
     }
 
     public function testDiffInYearsSymmetry(): void
     {
-        $a = Instant::fromGregorian(2026, 4, 8);
-        $b = Instant::fromGregorian(2016, 4, 8);
+        $a = CivilDateTime::fromGregorian(2026, 4, 8);
+        $b = CivilDateTime::fromGregorian(2016, 4, 8);
         $this->assertSame(10, $a->gregorian()->diffInYears($b));
         $this->assertSame(-10, $b->gregorian()->diffInYears($a));
     }
 
     public function testDiffInYearsSameDate(): void
     {
-        $a = Instant::fromGregorian(2026, 4, 8);
+        $a = CivilDateTime::fromGregorian(2026, 4, 8);
         $this->assertSame(0, $a->gregorian()->diffInYears($a));
     }
 
     public function testDiffInYearsJalaliLeapEdge(): void
     {
         // 1403 is a Jalali leap year: Esfand 30 → 1404 Esfand 29
-        $a = Instant::fromJalali(1404, 12, 29);
-        $b = Instant::fromJalali(1403, 12, 30);
+        $a = CivilDateTime::fromJalali(1404, 12, 29);
+        $b = CivilDateTime::fromJalali(1403, 12, 30);
         // Day not reached (29 < 30) → 0
         $this->assertSame(0, $a->jalali()->diffInYears($b));
     }
@@ -1120,20 +1120,20 @@ final class InstantTest extends TestCase
 
     public function testFormatPTokenWithTimezone(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'UTC');
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'UTC');
         $this->assertSame('+00:00', $i->gregorian()->format('P'));
     }
 
     public function testFormatOTokenWithTimezone(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'UTC');
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'UTC');
         $this->assertSame('+0000', $i->gregorian()->format('O'));
     }
 
     public function testFormatCTokenOnJalaliReturnsGregorian(): void
     {
         // ISO 8601 output should be Gregorian regardless of the view
-        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
         $jalaliC = $i->jalali()->format('c');
         $gregorianC = $i->gregorian()->format('c');
         // Both produce the same ISO 8601 string since c delegates to DTI
@@ -1142,7 +1142,7 @@ final class InstantTest extends TestCase
 
     public function testFormatRTokenOutputsRfc2822(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
         $r = $i->gregorian()->format('r');
         $dti = $i->toDateTimeImmutable();
         $this->assertSame($dti->format('r'), $r);
@@ -1150,14 +1150,14 @@ final class InstantTest extends TestCase
 
     public function testTimezoneTokenThrowsWithoutTzLabel(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8);
+        $i = CivilDateTime::fromGregorian(2026, 4, 8);
         $this->expectException(MissingTimezoneException::class);
         $i->gregorian()->format('P');
     }
 
     public function testTimezoneTokensNotTransliteratedInFullPattern(): void
     {
-        $i = Instant::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
+        $i = CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
         $view = $i->jalali()->withLocale('fa')->withDigits('persian');
         // P token should not have Persian digits
         $this->assertSame('+03:30', $view->format('P'));
@@ -1165,7 +1165,7 @@ final class InstantTest extends TestCase
 
     public function testTimezoneTokenEscapedDoesNotThrowWithoutTz(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8);
+        $i = CivilDateTime::fromGregorian(2026, 4, 8);
         // Escaped \P, \O, etc. should not trigger DTI construction or throw
         $this->assertSame('P+O', $i->gregorian()->format('\P+\O'));
     }
@@ -1175,25 +1175,25 @@ final class InstantTest extends TestCase
     public function testNowWithInvalidTimezoneThrows(): void
     {
         $this->expectException(InvalidTimezoneException::class);
-        Instant::now('InvalidZone');
+        CivilDateTime::now('InvalidZone');
     }
 
     public function testTodayWithInvalidTimezoneThrows(): void
     {
         $this->expectException(InvalidTimezoneException::class);
-        Instant::today('InvalidZone');
+        CivilDateTime::today('InvalidZone');
     }
 
     public function testToDateTimeImmutableWithInvalidTzLabelThrows(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8, 0, 0, 0, 'InvalidZone');
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 0, 0, 0, 'InvalidZone');
         $this->expectException(InvalidTimezoneException::class);
         $i->toDateTimeImmutable();
     }
 
     public function testNowWithValidOffsetSucceeds(): void
     {
-        $i = Instant::now('+03:30');
+        $i = CivilDateTime::now('+03:30');
         $this->assertSame('+03:30', $i->tzLabel);
     }
 
@@ -1201,7 +1201,7 @@ final class InstantTest extends TestCase
 
     public function testStartOfWeekEnumMatchesInt(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8);
+        $i = CivilDateTime::fromGregorian(2026, 4, 8);
         $fromEnum = $i->gregorian()->startOfWeek(WeekDay::Saturday);
         $fromInt = $i->gregorian()->startOfWeek(6);
         $this->assertSame($fromInt->jdn, $fromEnum->jdn);
@@ -1209,7 +1209,7 @@ final class InstantTest extends TestCase
 
     public function testEndOfWeekEnumMatchesInt(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8);
+        $i = CivilDateTime::fromGregorian(2026, 4, 8);
         $fromEnum = $i->gregorian()->endOfWeek(WeekDay::Sunday);
         $fromInt = $i->gregorian()->endOfWeek(7);
         $this->assertSame($fromInt->jdn, $fromEnum->jdn);

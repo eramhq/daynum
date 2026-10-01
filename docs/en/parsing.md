@@ -21,7 +21,7 @@ HijriCivilView::parseExact('0001/1/1', 'Y/n/j');    // Y still requires 4+ digit
 JalaliView::tryParseExact('not-a-date', 'Y/m/d');   // null
 ```
 
-Both return an `Instant` (not a view) on success. On failure, `parseExact` throws `ParseException`, `tryParseExact` returns `null`.
+Both return a `CivilDateTime` (not a view) on success. On failure, `parseExact` throws `ParseException`, `tryParseExact` returns `null`.
 
 ## Parseable tokens
 
@@ -103,7 +103,7 @@ A parsed `P`/`p`/`O` offset **overrides** any `$tzLabel` parameter passed to `pa
 
 ## Required fields
 
-A format must include at least `Y`, one of `m`/`n`, and one of `d`/`j`. Hours, minutes, and seconds default to `0`. If you parse without time tokens, the resulting `Instant` has `secondsOfDay == 0`.
+A format must include at least `Y`, one of `m`/`n`, and one of `d`/`j`. Hours, minutes, and seconds default to `0`. If you parse without time tokens, the resulting `CivilDateTime` has `secondsOfDay == 0`.
 
 ```php
 GregorianView::parseExact('2026-04-08', 'Y-m-d')

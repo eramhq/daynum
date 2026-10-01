@@ -2,52 +2,49 @@
 
 Daynum keeps five ideas in play. Understanding them up front makes every other page obvious.
 
-## Instant is civil, not UTC
+## CivilDateTime is wall-clock time
 
-> **The #1 footgun.** Read this first.
+`CivilDateTime` is a calendar-neutral **wall-clock** date-time: the triple `(JDN, time-of-day, timezone label)`. The label is carried along for formatting and for handing off to `DateTimeImmutable`; Daynum's own arithmetic and comparison never consult it.
 
-Daynum's `Instant` is **not** a UTC timeline instant (unlike `java.time.Instant`). It is a calendar-neutral **civil datetime**: the triple `(JDN, time-of-day, timezone label)`.
-
-Two `Instant` objects with the same JDN and time but different `tzLabel` values represent **different physical moments**. Comparison methods (`equals`, `lessThan`, etc.) compare wall-clock readings, not physical instants.
+So two values with the same date and time but different labels compare equal, even though they are different moments on the UTC timeline:
 
 ```php
-$a = Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
-$b = Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'UTC');
+$a = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
+$b = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'UTC');
 
-$a->equals($b);    // true — same JDN, same seconds-of-day
-// But they are 3.5 hours apart on the UTC timeline!
+$a->equals($b);    // true — same wall-clock reading
 ```
 
-For timeline-order comparison across timezones, convert to `DateTimeImmutable` first via `$instant->toDateTimeImmutable()`. That is the escape hatch for all "real" timezone math — see [timezones.md](timezones.md).
+For timeline-order comparison across timezones, convert with `$d->toDateTimeImmutable()`. That is the escape hatch for all real timezone math — see [timezones.md](timezones.md).
 
 ## Julian Day Number (JDN) is the interlingua
 
 Every calendar in Daynum converts to and from the Julian Day Number — the integer count of days since a fixed epoch (noon UT, 1 January 4713 BC Julian). This means converting between any two calendars is as trivial as composing two functions.
 
 ```php
-$d = Instant::fromJalali(1405, 1, 19);
+$d = CivilDateTime::fromJalali(1405, 1, 19);
 $d->gregorian()->format('Y-m-d');   // "2026-04-08"
 $d->hijri()->format('j F Y');       // "21 Shawwal 1447"
 ```
 
-You never touch JDNs directly in normal use — they live on the `Instant` as `$d->jdn`, but you read dates through calendar *views*.
+You never touch JDNs directly in normal use — they live on the `CivilDateTime` as `$d->jdn`, but you read dates through calendar *views*.
 
-## Instant vs. View
+## CivilDateTime vs. View
 
-`Instant` is the immutable value. A **view** (`GregorianView`, `JalaliView`, `HijriUmmAlQuraView`, `HijriCivilView`) pairs that `Instant` with a specific calendar system and locale.
+`CivilDateTime` is the immutable value. A **view** (`GregorianView`, `JalaliView`, `HijriUmmAlQuraView`, `HijriCivilView`) pairs that `CivilDateTime` with a specific calendar system and locale.
 
 ```php
-$d = Instant::fromGregorian(2026, 4, 8);     // just an Instant
+$d = CivilDateTime::fromGregorian(2026, 4, 8);     // just a CivilDateTime
 
 $d->gregorian()->year();                      // 2026 — entered a view
-$d->jalali()->year();                         // 1405 — different view, same Instant
+$d->jalali()->year();                         // 1405 — different view, same CivilDateTime
 $d->jalali()->format('l j F Y');              // "Wednesday 19 Farvardin 1405"
 ```
 
-**Arithmetic on a view returns an `Instant`, not another view.** To format the result, re-enter a view:
+**Arithmetic on a view returns a `CivilDateTime`, not another view.** To format the result, re-enter a view:
 
 ```php
-$next = $d->jalali()->addMonths(1);   // Instant
+$next = $d->jalali()->addMonths(1);   // CivilDateTime
 $next->jalali()->format('Y/m/d');     // re-enter Jalali view to format
 ```
 
@@ -58,12 +55,12 @@ This shape is deliberate: the arithmetic is calendar-specific (month-clamping di
 Every value type in Daynum is a `final` class with `readonly` properties. Methods that appear to mutate — `addDays`, `subMonths`, `withLocale`, `withDigits`, `withTzLabel` — always return a new instance.
 
 ```php
-$a = Instant::fromJalali(1405, 1, 19);
+$a = CivilDateTime::fromJalali(1405, 1, 19);
 $b = $a->jalali()->addDays(7);        // $a is unchanged
 $a === $b;                             // false
 ```
 
-You can safely share an `Instant` across threads, caches, or call sites without worrying about aliasing.
+You can safely share a `CivilDateTime` across threads, caches, or call sites without worrying about aliasing.
 
 ## Design decisions
 

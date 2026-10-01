@@ -8,32 +8,32 @@ Task-indexed recipes. Each one is copy-pasteable and runs against Daynum as ship
 2. [Display a date in both Jalali and Hijri alongside Gregorian](#display-a-date-in-both-jalali-and-hijri-alongside-gregorian)
 3. [Parse user input safely with `tryParseExact`](#parse-user-input-safely-with-tryparseexact)
 4. [Format with Persian digits and Persian month names](#format-with-persian-digits-and-persian-month-names)
-5. [Persist and reload an `Instant` via JSON](#persist-and-reload-an-instant-via-json)
-6. [Store an `Instant` in a database (three-column pattern)](#store-an-instant-in-a-database-three-column-pattern)
+5. [Persist and reload a `CivilDateTime` via JSON](#persist-and-reload-a-civildatetime-via-json)
+6. [Store a `CivilDateTime` in a database (three-column pattern)](#store-a-civildatetime-in-a-database-three-column-pattern)
 7. [Add months at the end of month (clamping behavior)](#add-months-at-the-end-of-month-clamping-behavior)
 8. [Handle the Umm al-Qura range boundary (fall back to civil)](#handle-the-umm-al-qura-range-boundary-fall-back-to-civil)
 9. [Do timezone math by escape-hatching to `DateTimeImmutable`](#do-timezone-math-by-escape-hatching-to-datetimeimmutable)
-10. [Convert an `Instant` between timezones](#convert-an-instant-between-timezones)
+10. [Convert a `CivilDateTime` between timezones](#convert-a-civildatetime-between-timezones)
 11. [Use Daynum in a Laravel request/response](#use-daynum-in-a-laravel-requestresponse)
 
 ## Convert a Gregorian date to Jalali (and back)
 
 ```php
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 
-$g = Instant::fromGregorian(2026, 4, 8);
+$g = CivilDateTime::fromGregorian(2026, 4, 8);
 echo $g->jalali()->format('Y/m/d'), "\n";    // 1405/01/19
 
-$j = Instant::fromJalali(1405, 1, 19);
+$j = CivilDateTime::fromJalali(1405, 1, 19);
 echo $j->gregorian()->format('Y-m-d'), "\n"; // 2026-04-08
 ```
 
-One `Instant`, read through different views. No conversion functions — views do the work.
+One `CivilDateTime`, read through different views. No conversion functions — views do the work.
 
 ## Display a date in both Jalali and Hijri alongside Gregorian
 
 ```php
-$d = Instant::fromGregorian(2026, 4, 8);
+$d = CivilDateTime::fromGregorian(2026, 4, 8);
 
 printf(
     "%s   |   %s   |   %s\n",
@@ -48,7 +48,7 @@ printf(
 ```php
 use Eram\Daynum\Calendar\Jalali\JalaliView;
 
-function parseJalaliBirthday(string $raw): ?Instant
+function parseJalaliBirthday(string $raw): ?CivilDateTime
 {
     foreach (['Y/m/d', 'Y-m-d', 'Y.m.d'] as $fmt) {
         $d = JalaliView::tryParseExact($raw, $fmt);
@@ -59,8 +59,8 @@ function parseJalaliBirthday(string $raw): ?Instant
     return null;
 }
 
-parseJalaliBirthday('۱۴۰۵/۰۱/۱۹');     // Instant — Persian digits normalized
-parseJalaliBirthday('1405-01-19');    // Instant
+parseJalaliBirthday('۱۴۰۵/۰۱/۱۹');     // CivilDateTime — Persian digits normalized
+parseJalaliBirthday('1405-01-19');    // CivilDateTime
 parseJalaliBirthday('nope');          // null
 ```
 
@@ -69,7 +69,7 @@ parseJalaliBirthday('nope');          // null
 ## Format with Persian digits and Persian month names
 
 ```php
-$d = Instant::fromJalali(1405, 1, 19, 14, 30);
+$d = CivilDateTime::fromJalali(1405, 1, 19, 14, 30);
 
 $output = $d->jalali()
     ->withLocale('fa')
@@ -78,10 +78,10 @@ $output = $d->jalali()
 // "چهارشنبه ۱۹ فروردین ۱۴۰۵ — ۱۴:۳۰"
 ```
 
-## Persist and reload an `Instant` via JSON
+## Persist and reload a `CivilDateTime` via JSON
 
 ```php
-$original = Instant::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
+$original = CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
 
 // Persist
 $json = json_encode($original);
@@ -89,7 +89,7 @@ $json = json_encode($original);
 
 // Reload
 $decoded = json_decode($json, true);
-$restored = Instant::fromArray($decoded);
+$restored = CivilDateTime::fromArray($decoded);
 
 $restored->equals($original);                         // true
 $restored->jalali()->format('Y/m/d H:i');             // "1405/01/19 14:30"
@@ -98,7 +98,7 @@ $restored->gregorian()->format('Y-m-d H:i');          // "2026-04-08 14:30"
 
 The contract: `jdn`, `secondsOfDay`, `tzLabel`. Nothing else. See [serialization.md](serialization.md).
 
-## Store an `Instant` in a database (three-column pattern)
+## Store a `CivilDateTime` in a database (three-column pattern)
 
 ```sql
 CREATE TABLE events (
@@ -119,15 +119,15 @@ $pdo->prepare(
 
 // Select
 $row = $pdo->query("SELECT * FROM events WHERE id = 42")->fetch();
-$d = new Instant(
+$d = new CivilDateTime(
     jdn: (int) $row['event_jdn'],
     secondsOfDay: (int) $row['event_sod'],
     tzLabel: $row['event_tz'],
 );
 
 // Range query — pure integer comparison, index-friendly
-$min = Instant::fromJalali(1405, 1, 1)->jdn;
-$max = Instant::fromJalali(1405, 12, 29)->jdn;
+$min = CivilDateTime::fromJalali(1405, 1, 1)->jdn;
+$max = CivilDateTime::fromJalali(1405, 12, 29)->jdn;
 $stmt = $pdo->prepare("SELECT * FROM events WHERE event_jdn BETWEEN ? AND ?");
 $stmt->execute([$min, $max]);
 ```
@@ -138,13 +138,13 @@ See [serialization.md](serialization.md#db-persistence-patterns) for alternative
 
 ```php
 // Gregorian: Jan 31 + 1 month → Feb 28/29 (clamped)
-$d = Instant::fromGregorian(2026, 1, 31);
+$d = CivilDateTime::fromGregorian(2026, 1, 31);
 $d->gregorian()->addMonths(1);       // → 2026-02-28
 $d->gregorian()->addMonths(2);       // → 2026-03-31 (no clamp needed)
 $d->gregorian()->addMonths(3);       // → 2026-04-30
 
 // Jalali: Shahrivar 31 + 1 month → Mehr 30 (clamped)
-$d = Instant::fromJalali(1405, 6, 31);
+$d = CivilDateTime::fromJalali(1405, 6, 31);
 $next = $d->jalali()->addMonths(1);
 $next->jalali()->format('Y/m/d');    // "1405/07/30"
 ```
@@ -156,7 +156,7 @@ Clamping matches Carbon, `java.time`, and most mainstream date libraries. See [a
 ```php
 use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
 
-function renderHijri(Instant $d): string
+function renderHijri(CivilDateTime $d): string
 {
     try {
         return $d->hijri()->format('j F Y');          // prefer UAQ
@@ -166,10 +166,10 @@ function renderHijri(Instant $d): string
 }
 
 // Modern date: uses UAQ
-renderHijri(Instant::fromGregorian(2026, 4, 8));      // "21 Shawwal 1447"
+renderHijri(CivilDateTime::fromGregorian(2026, 4, 8));      // "21 Shawwal 1447"
 
 // Historical date: falls back to civil
-renderHijri(Instant::fromGregorian(1500, 1, 1));      // "5 Shaʻban 905 (civil)"
+renderHijri(CivilDateTime::fromGregorian(1500, 1, 1));      // "5 Shaʻban 905 (civil)"
 ```
 
 See [calendars/hijri-umm-al-qura.md](calendars/hijri-umm-al-qura.md).
@@ -179,25 +179,25 @@ See [calendars/hijri-umm-al-qura.md](calendars/hijri-umm-al-qura.md).
 Daynum does not do DST. When you need real timezone arithmetic, escape, compute, re-import.
 
 ```php
-function addHours(Instant $d, int $hours): Instant
+function addHours(CivilDateTime $d, int $hours): CivilDateTime
 {
     $native = $d->toDateTimeImmutable()->modify("+{$hours} hours");
-    return Instant::fromDateTime($native);
+    return CivilDateTime::fromDateTime($native);
 }
 
-$d = Instant::fromGregorian(2026, 3, 29, 1, 30, 0, 'Europe/London');  // just before BST
+$d = CivilDateTime::fromGregorian(2026, 3, 29, 1, 30, 0, 'Europe/London');  // just before BST
 $d2 = addHours($d, 1);
 $d2->gregorian()->format('Y-m-d H:i T');    // "2026-03-29 03:30 BST"
 ```
 
 See [timezones.md](timezones.md).
 
-## Convert an `Instant` between timezones
+## Convert a `CivilDateTime` between timezones
 
 ```php
-$tehran = Instant::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
+$tehran = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
 
-$utc = Instant::fromDateTime(
+$utc = CivilDateTime::fromDateTime(
     $tehran->toDateTimeImmutable()->setTimezone(new DateTimeZone('UTC'))
 );
 $utc->gregorian()->format('Y-m-d H:i T');   // "2026-04-08 11:00 UTC"
@@ -209,16 +209,16 @@ $utc->gregorian()->format('Y-m-d H:i T');   // "2026-04-08 11:00 UTC"
 
 ```php
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 
-class InstantCast implements CastsAttributes
+class CivilDateTimeCast implements CastsAttributes
 {
-    public function get($model, string $key, $value, array $attributes): ?Instant
+    public function get($model, string $key, $value, array $attributes): ?CivilDateTime
     {
         if ($value === null) {
             return null;
         }
-        return Instant::fromArray(json_decode($value, true));
+        return CivilDateTime::fromArray(json_decode($value, true));
     }
 
     public function set($model, string $key, $value, array $attributes): ?string
@@ -229,7 +229,7 @@ class InstantCast implements CastsAttributes
 
 // In your model:
 protected $casts = [
-    'event_at' => InstantCast::class,
+    'event_at' => CivilDateTimeCast::class,
 ];
 ```
 

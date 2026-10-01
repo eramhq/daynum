@@ -7,7 +7,7 @@ namespace Eram\Daynum\Tests\Property;
 use Eram\Daynum\Calendar\Hijri\HijriCivilCalendar;
 use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraCalendar;
 use Eram\Daynum\Calendar\Hijri\Table;
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -30,9 +30,9 @@ final class HijriRoundTripTest extends TestCase
             $m = $rng(1, 12);
             $d = $rng(1, 28);
 
-            $instant = Instant::fromGregorian($y, $m, $d);
-            $h = $instant->hijriCivil();
-            $back = Instant::fromHijriCivil($h->year(), $h->month(), $h->day())->gregorian();
+            $dateTime = CivilDateTime::fromGregorian($y, $m, $d);
+            $h = $dateTime->hijriCivil();
+            $back = CivilDateTime::fromHijriCivil($h->year(), $h->month(), $h->day())->gregorian();
 
             $this->assertSame(
                 [$y, $m, $d],
@@ -51,9 +51,9 @@ final class HijriRoundTripTest extends TestCase
             $m = $rng(1, 12);
             $d = $rng(1, $c->daysInMonth($y, $m));
 
-            $instant = Instant::fromHijriCivil($y, $m, $d);
-            $g = $instant->gregorian();
-            $back = Instant::fromGregorian($g->year(), $g->month(), $g->day())->hijriCivil();
+            $dateTime = CivilDateTime::fromHijriCivil($y, $m, $d);
+            $g = $dateTime->gregorian();
+            $back = CivilDateTime::fromGregorian($g->year(), $g->month(), $g->day())->hijriCivil();
 
             $this->assertSame(
                 [$y, $m, $d],
@@ -73,9 +73,9 @@ final class HijriRoundTripTest extends TestCase
             $m = $rng(1, 12);
             $d = $rng(1, 28);
 
-            $instant = Instant::fromGregorian($y, $m, $d);
-            $h = $instant->hijri();
-            $back = Instant::fromHijri($h->year(), $h->month(), $h->day())->gregorian();
+            $dateTime = CivilDateTime::fromGregorian($y, $m, $d);
+            $h = $dateTime->hijri();
+            $back = CivilDateTime::fromHijri($h->year(), $h->month(), $h->day())->gregorian();
 
             $this->assertSame(
                 [$y, $m, $d],
@@ -94,9 +94,9 @@ final class HijriRoundTripTest extends TestCase
             $m = $rng(1, 12);
             $d = $rng(1, $c->daysInMonth($y, $m));
 
-            $instant = Instant::fromHijri($y, $m, $d);
-            $g = $instant->gregorian();
-            $back = Instant::fromGregorian($g->year(), $g->month(), $g->day())->hijri();
+            $dateTime = CivilDateTime::fromHijri($y, $m, $d);
+            $g = $dateTime->gregorian();
+            $back = CivilDateTime::fromGregorian($g->year(), $g->month(), $g->day())->hijri();
 
             $this->assertSame(
                 [$y, $m, $d],
@@ -115,7 +115,7 @@ final class HijriRoundTripTest extends TestCase
             $d = $rng(1, 28);
             $offset = $rng(1, 5_000);
 
-            $a = Instant::fromGregorian($y, $m, $d);
+            $a = CivilDateTime::fromGregorian($y, $m, $d);
             $b = $a->gregorian()->addDays($offset);
             $this->assertTrue($a->lessThan($b));
 
@@ -135,11 +135,11 @@ final class HijriRoundTripTest extends TestCase
             $m = $rng(1, 12);
             $d = $rng(1, 28);
 
-            $instant = Instant::fromGregorian($y, $m, $d);
-            $g = $instant->gregorian()->dayOfWeek();
-            $j = $instant->jalali()->dayOfWeek();
-            $hc = $instant->hijriCivil()->dayOfWeek();
-            $h = $instant->hijri()->dayOfWeek();
+            $dateTime = CivilDateTime::fromGregorian($y, $m, $d);
+            $g = $dateTime->gregorian()->dayOfWeek();
+            $j = $dateTime->jalali()->dayOfWeek();
+            $hc = $dateTime->hijriCivil()->dayOfWeek();
+            $h = $dateTime->hijri()->dayOfWeek();
             $this->assertSame($g, $j);
             $this->assertSame($g, $hc);
             $this->assertSame($g, $h);

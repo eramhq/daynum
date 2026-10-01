@@ -33,14 +33,14 @@ Use Umm al-Qura (`fromHijri` / `->hijri()`) for:
 ## Construction
 
 ```php
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 
-Instant::fromHijriCivil(1447, 10, 21);
-Instant::fromHijriCivil(1, 1, 1);         // earliest representable
-Instant::fromHijriCivil(9666, 12, 29);    // latest representable
+CivilDateTime::fromHijriCivil(1447, 10, 21);
+CivilDateTime::fromHijriCivil(1, 1, 1);         // earliest representable
+CivilDateTime::fromHijriCivil(9666, 12, 29);    // latest representable
 
-Instant::tryFromHijriCivil(1447, 13, 1);   // null — month 13 invalid
-Instant::isValidHijriCivil(1447, 1, 30);   // true — Muharram has 30 days
+CivilDateTime::tryFromHijriCivil(1447, 13, 1);   // null — month 13 invalid
+CivilDateTime::isValidHijriCivil(1447, 1, 30);   // true — Muharram has 30 days
 ```
 
 ## Accuracy vs. ICU
@@ -79,7 +79,7 @@ Odd months have 30 days, even months have 29. Dhu al-Hijjah gets a 30th day only
 ## Viewing
 
 ```php
-$d = Instant::fromHijriCivil(1447, 10, 21);
+$d = CivilDateTime::fromHijriCivil(1447, 10, 21);
 
 $d->hijriCivil()->year();           // 1447
 $d->hijriCivil()->month();          // 10
@@ -94,7 +94,7 @@ $d->hijriCivil()->dayOfYear();      // 1..354 or 1..355
 Both Hijri variants share a locale family (`hijri`), so month names are identical:
 
 ```php
-$d = Instant::fromHijriCivil(1447, 10, 21);
+$d = CivilDateTime::fromHijriCivil(1447, 10, 21);
 
 $d->hijriCivil()->format('j F Y');                                  // "21 Shawwal 1447"
 $d->hijriCivil()->withLocale('fa')->format('j F Y');                // "21 شوال 1447"

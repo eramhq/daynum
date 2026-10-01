@@ -34,7 +34,7 @@ All exceptions are `final`. They extend appropriate SPL base classes so existing
 
 **Extends**: `\InvalidArgumentException`
 
-**Thrown by**: `Instant::fromGregorian`, `fromJalali`, `fromHijri`, `fromHijriCivil` (via the calendar's `toJdn`), the `Instant` constructor for out-of-range time-of-day, calendar `daysInMonth` for invalid month numbers.
+**Thrown by**: `CivilDateTime::fromGregorian`, `fromJalali`, `fromHijri`, `fromHijriCivil` (via the calendar's `toJdn`), the `CivilDateTime` constructor for out-of-range time-of-day, calendar `daysInMonth` for invalid month numbers.
 
 **When**: the components do not form a valid date in the target calendar. Examples:
 
@@ -50,32 +50,32 @@ All exceptions are `final`. They extend appropriate SPL base classes so existing
 use Eram\Daynum\Exception\InvalidDateException;
 
 try {
-    $d = Instant::fromJalali(1405, 13, 1);
+    $d = CivilDateTime::fromJalali(1405, 13, 1);
 } catch (InvalidDateException $e) {
     // $e->getMessage() → "Invalid jalali date 1405-13-01: month must be in [1, 12]"
 }
 
 // Or preflight
-if (Instant::isValidJalali($year, $month, $day)) {
-    $d = Instant::fromJalali($year, $month, $day);
+if (CivilDateTime::isValidJalali($year, $month, $day)) {
+    $d = CivilDateTime::fromJalali($year, $month, $day);
 }
 
 // Or use the safe variant
-$d = Instant::tryFromJalali($year, $month, $day);   // null on invalid
+$d = CivilDateTime::tryFromJalali($year, $month, $day);   // null on invalid
 ```
 
 ## `InvalidArgumentException`
 
 **Extends**: `\InvalidArgumentException`
 
-**Thrown by**: `Instant::fromArray()` on malformed input; `withLocale()` on unknown locale tags; `withDigits()` on unknown digit scripts; `startOfWeek()`/`endOfWeek()` on out-of-range `weekStart`.
+**Thrown by**: `CivilDateTime::fromArray()` on malformed input; `withLocale()` on unknown locale tags; `withDigits()` on unknown digit scripts; `startOfWeek()`/`endOfWeek()` on out-of-range `weekStart`.
 
 **When**: a method received an argument outside its accepted domain that isn't date-component-invalid.
 
 ```php
 $d->jalali()->withLocale('zh');       // throws: "Unknown locale 'zh'. Daynum ships 'en', 'fa', 'ar'."
 $d->jalali()->withDigits('xyz');      // throws: "Unknown digit script 'xyz'."
-Instant::fromArray(['jdn' => '2461139']);  // throws: "fromArray() requires an integer 'jdn' key"
+CivilDateTime::fromArray(['jdn' => '2461139']);  // throws: "fromArray() requires an integer 'jdn' key"
 ```
 
 ## `ParseException`
@@ -115,12 +115,12 @@ $d = JalaliView::tryParseExact($input, 'Y/m/d');   // null on any parse failure
 
 **Extends**: `\RuntimeException`
 
-**Thrown by**: the `Instant` constructor (via `resolveZone`) when it can't build a `DateTimeZone` from the given `tzLabel`.
+**Thrown by**: the `CivilDateTime` constructor (via `resolveZone`) when it can't build a `DateTimeZone` from the given `tzLabel`.
 
 **When**: `tzLabel` is non-null and PHP's `new DateTimeZone($label)` throws — typically because the label is a typo, a legacy abbreviation, or a deprecated identifier.
 
 ```php
-Instant::fromGregorian(2026, 4, 8, 0, 0, 0, 'Tehran');
+CivilDateTime::fromGregorian(2026, 4, 8, 0, 0, 0, 'Tehran');
 // → InvalidTimezoneException: Invalid or unknown timezone: "Tehran".
 // (correct: 'Asia/Tehran')
 ```
@@ -131,12 +131,12 @@ Instant::fromGregorian(2026, 4, 8, 0, 0, 0, 'Tehran');
 
 **Extends**: `\RuntimeException`
 
-**Thrown by**: `DateTokenFormatter` when a timezone-dependent token is used on an `Instant` without a `tzLabel`.
+**Thrown by**: `DateTokenFormatter` when a timezone-dependent token is used on a `CivilDateTime` without a `tzLabel`.
 
-**When**: you call `format()` with any of `T`, `U`, `O`, `P`, `p`, `Z`, `I`, `c`, `r`, or `e` and the `Instant`'s `tzLabel` is `null`.
+**When**: you call `format()` with any of `T`, `U`, `O`, `P`, `p`, `Z`, `I`, `c`, `r`, or `e` and the `CivilDateTime`'s `tzLabel` is `null`.
 
 ```php
-$d = Instant::fromGregorian(2026, 4, 8);    // no tzLabel
+$d = CivilDateTime::fromGregorian(2026, 4, 8);    // no tzLabel
 $d->gregorian()->format('Y-m-d H:i P');
 // → MissingTimezoneException: Format token "P" requires a timezone ...
 ```
@@ -154,7 +154,7 @@ Or drop the tz-dependent token from the pattern. See [timezones.md](timezones.md
 
 **Extends**: `\OutOfRangeException`
 
-**Thrown by**: `HijriUmmAlQuraCalendar::toJdn`, `fromJdn`, `isLeapYear`, `daysInMonth`, `dayOfYear` — i.e., `Instant::fromHijri` at construction and `$d->hijri()->year()` / `->month()` / `->format()` at read time.
+**Thrown by**: `HijriUmmAlQuraCalendar::toJdn`, `fromJdn`, `isLeapYear`, `daysInMonth`, `dayOfYear` — i.e., `CivilDateTime::fromHijri` at construction and `$d->hijri()->year()` / `->month()` / `->format()` at read time.
 
 **When**: the date (or JDN) falls outside the bundled UAQ table range (`Table::MIN_YEAR` to `Table::MAX_YEAR`, currently AH 1300–1600). Outside that window, ICU's own UAQ data silently falls through to the arithmetic civil calendar, which Daynum refuses to mirror.
 
@@ -164,18 +164,18 @@ Or drop the tz-dependent token from the pattern. See [timezones.md](timezones.md
 use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
 
 try {
-    $d = Instant::fromHijri($year, $month, $day);
+    $d = CivilDateTime::fromHijri($year, $month, $day);
     $formatted = $d->hijri()->format('j F Y');
 } catch (UmmAlQuraOutOfRangeException) {
-    $d = Instant::fromHijriCivil($year, $month, $day);
+    $d = CivilDateTime::fromHijriCivil($year, $month, $day);
     $formatted = $d->hijriCivil()->format('j F Y');
 }
 
 // Or preflight
-if (Instant::isValidHijri($year, $month, $day)) {
-    $view = $instant->hijri();
+if (CivilDateTime::isValidHijri($year, $month, $day)) {
+    $view = $dateTime->hijri();
 } else {
-    $view = $instant->hijriCivil();
+    $view = $dateTime->hijriCivil();
 }
 ```
 
@@ -209,7 +209,7 @@ try {
 use Eram\Daynum\Exception\DaynumException;
 
 try {
-    $d = Instant::fromHijri($year, $month, $day);
+    $d = CivilDateTime::fromHijri($year, $month, $day);
     echo $d->hijri()->format($pattern);
 } catch (DaynumException $e) {
     // Covers every exception Daynum defines — including future ones —

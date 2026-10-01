@@ -7,7 +7,7 @@ namespace Eram\Daynum\Tests\Unit;
 use Eram\Daynum\Calendar\Gregorian\GregorianView;
 use Eram\Daynum\Calendar\Jalali\JalaliView;
 use Eram\Daynum\Exception\DaynumException;
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -19,50 +19,50 @@ final class DaynumExceptionContractTest extends TestCase
     public function testFromArrayWithMissingJdnImplementsDaynumException(): void
     {
         $this->expectException(DaynumException::class);
-        Instant::fromArray([]);
+        CivilDateTime::fromArray([]);
     }
 
     public function testFromArrayWithNonIntJdnImplementsDaynumException(): void
     {
         $this->expectException(DaynumException::class);
-        Instant::fromArray(['jdn' => 'abc']);
+        CivilDateTime::fromArray(['jdn' => 'abc']);
     }
 
     public function testFromArrayWithNonIntSecondsOfDayImplementsDaynumException(): void
     {
         $this->expectException(DaynumException::class);
-        Instant::fromArray(['jdn' => 2461139, 'secondsOfDay' => '0']);
+        CivilDateTime::fromArray(['jdn' => 2461139, 'secondsOfDay' => '0']);
     }
 
     public function testFromArrayWithNonStringTzLabelImplementsDaynumException(): void
     {
         $this->expectException(DaynumException::class);
-        Instant::fromArray(['jdn' => 2461139, 'tzLabel' => 123]);
+        CivilDateTime::fromArray(['jdn' => 2461139, 'tzLabel' => 123]);
     }
 
     public function testOfWithUnknownDigitScriptImplementsDaynumException(): void
     {
         $this->expectException(DaynumException::class);
-        $i = Instant::fromGregorian(2026, 1, 1);
+        $i = CivilDateTime::fromGregorian(2026, 1, 1);
         GregorianView::of($i, null, 'bogus');
     }
 
     public function testWithDigitsUnknownScriptImplementsDaynumException(): void
     {
         $this->expectException(DaynumException::class);
-        Instant::fromGregorian(2026, 1, 1)->gregorian()->withDigits('bogus');
+        CivilDateTime::fromGregorian(2026, 1, 1)->gregorian()->withDigits('bogus');
     }
 
     public function testStartOfWeekOutOfRangeImplementsDaynumException(): void
     {
         $this->expectException(DaynumException::class);
-        Instant::fromGregorian(2026, 1, 1)->gregorian()->startOfWeek(0);
+        CivilDateTime::fromGregorian(2026, 1, 1)->gregorian()->startOfWeek(0);
     }
 
     public function testUnknownLocaleImplementsDaynumException(): void
     {
         $this->expectException(DaynumException::class);
-        Instant::fromGregorian(2026, 1, 1)->gregorian()->withLocale('zz');
+        CivilDateTime::fromGregorian(2026, 1, 1)->gregorian()->withLocale('zz');
     }
 
     /**
@@ -72,7 +72,7 @@ final class DaynumExceptionContractTest extends TestCase
     public function testExceptionsAreStillInvalidArgumentException(): void
     {
         try {
-            Instant::fromArray([]);
+            CivilDateTime::fromArray([]);
             $this->fail('Expected exception');
         } catch (\InvalidArgumentException $e) {
             $this->assertInstanceOf(DaynumException::class, $e);
@@ -82,7 +82,7 @@ final class DaynumExceptionContractTest extends TestCase
     public function testFromArrayNonIntSecondsOfDayIsStillInvalidArgumentException(): void
     {
         try {
-            Instant::fromArray(['jdn' => 1, 'secondsOfDay' => '0']);
+            CivilDateTime::fromArray(['jdn' => 1, 'secondsOfDay' => '0']);
             $this->fail('Expected exception');
         } catch (\InvalidArgumentException $e) {
             $this->assertInstanceOf(DaynumException::class, $e);
@@ -92,7 +92,7 @@ final class DaynumExceptionContractTest extends TestCase
     public function testFromArrayNonStringTzLabelIsStillInvalidArgumentException(): void
     {
         try {
-            Instant::fromArray(['jdn' => 1, 'tzLabel' => 123]);
+            CivilDateTime::fromArray(['jdn' => 1, 'tzLabel' => 123]);
             $this->fail('Expected exception');
         } catch (\InvalidArgumentException $e) {
             $this->assertInstanceOf(DaynumException::class, $e);

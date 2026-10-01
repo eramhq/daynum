@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Tests\EdgeCase;
 
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -20,15 +20,15 @@ final class HijriRamadanAnchorTest extends TestCase
     /** @dataProvider anchors */
     public function testGregorianDateMatchesUaqRamadan(int $gy, int $gm, int $gd, int $hy, int $hm, int $hd): void
     {
-        $instant = Instant::fromGregorian($gy, $gm, $gd);
-        $view = $instant->hijri();
+        $dateTime = CivilDateTime::fromGregorian($gy, $gm, $gd);
+        $view = $dateTime->hijri();
         $this->assertSame($hy, $view->year());
         $this->assertSame($hm, $view->month());
         $this->assertSame($hd, $view->day());
 
         // Round-trip through fromHijri.
-        $back = Instant::fromHijri($hy, $hm, $hd);
-        $this->assertSame($instant->jdn, $back->jdn);
+        $back = CivilDateTime::fromHijri($hy, $hm, $hd);
+        $this->assertSame($dateTime->jdn, $back->jdn);
     }
 
     /** @return iterable<string, array{int,int,int,int,int,int}> */
@@ -42,7 +42,7 @@ final class HijriRamadanAnchorTest extends TestCase
 
     public function testRamadanAnchorsFormatInEnglishAndPersian(): void
     {
-        $d = Instant::fromGregorian(2024, 3, 11);
+        $d = CivilDateTime::fromGregorian(2024, 3, 11);
         $this->assertSame('1 Ramadan 1445', $d->hijri()->withLocale('en')->format('j F Y'));
         $this->assertSame('1 رمضان 1445', $d->hijri()->withLocale('fa')->format('j F Y'));
         $this->assertSame('١ رمضان ١٤٤٥', $d->hijri()->withLocale('fa')->withDigits('arab')->format('j F Y'));

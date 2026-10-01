@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Eram\Daynum;
 
 /**
- * A view pairs an {@see Instant} with a specific calendar and locale, exposing
+ * A view pairs an {@see CivilDateTime} with a specific calendar and locale, exposing
  * reading, formatting, and arithmetic in that calendar's terms.
  *
  * Views are immutable. Methods that appear to mutate (withLocale, addDays)
- * return a fresh view or Instant.
+ * return a fresh view or CivilDateTime.
  */
 interface CalendarView
 {
-    public function instant(): Instant;
+    public function dateTime(): CivilDateTime;
 
     public function calendar(): Calendar;
 
@@ -77,25 +77,25 @@ interface CalendarView
 
     public function withDigits(string $script): static;
 
-    public function addDays(int $days): Instant;
+    public function addDays(int $days): CivilDateTime;
 
-    public function subDays(int $days): Instant;
+    public function subDays(int $days): CivilDateTime;
 
-    public function addMonths(int $months): Instant;
+    public function addMonths(int $months): CivilDateTime;
 
-    public function subMonths(int $months): Instant;
+    public function subMonths(int $months): CivilDateTime;
 
-    public function addYears(int $years): Instant;
+    public function addYears(int $years): CivilDateTime;
 
-    public function subYears(int $years): Instant;
+    public function subYears(int $years): CivilDateTime;
 
-    public function startOfMonth(): Instant;
+    public function startOfMonth(): CivilDateTime;
 
-    public function endOfMonth(): Instant;
+    public function endOfMonth(): CivilDateTime;
 
-    public function startOfYear(): Instant;
+    public function startOfYear(): CivilDateTime;
 
-    public function endOfYear(): Instant;
+    public function endOfYear(): CivilDateTime;
 
     /**
      * First day of the week containing this date.
@@ -103,7 +103,7 @@ interface CalendarView
      * @param WeekDay|int $weekStart ISO day-of-week of the first day of the week
      *                               (1=Monday, 6=Saturday, 7=Sunday). Defaults to Monday.
      */
-    public function startOfWeek(WeekDay|int $weekStart = WeekDay::Monday): Instant;
+    public function startOfWeek(WeekDay|int $weekStart = WeekDay::Monday): CivilDateTime;
 
     /**
      * Last day of the week containing this date.
@@ -111,24 +111,24 @@ interface CalendarView
      * @param WeekDay|int $weekStart ISO day-of-week of the first day of the week
      *                               (1=Monday, 6=Saturday, 7=Sunday). Defaults to Monday.
      */
-    public function endOfWeek(WeekDay|int $weekStart = WeekDay::Monday): Instant;
+    public function endOfWeek(WeekDay|int $weekStart = WeekDay::Monday): CivilDateTime;
 
     /**
      * Signed difference in whole calendar months between this date and another.
      *
      * A month is not counted until the same day-of-month is reached.
      */
-    public function diffInMonths(Instant $other): int;
+    public function diffInMonths(CivilDateTime $other): int;
 
     /**
      * Signed difference in whole calendar years between this date and another.
      *
      * A year is not counted until the same day-of-month is reached.
      */
-    public function diffInYears(Instant $other): int;
+    public function diffInYears(CivilDateTime $other): int;
 
     /**
-     * Whether this instant's JDN falls within the calendar's supported range.
+     * Whether this date's JDN falls within the calendar's supported range.
      */
     public function isInSupportedRange(): bool;
 
@@ -137,5 +137,5 @@ interface CalendarView
      *
      * @see \Eram\Daynum\Calendar\AbstractCalendarView::parseExact()
      */
-    public static function tryParseExact(string $text, string $format, ?string $tzLabel = null): ?Instant;
+    public static function tryParseExact(string $text, string $format, ?string $tzLabel = null): ?CivilDateTime;
 }

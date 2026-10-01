@@ -8,11 +8,11 @@ use Eram\Daynum\Calendar;
 use Eram\Daynum\Calendar\AbstractCalendarView;
 
 /**
- * View of an {@see \Eram\Daynum\Instant} as a tabular Hijri (arithmetic Islamic)
+ * View of an {@see \Eram\Daynum\CivilDateTime} as a tabular Hijri (arithmetic Islamic)
  * date.
  *
- * Use `$instant->hijriCivil()` to construct; never `new` directly. For the
- * Saudi Umm al-Qura calendar, use `$instant->hijri()` instead — this view
+ * Use `$dateTime->hijriCivil()` to construct; never `new` directly. For the
+ * Saudi Umm al-Qura calendar, use `$dateTime->hijri()` instead — this view
  * is the arithmetic fallback that always works for AH 1..9666.
  */
 final class HijriCivilView extends AbstractCalendarView

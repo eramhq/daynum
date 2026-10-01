@@ -14,7 +14,7 @@ use OutOfRangeException;
  * which ICU exposes native Umm al-Qura data. Outside it, ICU silently falls
  * back to the tabular `islamic-civil` calendar, which is precisely the kind
  * of quiet divergence Daynum exists to avoid. If you need dates outside this
- * window, use `Instant::fromHijriCivil()` / `Instant->hijriCivil()` instead —
+ * window, use `CivilDateTime::fromHijriCivil()` / `CivilDateTime->hijriCivil()` instead —
  * the arithmetic civil calendar has no table-bound limit.
  *
  * The specific range depends on the ICU version that {@see Table} was

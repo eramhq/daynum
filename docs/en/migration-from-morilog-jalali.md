@@ -21,9 +21,9 @@ A third `jdate()` with yet another signature would either clash or be silently s
 namespace App\Support;
 
 use Eram\Daynum\Calendar\Jalali\JalaliView;
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 
-function jalali(Instant $d): JalaliView
+function jalali(CivilDateTime $d): JalaliView
 {
     return $d->jalali()->withLocale('fa')->withDigits('persian');
 }
@@ -33,14 +33,14 @@ function jalali(Instant $d): JalaliView
 
 | `morilog/jalali` | Daynum |
 |---|---|
-| `jdate()` / `Jalalian::now()` | `Instant::now('Asia/Tehran')->jalali()` |
-| `jdate($dateTime)` / `Jalalian::fromDateTime($dt)` | `Instant::fromDateTime($dt)->jalali()` |
-| `Jalalian::fromCarbon($carbon)` | `Instant::fromDateTime($carbon)->jalali()` (Carbon is a `DateTimeInterface`) |
-| `new Jalalian(1405, 1, 19)` | `Instant::fromJalali(1405, 1, 19)` |
+| `jdate()` / `Jalalian::now()` | `CivilDateTime::now('Asia/Tehran')->jalali()` |
+| `jdate($dateTime)` / `Jalalian::fromDateTime($dt)` | `CivilDateTime::fromDateTime($dt)->jalali()` |
+| `Jalalian::fromCarbon($carbon)` | `CivilDateTime::fromDateTime($carbon)->jalali()` (Carbon is a `DateTimeInterface`) |
+| `new Jalalian(1405, 1, 19)` | `CivilDateTime::fromJalali(1405, 1, 19)` |
 | `Jalalian::fromFormat('Y/m/d', $s)` | `JalaliView::parseExact($s, 'Y/m/d')` |
-| `CalendarUtils::toJalali(2026, 4, 8)` | `Instant::fromGregorian(2026, 4, 8)->jalali()->toArray()` |
-| `CalendarUtils::toGregorian(1405, 1, 19)` | `Instant::fromJalali(1405, 1, 19)->gregorian()->toArray()` |
-| `CalendarUtils::checkDate($y, $m, $d)` | `Instant::isValidJalali($y, $m, $d)` |
+| `CalendarUtils::toJalali(2026, 4, 8)` | `CivilDateTime::fromGregorian(2026, 4, 8)->jalali()->toArray()` |
+| `CalendarUtils::toGregorian(1405, 1, 19)` | `CivilDateTime::fromJalali(1405, 1, 19)->gregorian()->toArray()` |
+| `CalendarUtils::checkDate($y, $m, $d)` | `CivilDateTime::isValidJalali($y, $m, $d)` |
 | `CalendarUtils::convertNumbers($s)` | `DigitTransliterator::toScript($s, 'persian')` |
 | `->format('%A، %d %B %Y')` (strftime `%` tokens) | `->format('l، d F Y')` (PHP `date()` tokens, see below) |
 | `->getYear()` / `getMonth()` / `getDay()` | `->year()` / `month()` / `day()` |
@@ -48,7 +48,7 @@ function jalali(Instant $d): JalaliView
 | `->getMonthDays()` | `->daysInMonth()` |
 | `->isLeapYear()` | `->isLeapYear()` |
 | `->getDayOfWeek()` (Saturday = 0) | `->dayOfWeek()` (Sunday = 0, PHP `date('w')`) or `->dayOfWeekIso()` |
-| `->addDays(3)` / `addMonths` / `addYears` | `->addDays(3)` … — returns an `Instant`, see below |
+| `->addDays(3)` / `addMonths` / `addYears` | `->addDays(3)` … — returns a `CivilDateTime`, see below |
 | `->toCarbon()` | `Carbon::instance($d->toDateTimeImmutable())` |
 
 ### strftime tokens → `date()` tokens
@@ -69,9 +69,9 @@ function jalali(Instant $d): JalaliView
 
 ## Key differences
 
-### 1. Values are `Instant`; calendars are views
+### 1. Values are `CivilDateTime`; calendars are views
 
-`Jalalian` mixes "which date" and "which calendar" into one object. Daynum splits them: `Instant` is the date-time value, and `jalali()`, `gregorian()`, `hijri()` are views onto it.
+`Jalalian` mixes "which date" and "which calendar" into one object. Daynum splits them: `CivilDateTime` is the date-time value, and `jalali()`, `gregorian()`, `hijri()` are views onto it.
 
 ```php
 // morilog/jalali
@@ -79,13 +79,13 @@ $d = Jalalian::fromFormat('Y/m/d', '1405/01/19');
 echo $d->format('%A %d %B %Y');
 
 // Daynum
-$d = JalaliView::parseExact('1405/01/19', 'Y/m/d');          // Instant
+$d = JalaliView::parseExact('1405/01/19', 'Y/m/d');          // CivilDateTime
 echo $d->jalali()->withLocale('fa')->format('l d F Y');      // enter a view to format
 ```
 
-The same `Instant` is also `$d->gregorian()` and `$d->hijri()` with no conversion code.
+The same `CivilDateTime` is also `$d->gregorian()` and `$d->hijri()` with no conversion code.
 
-### 2. Arithmetic returns `Instant`, not a view
+### 2. Arithmetic returns `CivilDateTime`, not a view
 
 ```php
 // morilog/jalali
@@ -95,7 +95,7 @@ echo $d->addMonths(1)->format('Y/m/d');
 echo $d->jalali()->addMonths(1)->jalali()->format('Y/m/d');
 ```
 
-Arithmetic is calendar-specific ("one Jalali month"), but its result is calendar-neutral. See [concepts.md](concepts.md#instant-vs-view).
+Arithmetic is calendar-specific ("one Jalali month"), but its result is calendar-neutral. See [concepts.md](concepts.md#civildatetime-vs-view).
 
 ### 3. Locale and digits are per view, not global
 
@@ -115,23 +115,23 @@ No global state, so nothing leaks between requests.
 ```php
 $d = JalaliView::tryParseExact($raw, 'Y/m/d')
    ?? JalaliView::tryParseExact($raw, 'Y-m-d')
-   ?? Instant::fromDateTime(new DateTimeImmutable($raw));
+   ?? CivilDateTime::fromDateTime(new DateTimeImmutable($raw));
 ```
 
 See [parsing.md](parsing.md).
 
 ### 5. Time zones are labels; comparison is wall-clock
 
-An `Instant` stores a time-zone label next to the wall-clock date and time; it does not convert anything. Two values with the same wall-clock reading compare equal even if their labels differ. For real time-zone math, use `toDateTimeImmutable()`.
+A `CivilDateTime` stores a time-zone label next to the wall-clock date and time; it does not convert anything. Two values with the same wall-clock reading compare equal even if their labels differ. For real time-zone math, use `toDateTimeImmutable()`.
 
-See [timezones.md](timezones.md) and [concepts.md](concepts.md#instant-is-civil-not-utc).
+See [timezones.md](timezones.md) and [concepts.md](concepts.md#civildatetime-is-wall-clock-time).
 
 ### 6. No relative-date parsing
 
 `Jalalian` accepts Carbon-style strings like `"next Monday"`. Daynum does not parse them; let PHP do it first:
 
 ```php
-$d = Instant::fromDateTime(new DateTimeImmutable('next Saturday', new DateTimeZone('Asia/Tehran')));
+$d = CivilDateTime::fromDateTime(new DateTimeImmutable('next Saturday', new DateTimeZone('Asia/Tehran')));
 ```
 
 ## Arabic month names on Jalali throw

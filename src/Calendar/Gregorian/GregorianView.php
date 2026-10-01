@@ -8,9 +8,9 @@ use Eram\Daynum\Calendar;
 use Eram\Daynum\Calendar\AbstractCalendarView;
 
 /**
- * View of an {@see \Eram\Daynum\Instant} as a proleptic Gregorian date.
+ * View of an {@see \Eram\Daynum\CivilDateTime} as a proleptic Gregorian date.
  *
- * Use `$instant->gregorian()` to construct; never `new` directly.
+ * Use `$dateTime->gregorian()` to construct; never `new` directly.
  */
 final class GregorianView extends AbstractCalendarView
 {

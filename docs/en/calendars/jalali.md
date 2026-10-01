@@ -17,14 +17,14 @@ The Persian solar calendar, implemented using Ahmad Birashk's 33-year arithmetic
 ## Construction
 
 ```php
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 
-Instant::fromJalali(1405, 1, 19);
-Instant::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
+CivilDateTime::fromJalali(1405, 1, 19);
+CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
 
-Instant::tryFromJalali(1405, 13, 1);    // null — no month 13
-Instant::isValidJalali(1403, 12, 30);   // true — 1403 is a leap year
-Instant::isValidJalali(1404, 12, 30);   // false — 1404 is not leap, Esfand has 29
+CivilDateTime::tryFromJalali(1405, 13, 1);    // null — no month 13
+CivilDateTime::isValidJalali(1403, 12, 30);   // true — 1403 is a leap year
+CivilDateTime::isValidJalali(1404, 12, 30);   // false — 1404 is not leap, Esfand has 29
 ```
 
 ## Month lengths
@@ -76,7 +76,7 @@ Birashk defines a 33-year arithmetic cycle with pre-computed break points (see t
 ## Viewing
 
 ```php
-$d = Instant::fromJalali(1405, 1, 19, 14, 30);
+$d = CivilDateTime::fromJalali(1405, 1, 19, 14, 30);
 
 $d->jalali()->year();          // 1405
 $d->jalali()->month();         // 1
@@ -90,7 +90,7 @@ $d->jalali()->daysInMonth();   // 31
 ## Formatting
 
 ```php
-$d = Instant::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
+$d = CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
 
 $d->jalali()->format('Y/m/d');                                      // "1405/01/19"
 $d->jalali()->format('l j F Y');                                    // "Wednesday 19 Farvardin 1405"

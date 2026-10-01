@@ -5,7 +5,7 @@ Daynum is a small, tightly scoped library. Contributions are welcome, especially
 ## Before you start
 
 - **File an issue first** for anything bigger than a typo fix or a one-line bug. Daynum has strong opinions about scope (see `README.md` and [docs/en/concepts.md](docs/en/concepts.md#scope-what-v1-does-and-doesnt-ship)), so a quick sanity check saves you from writing code that won't land.
-- **Read [docs/en/concepts.md](docs/en/concepts.md)** so you know the `Instant`-vs-view split, the "civil, not UTC" rule, and why arithmetic returns `Instant`. A lot of contributor confusion goes away once these are clear.
+- **Read [docs/en/concepts.md](docs/en/concepts.md)** so you know the `CivilDateTime`-vs-view split, the "wall-clock, not UTC" rule, and why arithmetic returns `CivilDateTime`. A lot of contributor confusion goes away once these are clear.
 - **Read [docs/en/algorithms-and-attribution.md](docs/en/algorithms-and-attribution.md)** if you are touching any calendar math. Every calendar is a port of a published algorithm with attribution headers — keep them intact.
 
 ## Running the test suite
@@ -111,7 +111,7 @@ Post-v1, Daynum will ship Hebrew, Buddhist, Japanese, Indian, Coptic, and Ethiop
 
 3. **Add the view**: `src/Calendar/<Name>/<Name>View.php` extends `AbstractCalendarView` and only overrides `calendar()`, `calendarInstance()`, and `defaultFormat()`.
 
-4. **Wire it into `Instant`** with `fromX()`, `tryFromX()`, `isValidX()`, and an accessor method (`$instant->x(): XView`).
+4. **Wire it into `CivilDateTime`** with `fromX()`, `tryFromX()`, `isValidX()`, and an accessor method (`$dateTime->x(): XView`).
 
 5. **Add month names** to each `Locale/*Locale.php` table under a new `localeFamily()` key. Locales that don't define names for this calendar should inherit the base-class throw behavior — don't ship bad transliterations.
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Tests\Conformance;
 
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use Eram\Daynum\Locale\LocaleRegistry;
 use Eram\Daynum\Tests\Conformance\Support\FixtureReader;
 use Eram\Daynum\Tests\Conformance\Support\JalaliIcuDivergence;
@@ -64,11 +64,11 @@ final class FormatTokenConformanceTest extends TestCase
                 continue;
             }
 
-            $instant = new Instant($jdn);
+            $dateTime = new CivilDateTime($jdn);
             $view = match ($calendar) {
-                'gregorian'   => $instant->gregorian()->withLocale($locale),
-                'jalali'      => $instant->jalali()->withLocale($locale),
-                'hijri-civil' => $instant->hijriCivil()->withLocale($locale),
+                'gregorian'   => $dateTime->gregorian()->withLocale($locale),
+                'jalali'      => $dateTime->jalali()->withLocale($locale),
+                'hijri-civil' => $dateTime->hijriCivil()->withLocale($locale),
                 default       => throw new \LogicException("Unknown calendar: {$calendar}"),
             };
 

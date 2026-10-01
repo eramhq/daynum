@@ -13,7 +13,7 @@ use Eram\Daynum\Exception\WeekAtBoundaryException;
 use Eram\Daynum\Formatter\DateTokenFormatter;
 use Eram\Daynum\Formatter\DigitTransliterator;
 use Eram\Daynum\Formatter\FormatContext;
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use Eram\Daynum\Locale\LocaleData;
 use Eram\Daynum\Locale\LocaleRegistry;
 use Eram\Daynum\WeekDay;
@@ -38,7 +38,7 @@ abstract class AbstractCalendarView implements CalendarView
     private ?array $cache = null;
 
     final protected function __construct(
-        protected readonly Instant $instant,
+        protected readonly CivilDateTime $dateTime,
         protected readonly LocaleData $locale,
         protected readonly string $digitScript,
     ) {
@@ -55,17 +55,17 @@ abstract class AbstractCalendarView implements CalendarView
     /** Default format pattern used by `__toString()`. */
     abstract protected function defaultFormat(): string;
 
-    // ─── Instance factory (used by Instant) ───────────────────────────
+    // ─── Instance factory (used by CivilDateTime) ───────────────────────────
 
     /**
      * @return static
      */
-    public static function of(Instant $instant, ?string $locale = null, string $digitScript = DigitTransliterator::LATN): static
+    public static function of(CivilDateTime $dateTime, ?string $locale = null, string $digitScript = DigitTransliterator::LATN): static
     {
         if (!DigitTransliterator::isSupported($digitScript)) {
             throw new InvalidArgumentException("Unknown digit script '{$digitScript}'.");
         }
-        return new static($instant, LocaleRegistry::get($locale ?? 'en'), $digitScript);
+        return new static($dateTime, LocaleRegistry::get($locale ?? 'en'), $digitScript);
     }
 
     // ─── Parsing ──────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ abstract class AbstractCalendarView implements CalendarView
     ];
 
     /**
-     * Parse a date/time string in the given format, returning an Instant.
+     * Parse a date/time string in the given format, returning a CivilDateTime.
      *
      * Supported tokens:
      * `Y` (4+ digit year), `m`/`n` (month), `d`/`j` (day),
@@ -115,7 +115,7 @@ abstract class AbstractCalendarView implements CalendarView
      *
      * @throws ParseException on format mismatch, unsupported tokens, or invalid date
      */
-    public static function parseExact(string $text, string $format, ?string $tzLabel = null): Instant
+    public static function parseExact(string $text, string $format, ?string $tzLabel = null): CivilDateTime
     {
         // Normalize non-Latin digits to ASCII
         $text = DigitTransliterator::toLatin($text);
@@ -292,7 +292,7 @@ abstract class AbstractCalendarView implements CalendarView
         }
 
         try {
-            return new Instant($jdn, $hour * 3600 + $minute * 60 + $second, $parsedTz);
+            return new CivilDateTime($jdn, $hour * 3600 + $minute * 60 + $second, $parsedTz);
         } catch (\Eram\Daynum\Exception\InvalidDateException $e) {
             throw ParseException::forFormat($text, $format, $e->getMessage());
         }
@@ -524,7 +524,7 @@ abstract class AbstractCalendarView implements CalendarView
      * because {@see parseExact()} already wraps calendar-level exceptions
      * (InvalidDateException, UmmAlQuraOutOfRangeException) in ParseException.
      */
-    public static function tryParseExact(string $text, string $format, ?string $tzLabel = null): ?Instant
+    public static function tryParseExact(string $text, string $format, ?string $tzLabel = null): ?CivilDateTime
     {
         try {
             return static::parseExact($text, $format, $tzLabel);
@@ -535,9 +535,9 @@ abstract class AbstractCalendarView implements CalendarView
 
     // ─── CalendarView interface ───────────────────────────────────────
 
-    public function instant(): Instant
+    public function dateTime(): CivilDateTime
     {
-        return $this->instant;
+        return $this->dateTime;
     }
 
     public function year(): int
@@ -557,24 +557,24 @@ abstract class AbstractCalendarView implements CalendarView
 
     public function hour(): int
     {
-        return intdiv($this->instant->secondsOfDay, 3600);
+        return intdiv($this->dateTime->secondsOfDay, 3600);
     }
 
     public function minute(): int
     {
-        return intdiv($this->instant->secondsOfDay % 3600, 60);
+        return intdiv($this->dateTime->secondsOfDay % 3600, 60);
     }
 
     public function second(): int
     {
-        return $this->instant->secondsOfDay % 60;
+        return $this->dateTime->secondsOfDay % 60;
     }
 
     public function dayOfWeek(): int
     {
         // JDN 0 was a Monday. PHP's w is Sun=0..Sat=6.
         // JDN 0 (Mon) → w=1. Formula: ((jdn + 1) mod 7), normalized.
-        $w = ($this->instant->jdn + 1) % 7;
+        $w = ($this->dateTime->jdn + 1) % 7;
         if ($w < 0) {
             $w += 7;
         }
@@ -584,7 +584,7 @@ abstract class AbstractCalendarView implements CalendarView
     public function dayOfWeekIso(): int
     {
         // Monday = 1, Sunday = 7.
-        $iso = $this->instant->jdn % 7;
+        $iso = $this->dateTime->jdn % 7;
         if ($iso < 0) {
             $iso += 7;
         }
@@ -602,7 +602,7 @@ abstract class AbstractCalendarView implements CalendarView
         // ISO 8601 week number. A week belongs to the year of its Thursday.
         // Algorithm: offset the JDN to the Thursday of its week, then count
         // weeks since the Thursday of week 1 of that year.
-        $jdn = $this->instant->jdn;
+        $jdn = $this->dateTime->jdn;
         $isoDow = $this->dayOfWeekIso();           // Mon=1..Sun=7
         $thursdayJdn = $jdn - $isoDow + 4;          // JDN of this week's Thursday
         $calendar = $this->calendar();
@@ -628,7 +628,7 @@ abstract class AbstractCalendarView implements CalendarView
     {
         // ISO 8601 week-based year — the year owning the ISO week of this
         // date's Thursday. Differs from `year()` by ±1 around Jan 1 / Dec 31.
-        $jdn = $this->instant->jdn;
+        $jdn = $this->dateTime->jdn;
         $isoDow = $this->dayOfWeekIso();
         $thursdayJdn = $jdn - $isoDow + 4;
         $calendar = $this->calendar();
@@ -698,7 +698,7 @@ abstract class AbstractCalendarView implements CalendarView
             'hour' => $this->hour(),
             'minute' => $this->minute(),
             'second' => $this->second(),
-            'tzLabel' => $this->instant->tzLabel,
+            'tzLabel' => $this->dateTime->tzLabel,
         ];
     }
 
@@ -727,7 +727,7 @@ abstract class AbstractCalendarView implements CalendarView
         $dti = null;
         foreach ($tzTokens as $t) {
             if (str_contains($pattern, $t) && self::patternContainsUnescaped($pattern, $t)) {
-                $dti = $this->instant->toDateTimeImmutable();
+                $dti = $this->dateTime->toDateTimeImmutable();
                 break;
             }
         }
@@ -748,7 +748,7 @@ abstract class AbstractCalendarView implements CalendarView
             weekOfYear: $weekOfYear,
             weekBasedYear: $weekBasedYear,
             isLeapYear: $c['isLeapYear'],
-            tzLabel: $this->instant->tzLabel,
+            tzLabel: $this->dateTime->tzLabel,
             digitScript: $this->digitScript,
             dateTimeImmutable: $dti,
         );
@@ -782,7 +782,7 @@ abstract class AbstractCalendarView implements CalendarView
 
     public function withLocale(string $locale): static
     {
-        return new static($this->instant, LocaleRegistry::get($locale), $this->digitScript);
+        return new static($this->dateTime, LocaleRegistry::get($locale), $this->digitScript);
     }
 
     public function withDigits(string $script): static
@@ -790,22 +790,22 @@ abstract class AbstractCalendarView implements CalendarView
         if (!DigitTransliterator::isSupported($script)) {
             throw new InvalidArgumentException("Unknown digit script '{$script}'.");
         }
-        return new static($this->instant, $this->locale, $script);
+        return new static($this->dateTime, $this->locale, $script);
     }
 
     // ─── Arithmetic ───────────────────────────────────────────────────
 
-    public function addDays(int $days): Instant
+    public function addDays(int $days): CivilDateTime
     {
-        return $this->instant->withJdn($this->instant->jdn + $days);
+        return $this->dateTime->withJdn($this->dateTime->jdn + $days);
     }
 
-    public function subDays(int $days): Instant
+    public function subDays(int $days): CivilDateTime
     {
         return $this->addDays(-$days);
     }
 
-    public function addMonths(int $months): Instant
+    public function addMonths(int $months): CivilDateTime
     {
         $c = $this->components();
         $calendar = $this->calendar();
@@ -841,57 +841,57 @@ abstract class AbstractCalendarView implements CalendarView
 
         $dim = $calendar->daysInMonth($year, $month);
         $newDay = min($c['day'], $dim);
-        return $this->instant->withJdn($calendar->toJdn($year, $month, $newDay));
+        return $this->dateTime->withJdn($calendar->toJdn($year, $month, $newDay));
     }
 
-    public function subMonths(int $months): Instant
+    public function subMonths(int $months): CivilDateTime
     {
         return $this->addMonths(-$months);
     }
 
-    public function addYears(int $years): Instant
+    public function addYears(int $years): CivilDateTime
     {
         $c = $this->components();
         $newYear = $c['year'] + $years;
         $calendar = $this->calendar();
         $dim = $calendar->daysInMonth($newYear, $c['month']);
         $newDay = min($c['day'], $dim);
-        return $this->instant->withJdn($calendar->toJdn($newYear, $c['month'], $newDay));
+        return $this->dateTime->withJdn($calendar->toJdn($newYear, $c['month'], $newDay));
     }
 
-    public function subYears(int $years): Instant
+    public function subYears(int $years): CivilDateTime
     {
         return $this->addYears(-$years);
     }
 
-    public function startOfMonth(): Instant
+    public function startOfMonth(): CivilDateTime
     {
         $c = $this->components();
-        return $this->instant->withJdn($this->calendar()->toJdn($c['year'], $c['month'], 1));
+        return $this->dateTime->withJdn($this->calendar()->toJdn($c['year'], $c['month'], 1));
     }
 
-    public function endOfMonth(): Instant
+    public function endOfMonth(): CivilDateTime
     {
         $c = $this->components();
-        return $this->instant->withJdn(
+        return $this->dateTime->withJdn(
             $this->calendar()->toJdn($c['year'], $c['month'], $c['daysInMonth'])
         );
     }
 
-    public function startOfYear(): Instant
+    public function startOfYear(): CivilDateTime
     {
-        return $this->instant->withJdn($this->calendar()->toJdn($this->year(), 1, 1));
+        return $this->dateTime->withJdn($this->calendar()->toJdn($this->year(), 1, 1));
     }
 
-    public function endOfYear(): Instant
+    public function endOfYear(): CivilDateTime
     {
         $c = $this->components();
         $lastMonth = $this->calendar()->monthsInYear($c['year']);
         $lastDay = $this->calendar()->daysInMonth($c['year'], $lastMonth);
-        return $this->instant->withJdn($this->calendar()->toJdn($c['year'], $lastMonth, $lastDay));
+        return $this->dateTime->withJdn($this->calendar()->toJdn($c['year'], $lastMonth, $lastDay));
     }
 
-    public function startOfWeek(WeekDay|int $weekStart = WeekDay::Monday): Instant
+    public function startOfWeek(WeekDay|int $weekStart = WeekDay::Monday): CivilDateTime
     {
         $weekStart = $weekStart instanceof WeekDay ? $weekStart->value : $weekStart;
         if ($weekStart < 1 || $weekStart > 7) {
@@ -899,25 +899,25 @@ abstract class AbstractCalendarView implements CalendarView
         }
         $isoDow = $this->dayOfWeekIso(); // Mon=1..Sun=7
         $offset = ($isoDow - $weekStart + 7) % 7;
-        return $this->instant->withJdn($this->instant->jdn - $offset);
+        return $this->dateTime->withJdn($this->dateTime->jdn - $offset);
     }
 
-    public function endOfWeek(WeekDay|int $weekStart = WeekDay::Monday): Instant
+    public function endOfWeek(WeekDay|int $weekStart = WeekDay::Monday): CivilDateTime
     {
         $startJdn = $this->startOfWeek($weekStart)->jdn;
-        return $this->instant->withJdn($startJdn + 6);
+        return $this->dateTime->withJdn($startJdn + 6);
     }
 
     public function isInSupportedRange(): bool
     {
         [$min, $max] = $this->calendar()->supportedRange();
-        return $this->instant->jdn >= $min && $this->instant->jdn <= $max;
+        return $this->dateTime->jdn >= $min && $this->dateTime->jdn <= $max;
     }
 
-    public function diffInMonths(Instant $other): int
+    public function diffInMonths(CivilDateTime $other): int
     {
         $calendar = $this->calendar();
-        [$y1, $m1, $d1] = $calendar->fromJdn($this->instant->jdn);
+        [$y1, $m1, $d1] = $calendar->fromJdn($this->dateTime->jdn);
         [$y2, $m2, $d2] = $calendar->fromJdn($other->jdn);
 
         $months = self::monthsBetween($calendar, $y2, $y1) + ($m1 - $m2);
@@ -932,10 +932,10 @@ abstract class AbstractCalendarView implements CalendarView
         return $months;
     }
 
-    public function diffInYears(Instant $other): int
+    public function diffInYears(CivilDateTime $other): int
     {
         $calendar = $this->calendar();
-        [$y1, $m1, $d1] = $calendar->fromJdn($this->instant->jdn);
+        [$y1, $m1, $d1] = $calendar->fromJdn($this->dateTime->jdn);
         [$y2, $m2, $d2] = $calendar->fromJdn($other->jdn);
 
         $years = $y1 - $y2;
@@ -979,7 +979,7 @@ abstract class AbstractCalendarView implements CalendarView
             return $this->cache;
         }
         $calendar = $this->calendar();
-        [$year, $month, $day] = $calendar->fromJdn($this->instant->jdn);
+        [$year, $month, $day] = $calendar->fromJdn($this->dateTime->jdn);
         return $this->cache = [
             'year' => $year,
             'month' => $month,

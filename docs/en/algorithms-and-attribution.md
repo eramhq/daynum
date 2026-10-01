@@ -17,7 +17,7 @@ Attribution headers in the ported files name the exact upstream source. `src/Cal
 
 ```text
 src/
-├── Instant.php                     # immutable core type
+├── CivilDateTime.php                     # immutable core type
 ├── Calendar.php                    # Calendar interface
 ├── CalendarView.php                # CalendarView interface
 ├── WeekDay.php                     # ISO weekday enum

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Tests\Property;
 
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
  *
  * If Gregorian date A comes before Gregorian date B, then after converting
  * to Jalali the same must hold. Additionally, adding N days always produces
- * an instant whose JDN is exactly N higher.
+ * a value whose JDN is exactly N higher.
  */
 final class MonotonicityTest extends TestCase
 {
@@ -28,7 +28,7 @@ final class MonotonicityTest extends TestCase
             $d = mt_rand(1, 28);
             $offset = mt_rand(1, 10_000);
 
-            $a = Instant::fromGregorian($y, $m, $d);
+            $a = CivilDateTime::fromGregorian($y, $m, $d);
             $b = $a->gregorian()->addDays($offset);
 
             $this->assertTrue($a->lessThan($b));
@@ -49,10 +49,10 @@ final class MonotonicityTest extends TestCase
             $m = mt_rand(1, 12);
             $d = mt_rand(1, 28);
 
-            $instant = Instant::fromJalali($y, $m, $d);
-            $next = $instant->jalali()->addDays(1);
-            $this->assertSame($instant->jdn + 1, $next->jdn);
-            $this->assertTrue($instant->lessThan($next));
+            $dateTime = CivilDateTime::fromJalali($y, $m, $d);
+            $next = $dateTime->jalali()->addDays(1);
+            $this->assertSame($dateTime->jdn + 1, $next->jdn);
+            $this->assertTrue($dateTime->lessThan($next));
         }
     }
 
@@ -65,7 +65,7 @@ final class MonotonicityTest extends TestCase
             $d = mt_rand(1, 28);
             $n = mt_rand(1, 10_000);
 
-            $a = Instant::fromGregorian($y, $m, $d);
+            $a = CivilDateTime::fromGregorian($y, $m, $d);
             $b = $a->gregorian()->addDays($n);
             $c = $b->gregorian()->subDays($n);
             $this->assertSame($a->jdn, $c->jdn);

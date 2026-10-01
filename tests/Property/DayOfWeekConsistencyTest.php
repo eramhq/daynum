@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Tests\Property;
 
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -25,15 +25,15 @@ final class DayOfWeekConsistencyTest extends TestCase
             $m = mt_rand(1, 12);
             $d = mt_rand(1, 28);
 
-            $instant = Instant::fromGregorian($y, $m, $d);
+            $dateTime = CivilDateTime::fromGregorian($y, $m, $d);
             $this->assertSame(
-                $instant->gregorian()->dayOfWeek(),
-                $instant->jalali()->dayOfWeek(),
+                $dateTime->gregorian()->dayOfWeek(),
+                $dateTime->jalali()->dayOfWeek(),
                 "Iteration {$i}: Gregorian and Jalali views disagree on day-of-week"
             );
             $this->assertSame(
-                $instant->gregorian()->dayOfWeekIso(),
-                $instant->jalali()->dayOfWeekIso()
+                $dateTime->gregorian()->dayOfWeekIso(),
+                $dateTime->jalali()->dayOfWeekIso()
             );
         }
     }
@@ -46,9 +46,9 @@ final class DayOfWeekConsistencyTest extends TestCase
             $m = mt_rand(1, 12);
             $d = mt_rand(1, 28);
 
-            $instant = Instant::fromGregorian($y, $m, $d);
-            $php = $instant->gregorian()->dayOfWeek();   // 0..6, Sun=0
-            $iso = $instant->gregorian()->dayOfWeekIso(); // 1..7, Mon=1
+            $dateTime = CivilDateTime::fromGregorian($y, $m, $d);
+            $php = $dateTime->gregorian()->dayOfWeek();   // 0..6, Sun=0
+            $iso = $dateTime->gregorian()->dayOfWeekIso(); // 1..7, Mon=1
 
             // Sun: php=0 → iso=7; Mon..Sat: php=1..6 → iso=1..6.
             $expected = $php === 0 ? 7 : $php;
@@ -68,7 +68,7 @@ final class DayOfWeekConsistencyTest extends TestCase
             $m = mt_rand(1, 12);
             $d = mt_rand(1, 27);
 
-            $a = Instant::fromGregorian($y, $m, $d);
+            $a = CivilDateTime::fromGregorian($y, $m, $d);
             $b = $a->gregorian()->addDays(1);
             $this->assertSame(
                 ($a->gregorian()->dayOfWeek() + 1) % 7,

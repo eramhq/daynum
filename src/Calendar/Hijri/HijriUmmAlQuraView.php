@@ -8,12 +8,12 @@ use Eram\Daynum\Calendar;
 use Eram\Daynum\Calendar\AbstractCalendarView;
 
 /**
- * View of an {@see \Eram\Daynum\Instant} as an Umm al-Qura (Saudi KACST) Hijri date.
+ * View of an {@see \Eram\Daynum\CivilDateTime} as an Umm al-Qura (Saudi KACST) Hijri date.
  *
- * Use `$instant->hijri()` to construct; never `new` directly. The view will
+ * Use `$dateTime->hijri()` to construct; never `new` directly. The view will
  * throw {@see \Eram\Daynum\Exception\UmmAlQuraOutOfRangeException} when asked to
  * read components for a JDN outside the bundled UAQ table — use
- * `$instant->hijriCivil()` in that case instead.
+ * `$dateTime->hijriCivil()` in that case instead.
  */
 final class HijriUmmAlQuraView extends AbstractCalendarView
 {

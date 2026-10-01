@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Eram\Daynum\Tests\Conformance;
 
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use DateTimeImmutable;
 use DateTimeZone;
 use PHPUnit\Framework\TestCase;
@@ -50,8 +50,8 @@ final class PhpFormatTokenMatrixTest extends TestCase
             sprintf('%04d-%02d-%02d %02d:%02d:%02d', $year, $month, $day, $hour, $minute, $second),
             new DateTimeZone($tz),
         );
-        $instant = Instant::fromDateTime($dti);
-        $view = $instant->gregorian();
+        $dateTime = CivilDateTime::fromDateTime($dti);
+        $view = $dateTime->gregorian();
 
         foreach (self::TOKENS as $token) {
             $expected = $dti->format($token);
@@ -103,7 +103,7 @@ final class PhpFormatTokenMatrixTest extends TestCase
      */
     public function testSubSecondTokensReturnZeros(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
         $this->assertSame('000000', $i->gregorian()->format('u'));
         $this->assertSame('000', $i->gregorian()->format('v'));
     }
@@ -115,7 +115,7 @@ final class PhpFormatTokenMatrixTest extends TestCase
     {
         for ($day = 1; $day <= 28; $day++) {
             $dti = new DateTimeImmutable(sprintf('2026-01-%02d', $day), new DateTimeZone('UTC'));
-            $i = Instant::fromGregorian(2026, 1, $day, 0, 0, 0, 'UTC');
+            $i = CivilDateTime::fromGregorian(2026, 1, $day, 0, 0, 0, 'UTC');
             $this->assertSame(
                 $dti->format('S'),
                 $i->gregorian()->format('S'),
@@ -129,7 +129,7 @@ final class PhpFormatTokenMatrixTest extends TestCase
      */
     public function testCAndROnJalaliOutputGregorian(): void
     {
-        $i = Instant::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
+        $i = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 45, 'UTC');
         $jalaliC = $i->jalali()->format('c');
         $gregorianC = $i->gregorian()->format('c');
         $this->assertSame($gregorianC, $jalaliC);

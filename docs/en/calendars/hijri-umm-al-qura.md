@@ -17,13 +17,13 @@ The official Saudi calendar, with month lengths hand-curated per year by KACST b
 ## Construction
 
 ```php
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 
-Instant::fromHijri(1447, 10, 21);                        // Saudi UAQ
-Instant::fromHijri(1447, 10, 21, 14, 30, 0, 'Asia/Riyadh');
+CivilDateTime::fromHijri(1447, 10, 21);                        // Saudi UAQ
+CivilDateTime::fromHijri(1447, 10, 21, 14, 30, 0, 'Asia/Riyadh');
 
-Instant::tryFromHijri(1200, 1, 1);     // null — outside table range
-Instant::isValidHijri(1447, 1, 31);    // false — Muharram has at most 30 days
+CivilDateTime::tryFromHijri(1200, 1, 1);     // null — outside table range
+CivilDateTime::isValidHijri(1447, 1, 31);    // false — Muharram has at most 30 days
 ```
 
 ## Bundled table
@@ -47,7 +47,7 @@ Outside AH 1300–1600, ICU silently falls back to the arithmetic civil calendar
 So Daynum **throws**:
 
 ```php
-Instant::fromHijri(1200, 1, 1);
+CivilDateTime::fromHijri(1200, 1, 1);
 // → UmmAlQuraOutOfRangeException:
 // "Hijri Umm al-Qura date 1200-01-01 is outside the supported range
 //  (AH 1300 to AH 1600). Use fromHijriCivil() for dates outside this range."
@@ -56,14 +56,14 @@ Instant::fromHijri(1200, 1, 1);
 ### Recovery: fall back to civil
 
 ```php
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
 
 try {
-    $d = Instant::fromHijri($year, $month, $day);
+    $d = CivilDateTime::fromHijri($year, $month, $day);
     $formatted = $d->hijri()->format('j F Y');
 } catch (UmmAlQuraOutOfRangeException) {
-    $d = Instant::fromHijriCivil($year, $month, $day);
+    $d = CivilDateTime::fromHijriCivil($year, $month, $day);
     $formatted = $d->hijriCivil()->format('j F Y') . ' (civil)';
 }
 ```
@@ -71,20 +71,20 @@ try {
 Or preflight with `isValidHijri()`:
 
 ```php
-if (Instant::isValidHijri($year, $month, $day)) {
-    $view = Instant::fromHijri($year, $month, $day)->hijri();
+if (CivilDateTime::isValidHijri($year, $month, $day)) {
+    $view = CivilDateTime::fromHijri($year, $month, $day)->hijri();
 } else {
-    $view = Instant::fromHijriCivil($year, $month, $day)->hijriCivil();
+    $view = CivilDateTime::fromHijriCivil($year, $month, $day)->hijriCivil();
 }
 ```
 
 ## UAQ boundary crossing via arithmetic
 
-Arithmetic on a UAQ view returns an `Instant` — calendar-neutral — so the arithmetic itself never throws at the boundary. Viewing the *result* can throw, though:
+Arithmetic on a UAQ view returns a `CivilDateTime` — calendar-neutral — so the arithmetic itself never throws at the boundary. Viewing the *result* can throw, though:
 
 ```php
-$d = Instant::fromHijri(1600, 12, 29);     // near table edge
-$result = $d->hijri()->addDays(100);        // returns Instant (no error)
+$d = CivilDateTime::fromHijri(1600, 12, 29);     // near table edge
+$result = $d->hijri()->addDays(100);        // returns CivilDateTime (no error)
 $result->hijriCivil()->year();              // works — civil has no range limit
 $result->hijri()->year();                   // throws UmmAlQuraOutOfRangeException
 ```
@@ -96,14 +96,14 @@ See [../arithmetic.md](../arithmetic.md).
 Unlike the civil variant, UAQ does not fix the leap day to Dhu al-Hijjah. Any month can have 29 or 30 days in any given year, and the leap test is "did this year have 355 days?" rather than "is Dhu al-Hijjah 30 days?".
 
 ```php
-$view = Instant::fromHijri(1447, 1, 1)->hijri();
+$view = CivilDateTime::fromHijri(1447, 1, 1)->hijri();
 $view->isLeapYear();    // depends on year's bit-packed month lengths
 ```
 
 ## Formatting
 
 ```php
-$d = Instant::fromHijri(1447, 10, 21);
+$d = CivilDateTime::fromHijri(1447, 10, 21);
 
 $d->hijri()->format('j F Y');                                          // "21 Shawwal 1447"
 $d->hijri()->withLocale('fa')->format('j F Y');                        // "21 شوال 1447"

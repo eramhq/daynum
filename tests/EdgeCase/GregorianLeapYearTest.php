@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Eram\Daynum\Tests\EdgeCase;
 
 use Eram\Daynum\Calendar\Gregorian\GregorianCalendar;
-use Eram\Daynum\Instant;
+use Eram\Daynum\CivilDateTime;
 use PHPUnit\Framework\TestCase;
 
 final class GregorianLeapYearTest extends TestCase
@@ -30,19 +30,19 @@ final class GregorianLeapYearTest extends TestCase
     public function testFeb29OnlyAllowedInLeapYear(): void
     {
         // Feb 29 2024 is valid
-        $leap = Instant::fromGregorian(2024, 2, 29);
+        $leap = CivilDateTime::fromGregorian(2024, 2, 29);
         $this->assertSame(29, $leap->gregorian()->day());
 
         // Feb 29 2023 is not
         $this->expectException(\Eram\Daynum\Exception\InvalidDateException::class);
-        Instant::fromGregorian(2023, 2, 29);
+        CivilDateTime::fromGregorian(2023, 2, 29);
     }
 
     public function testYearZeroIsLeap(): void
     {
         // Year 0 in proleptic Gregorian is leap (divisible by 400)
         $this->assertTrue(GregorianCalendar::instance()->isLeapYear(0));
-        $i = Instant::fromGregorian(0, 2, 29);
+        $i = CivilDateTime::fromGregorian(0, 2, 29);
         $this->assertSame(0, $i->gregorian()->year());
         $this->assertSame(29, $i->gregorian()->day());
     }
@@ -50,11 +50,11 @@ final class GregorianLeapYearTest extends TestCase
     public function testAddingOneDayCrossesLeapBoundary(): void
     {
         // Feb 28 2024 + 1 day = Feb 29 2024
-        $a = Instant::fromGregorian(2024, 2, 28);
+        $a = CivilDateTime::fromGregorian(2024, 2, 28);
         $this->assertSame('2024-02-29', $a->gregorian()->addDays(1)->gregorian()->format('Y-m-d'));
 
         // Feb 28 2025 + 1 day = Mar 1 2025
-        $b = Instant::fromGregorian(2025, 2, 28);
+        $b = CivilDateTime::fromGregorian(2025, 2, 28);
         $this->assertSame('2025-03-01', $b->gregorian()->addDays(1)->gregorian()->format('Y-m-d'));
     }
 }
