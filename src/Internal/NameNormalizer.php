@@ -40,8 +40,14 @@ final class NameNormalizer
         'Ğ' => 'ğ', 'Ş' => 'ş', 'İ' => 'i', 'ı' => 'i',
     ];
 
+    // ASCII case folding without strtolower(), which on PHP < 8.2 follows
+    // setlocale(LC_CTYPE) and under a single-byte locale rewrites UTF-8
+    // lead bytes (Ş is 0xC5 0x9E; 0xC5 would become 0xE5).
+    private const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    private const LOWER = 'abcdefghijklmnopqrstuvwxyz';
+
     public static function normalize(string $name): string
     {
-        return strtolower(strtr(DigitTransliterator::toLatin($name), self::MAP));
+        return strtr(strtr(DigitTransliterator::toLatin($name), self::MAP), self::UPPER, self::LOWER);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Eram\Daynum\Tests\Unit;
 
 use Eram\Daynum\Calendar\Gregorian\GregorianView;
+use Eram\Daynum\Calendar\Hijri\HijriUmmAlQuraView;
 use Eram\Daynum\Exception\InvalidArgumentException;
 use Eram\Daynum\Internal\NameNormalizer;
 use Eram\Daynum\Locale\EnglishLocale;
@@ -37,6 +38,27 @@ final class NameNormalizerTest extends TestCase
     public function testFolding(string $input, string $expected): void
     {
         $this->assertSame($expected, NameNormalizer::normalize($input));
+    }
+
+    /**
+     * Folding ignores the C library locale: on PHP < 8.2 strtolower() under
+     * a single-byte LC_CTYPE rewrote UTF-8 lead bytes, so `ŞEVVAL` stopped
+     * matching. Fails only on 8.1; on 8.2+ it pins the behaviour.
+     */
+    public function testFoldingIgnoresSingleByteCtypeLocale(): void
+    {
+        $previous = setlocale(LC_CTYPE, '0');
+        if (setlocale(LC_CTYPE, 'de_DE.ISO8859-1', 'en_US.ISO8859-1', 'en_SG.ISO8859-1') === false) {
+            $this->markTestSkipped('no ISO-8859-1 locale installed');
+        }
+
+        try {
+            $this->assertSame('şevval', NameNormalizer::normalize('ŞEVVAL'));
+            $this->assertSame(10, HijriUmmAlQuraView::parseExact('20 ŞEVVAL 1447', 'j F Y', null, 'tr')->hijri()->month());
+            $this->assertSame(11, GregorianView::parseExact('3 Kasım 2026', 'j F Y', null, 'tr')->gregorian()->month());
+        } finally {
+            setlocale(LC_CTYPE, $previous === false ? 'C' : $previous);
+        }
     }
 
     /**

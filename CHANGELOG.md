@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Name matching no longer depends on the C library locale. On PHP 8.1,
+  `strtolower()` follows `setlocale(LC_CTYPE)`, and under a single-byte
+  locale such as `de_DE.ISO8859-1` it corrupted UTF-8 letters, so `ŞEVVAL`
+  stopped matching `Şevval`. ASCII letters now fold through a fixed table.
+
 ## [1.0.0-beta.3] — 2026-10-01
 
 ### Added
