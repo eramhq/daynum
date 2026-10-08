@@ -1,105 +1,46 @@
 # Daynum
 
-**Immutable, zero-runtime-dependency, multi-calendar PHP library.**
-
-Daynum is a clean, single-package replacement for the 3–4 libraries PHP developers currently glue together to get Gregorian + Jalali (Shamsi) + Hijri support. It targets PHP 8.1+, requires no `ext-intl` at runtime, pulls no transitive dependencies, and is differentially tested against ICU on ~220,000 dates per calendar per CI build.
-
-v1 ships **Gregorian**, **Jalali**, and **Hijri** (Saudi Umm al-Qura + tabular civil), with **English**, **Persian**, **Dari**, **Arabic**, **Pashto**, **Urdu** and **Turkish** locales — and you can register your own.
-
-## What Daynum is (and isn't)
-
-**Daynum IS:** multi-calendar date conversion + formatting, immutable arithmetic, locale-aware formatting and parsing with PHP `date()` tokens, relative time ("3 days ago"), a zero-dependency ICU-tested alternative to `morilog/jalali`.
-
-**Daynum is NOT:** a timezone library (use `toDateTimeImmutable()` for DST math), a relative-date parser ("next Monday"), a Carbon replacement (Carbon covers Gregorian + timezones; Daynum covers multi-calendar + correctness), or a framework bridge.
-
-| Feature | Daynum | Carbon | morilog/jalali | ext-intl |
-|---------|--------|--------|----------------|----------|
-| Jalali | Birashk 33-year | No | Birashk (same) | Borkowski |
-| Hijri UAQ | Bundled table | No | No | Runtime ICU |
-| Hijri Civil | Yes | No | No | Yes |
-| Runtime deps | Zero | symfony/* | nesbot/carbon | ext-intl |
-| Immutable | Yes | Optional | No | N/A |
-| Testing | ICU differential | Unit tests | Unit tests | IS the oracle |
+Immutable multi-calendar dates for PHP 8.1+: Gregorian, Jalali, Hijri Umm al-Qura and civil Hijri. No Composer runtime dependencies or runtime `ext-intl` requirement.
 
 ## Install
 
-```bash
-composer require eram/daynum:^1.0@beta
+```sh
+composer require eram/daynum:1.0.0-beta.4
 ```
+
+These guides accompany **v1.0.0-beta.4**, a prerelease dated October 8, 2026. See [release status](docs/en/overview.md#release-status) and the [changelog](CHANGELOG.md).
 
 ## Quick start
 
 ```php
+<?php
+require 'vendor/autoload.php';
+
 use Eram\Daynum\CivilDateTime;
-use Eram\Daynum\Calendar\Jalali\JalaliView;
 
-// Construction — one calendar to pick from, three calendars to read back
 $d = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
-
-$d->gregorian()->format('Y-m-d');                   // "2026-04-08"
-$d->jalali()->format('Y/m/d');                      // "1405/01/19"
-$d->hijri()->format('j F Y');                       // "20 Shawwal 1447"
-
-// Persian locale + Persian digits
-$d->jalali()->withLocale('fa')->withDigits('persian')->format('l j F Y');
-// "چهارشنبه ۱۹ فروردین ۱۴۰۵"
-
-// Immutable arithmetic — returns CivilDateTime, re-enter a view to format
-$next = $d->jalali()->addMonths(1);                 // CivilDateTime
-$next->jalali()->format('Y/m/d');                   // "1405/02/19"
-
-// Strict parsing — digits in any script are normalized, names in a chosen locale
-JalaliView::parseExact('۱۴۰۵/۰۱/۱۹', 'Y/m/d');     // CivilDateTime
-JalaliView::parseExact('۱۹ فروردین ۱۴۰۵', 'j F Y', null, 'fa');
-JalaliView::tryParseExact('nope', 'Y/m/d');         // null
-
-// Relative time and locale-aware weeks
-$d->subDays(3)->jalali()->withLocale('fa')->diffForHumans($d);   // "3 روز پیش"
-$d->jalali()->withLocale('fa')->startOfWeek();                   // Saturday
-
-// Timestamps and wall-clock time math
-CivilDateTime::fromTimestamp(1775642400, 'Asia/Tehran');
-$d->addHours(3)->toTimestamp();
-
-// JSON round-trip contract
-json_encode($d);
-// {"jdn":2461139,"secondsOfDay":52200,"tzLabel":"Asia/Tehran"}
-CivilDateTime::fromArray(json_decode(json_encode($d), true))->equals($d);   // true
-
-// Escape hatch to native PHP for real timezone math
-$d->toDateTimeImmutable();
+echo $d->gregorian()->format('Y-m-d H:i'), "\n";
+echo $d->jalali()->withLocale('fa')->withDigits('persian')->format('l j F Y'), "\n";
+echo $d->hijri()->format('Y/m/d'), "\n";
+echo $d->hijriCivil()->format('Y/m/d'), "\n";
 ```
+
+```text
+2026-04-08 14:30
+چهارشنبه ۱۹ فروردین ۱۴۰۵
+1447/10/20
+1447/10/20
+```
+
+Calendar conversion preserves wall-clock time and the optional timezone label. Arithmetic returns `CivilDateTime`; select a view again to format. Use timestamps or native PHP for elapsed time and timezone conversion.
 
 ## Documentation
 
-**Learn**
-- [Getting Started](docs/en/getting-started.md) — install, first example, 5-minute tour
-- [Concepts](docs/en/concepts.md) — civil vs. UTC, `CivilDateTime` vs. view, JDN, immutability
-- [Cookbook](docs/en/cookbook.md) — 10+ task-indexed recipes
-- [FAQ](docs/en/faq.md) — surprising-but-intentional design decisions
-
-**Calendars**
-- [Gregorian](docs/en/calendars/gregorian.md) · [Jalali](docs/en/calendars/jalali.md) · [Hijri (Umm al-Qura)](docs/en/calendars/hijri-umm-al-qura.md) · [Hijri (civil)](docs/en/calendars/hijri-civil.md)
-
-**Reference**
-- [API Reference](docs/en/api-reference.md) — every type and method
-- [Formatting](docs/en/formatting.md) · [Parsing](docs/en/parsing.md) · [Arithmetic](docs/en/arithmetic.md)
-- [Localization](docs/en/localization.md) · [Timezones](docs/en/timezones.md) · [Exceptions](docs/en/exceptions.md) · [Serialization](docs/en/serialization.md)
-
-**Migration & attribution**
+- [English guides](docs/en/overview.md) · [راهنمای فارسی](docs/fa/overview.md)
+- [Getting started](docs/en/getting-started.md) · [Recipes](docs/en/cookbook.md) · [API reference](docs/en/api-reference.md)
 - [Migrating from morilog/jalali](docs/en/migration-from-morilog-jalali.md)
-- [Algorithms and attribution](docs/en/algorithms-and-attribution.md)
-
-## Contributing
-
-Bug reports, docs fixes, new locales, and new calendar systems are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for testing, fixture regeneration, and the "how to add a new calendar" checklist.
-
-## Links
-
-- [CHANGELOG.md](CHANGELOG.md) — release notes
-- [LICENSE](LICENSE) — MIT
-- [Issue tracker](https://github.com/eramhq/daynum/issues)
+- [Contributing](CONTRIBUTING.md) · [Documentation maintenance](docs/README.md) · [Security](SECURITY.md)
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+[MIT](LICENSE). See [algorithm attribution](docs/en/algorithms-and-attribution.md) for upstream sources.

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "defaultLocale": "en",
+  "locales": [
+    "en",
+    "fa"
+  ],
+  "entry": "overview",
+  "sections": [
+    {
+      "id": "start",
+      "title": {
+        "en": "Start here",
+        "fa": "شروع استفاده"
+      },
+      "pages": [
+        "overview",
+        "getting-started",
+        "concepts"
+      ]
+    },
+    {
+      "id": "guides",
+      "title": {
+        "en": "Working with dates",
+        "fa": "کار با تاریخ"
+      },
+      "pages": [
+        "formatting",
+        "parsing",
+        "localization",
+        "arithmetic",
+        "timezones",
+        "serialization",
+        "exceptions",
+        "cookbook"
+      ]
+    },
+    {
+      "id": "calendars",
+      "title": {
+        "en": "Calendar choices",
+        "fa": "انتخاب تقویم"
+      },
+      "pages": [
+        "calendars/gregorian",
+        "calendars/jalali",
+        "calendars/hijri-umm-al-qura",
+        "calendars/hijri-civil"
+      ]
+    },
+    {
+      "id": "reference",
+      "title": {
+        "en": "Reference and migration",
+        "fa": "مرجع و مهاجرت"
+      },
+      "pages": [
+        "api-reference",
+        "migration-from-morilog-jalali",
+        "algorithms-and-attribution",
+        "faq"
+      ]
+    }
+  ]
+}

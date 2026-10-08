@@ -1,156 +1,51 @@
-# Jalali (Shamsi / Solar Hijri) Calendar
-
-The Persian solar calendar, implemented using Ahmad Birashk's 33-year arithmetic cycle — the same algorithm used by `morilog/jalali`, `jalaali-js`, and `date-fns-jalali`.
-
-## Quick facts
-
-| | |
-|---|---|
-| Class | `Eram\Daynum\Calendar\Jalali\JalaliCalendar` |
-| View | `Eram\Daynum\Calendar\Jalali\JalaliView` |
-| Identifier | `jalali` |
-| Locale family | `jalali` |
-| Year range | `1` to `3177` AP (inclusive) |
-| Algorithm | Birashk 33-year cycle (port of `jalaali-js`) |
-| Default format | `Y/m/d` |
+---
+title: "Jalali calendar"
+description: "Convert Solar Hijri dates and account for leap years and seasons."
+---
+# Jalali calendar
 
 ## Construction
 
-```php
-use Eram\Daynum\CivilDateTime;
-
-CivilDateTime::fromJalali(1405, 1, 19);
-CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
-
-CivilDateTime::tryFromJalali(1405, 13, 1);    // null — no month 13
-CivilDateTime::isValidJalali(1403, 12, 30);   // true — 1403 is a leap year
-CivilDateTime::isValidJalali(1404, 12, 30);   // false — 1404 is not leap, Esfand has 29
-```
+Use `CivilDateTime::fromJalali()` and `jalali()`; parse with `Eram\Daynum\Calendar\Jalali\JalaliView`. The identifier and locale family are `jalali`. Default string format is `Y/m/d`. Select `withLocale('fa')` for Iranian month names or `fa-AF` for Dari names; digits are a separate setting.
 
 ## Month lengths
 
-| Month | Name (en) | Name (fa) | Days |
-|------:|-----------|-----------|-----:|
-| 1 | Farvardin | فروردین | 31 |
-| 2 | Ordibehesht | اردیبهشت | 31 |
-| 3 | Khordad | خرداد | 31 |
-| 4 | Tir | تیر | 31 |
-| 5 | Mordad | مرداد | 31 |
-| 6 | Shahrivar | شهریور | 31 |
-| 7 | Mehr | مهر | 30 |
-| 8 | Aban | آبان | 30 |
-| 9 | Azar | آذر | 30 |
-| 10 | Dey | دی | 30 |
-| 11 | Bahman | بهمن | 30 |
-| 12 | Esfand | اسفند | 29 / 30 (leap) |
-
-Months 1–6 are always 31 days, 7–11 always 30, and Esfand is 29 days or 30 in a leap year.
-
-## Jalali and ICU: a note on correctness
-
-Daynum's Jalali calendar is the 33-year Birashk cycle ported from `jalaali-js`, the algorithm behind `morilog/jalali` and `date-fns-jalali`. This is a deliberate ecosystem choice — it's what every migrating PHP and JS developer already tests against.
-
-Birashk is **not** identical to ICU's `persian` calendar (which uses Borkowski's arithmetic). Across the full 1700–2300 Gregorian fixture range the two algorithms agree on **99.5%** of days. The remaining 0.5% form four contiguous windows where Birashk and ICU assign the leap day to adjacent years:
-
-| Nowruz in ICU | Nowruz in Birashk | Gregorian window       |
-|---------------|-------------------|------------------------|
-| 1078 AP       | (neither leap)    | 1700-01-01..1700-03-19 |
-| 1177 AP       | 1176 AP           | 1797-03-21..1798       |
-| 1503 AP       | 1502 AP           | 2123-03-21..2124       |
-| 1602 AP       | 1601 AP           | 2222-03-21..2223       |
-
-Within these windows Daynum is **exactly one day behind ICU**. For the ~300 years between 1800 and 2122 — the practical modern range — the two algorithms agree on every single day.
-
-The `IcuConformanceTest` allow-list documents these windows explicitly. New divergences outside them are treated as regressions and fail the build.
-
-See `src/Calendar/Jalali/JalaliCalendar.php` for the full class-level explanation.
-
-## Why Birashk, not Borkowski?
-
-Daynum prioritizes compatibility with the dominant PHP/JS Jalali ecosystem (`morilog/jalali`, `jalaali-js`, `date-fns-jalali`) over strict ICU conformance. Every migrating developer already tests against Birashk output; switching to Borkowski would break those tests without improving correctness for anyone.
-
-## Leap year rule
-
-Birashk defines a 33-year arithmetic cycle with pre-computed break points (see the `BREAKS` table in `JalaliCalendar.php`). `isLeapYear(1403)` is `true`; `isLeapYear(1404)` is `false`.
-
-## Viewing
+Months 1–6 (Farvardin through Shahrivar) have 31 days; 7–11 (Mehr through Bahman) have 30; Esfand has 29 or 30 according to the leap calculation.
 
 ```php
-$d = CivilDateTime::fromJalali(1405, 1, 19, 14, 30);
+<?php
+require 'vendor/autoload.php';
 
-$d->jalali()->year();          // 1405
-$d->jalali()->month();         // 1
-$d->jalali()->day();           // 19
-$d->jalali()->dayOfWeek();     // 3 (Wednesday, Sun=0)
-$d->jalali()->dayOfYear();     // 19
-$d->jalali()->isLeapYear();    // false
-$d->jalali()->daysInMonth();   // 31
+use Eram\Daynum\CivilDateTime;
+
+var_export(CivilDateTime::isValidJalali(1403, 12, 30));
+echo "\n";
+var_export(CivilDateTime::isValidJalali(1404, 12, 30));
+echo "\n";
+$v = CivilDateTime::fromJalali(1405, 8, 1)->jalali();
+echo $v->withLocale('fa')->seasonName(), "\n";
+echo $v->startOfQuarter()->jalali()->format('Y/m/d'), "\n";
+```
+
+```text
+true
+false
+پاییز
+1405/07/01
 ```
 
 ## Seasons
 
-Each Jalali season is exactly one quarter: Farvardin–Khordad is spring, Tir–Shahrivar summer, Mehr–Azar autumn and Dey–Esfand winter.
+Only `JalaliView` supplies `season(): Season` and `seasonName(): string`. Months 1–3 are spring, 4–6 summer, 7–9 autumn and 10–12 winter. These are calendar seasons, not astronomical transition times; `startOfQuarter()` uses the first month of that group and preserves time.
 
-```php
-use Eram\Daynum\Season;
+## Jalali and ICU: a note on correctness
 
-$v = CivilDateTime::fromJalali(1405, 8, 1)->jalali();
+The implemented break-point table and `jalCal` calculation follow `jalaali-js`. Its [upstream attribution](https://github.com/jalaali/jalaali-js#about) credits Kazimierz M. Borkowski. Earlier Daynum prose and current source comments call this “Birashk”; that attribution should not be used to describe the code. This documentation change does not alter the algorithm.
 
-$v->season();                          // Season::Autumn
-$v->withLocale('fa')->seasonName();    // "پاییز"
-$v->withLocale('fa-AF')->seasonName(); // "خزان"
-$v->seasonName();                      // "Autumn"
-$v->startOfQuarter();                  // 1405/07/01 — first day of autumn
-```
-
-`season()` exists only on `JalaliView`. Gregorian seasons depend on the hemisphere and the convention (meteorological or astronomical), so Daynum doesn't guess them.
-
-## Formatting
-
-```php
-$d = CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
-
-$d->jalali()->format('Y/m/d');                                      // "1405/01/19"
-$d->jalali()->format('l j F Y');                                    // "Wednesday 19 Farvardin 1405"
-$d->jalali()->withLocale('fa')->format('l j F Y');                  // "چهارشنبه 19 فروردین 1405"
-$d->jalali()->withLocale('fa')->withDigits('persian')->format('Y/m/d'); // "۱۴۰۵/۰۱/۱۹"
-$d->jalali()->withLocale('fa')->withDigits('persian')->format('l j F Y H:i');
-// "چهارشنبه 19 فروردین 1405 14:30"
-```
-
-Arabic + Jalali formatting throws on `F` / `M` tokens because ICU's Arabic transliteration of Persian month names is low quality. Arabic-script readers who want Jalali should use `withLocale('fa')` — Persian month names render in the same Perso-Arabic script. See [../localization.md](../localization.md).
-
-## Parsing
-
-```php
-use Eram\Daynum\Calendar\Jalali\JalaliView;
-
-JalaliView::parseExact('1405/01/19', 'Y/m/d');
-JalaliView::parseExact('۱۴۰۵/۰۱/۱۹', 'Y/m/d');     // Persian digits normalized
-JalaliView::parseExact('1405/01/19 14:30', 'Y/m/d H:i');
-JalaliView::tryParseExact('not-a-date', 'Y/m/d');   // null
-```
-
-Locale-dependent tokens (`F`, `M`, `l`, `D`) cannot be parsed — they are format-only. See [../parsing.md](../parsing.md).
+The committed ICU fixtures and Daynum have known differences. [JalaliIcuDivergence](../../../tests/Conformance/Support/JalaliIcuDivergence.php) reconciles baseline JDN windows against the current fixture and, when present, a Node oracle. The exact baseline ranges are 2341973–2342051, 2377845–2378210, 2496914–2497279 and 2533073–2533438. Tests reject unexpected differences; this is not a claim of universal agreement with ICU, observational calendars or every upstream version. See [algorithms and attribution](../algorithms-and-attribution.md).
 
 ## Range
 
-```php
-JalaliCalendar::MIN_YEAR;   // 1
-JalaliCalendar::MAX_YEAR;   // 3177
-```
+Construction supports years 1–3177 inclusive, exposed by `JalaliCalendar::MIN_YEAR` and `MAX_YEAR`. Use `isInSupportedRange()` before reading an arbitrary JDN. The low-level break-point computation is not a strict range validator on every reverse-conversion path.
 
-Year 3177 AP ≈ year 3798 CE.
-
-## References
-
-- jalaali/jalaali-js — <https://github.com/jalaali/jalaali-js>
-- Ahmad Birashk, *A New Survey of the Persian Calendar* (1993)
-- `morilog/jalali` — the PHP library whose algorithm this is
-
-## See also
-
-- [gregorian.md](gregorian.md)
-- [hijri-umm-al-qura.md](hijri-umm-al-qura.md)
-- [../localization.md](../localization.md)
-- [../migration-from-morilog-jalali.md](../migration-from-morilog-jalali.md)
+For localized name input see [parsing](../parsing.md); `F`, `M`, `l` and `D` are supported. For month-end handling see [arithmetic](../arithmetic.md).

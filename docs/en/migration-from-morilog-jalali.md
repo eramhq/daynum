@@ -1,164 +1,60 @@
-# Migrating from `morilog/jalali`
+---
+title: "Migrating from morilog/jalali"
+description: "Map Jalalian tasks to Daynum and review behavioral differences."
+---
+# Migrating from morilog/jalali
 
-Daynum covers what most projects use `morilog/jalali` for — Jalali ↔ Gregorian conversion, Jalali formatting and arithmetic — plus Hijri, with zero runtime dependencies. It is **not** a drop-in replacement: the API is shaped differently, and every call site needs a small rewrite. This page lists the rewrites.
-
-## TL;DR
-
-1. `composer require eram/daynum:^1.0@beta` (both packages can be installed side by side while you migrate).
-2. Rewrite call sites using the table below, one file at a time.
-3. `composer remove morilog/jalali` once nothing references `Morilog\Jalali\` or `jdate()`.
-
-## There is no `jdate()` in Daynum
-
-Daynum ships no global functions. That is deliberate: the name `jdate()` already means two incompatible things in the PHP world —
-
-- `morilog/jalali`: `jdate($str = null)` → a `Jalalian` object.
-- jdf.php (and its many copies): `jdate($format, $timestamp = '', …)` → a formatted string.
-
-A third `jdate()` with yet another signature would either clash or be silently skipped by a `function_exists` guard, and every existing call would break at runtime rather than at install time. Rewrite `jdate()` calls explicitly (see the table). If you want a short helper, define one in your own namespace so its signature is yours:
-
-```php
-namespace App\Support;
-
-use Eram\Daynum\Calendar\Jalali\JalaliView;
-use Eram\Daynum\CivilDateTime;
-
-function jalali(CivilDateTime $d): JalaliView
-{
-    return $d->jalali()->withLocale('fa')->withDigits('persian');
-}
-```
+Daynum is not a drop-in replacement. **morilog/jalali v3 supports immutability**, as its [v3 documentation](https://github.com/morilog/jalali/blob/v3.4.2/README.md#version-3-features) states. Migrate for the API and calendar models your application needs, not for an invented immutability, speed or accuracy advantage.
 
 ## Before / after
 
-| `morilog/jalali` | Daynum |
+The left column refers to morilog v3. Check your installed version before changing call sites. Daynum examples here target beta.4. The [parsing guide](parsing.md) identifies changes since beta.3.
+
+| morilog v3 task | Daynum equivalent |
 |---|---|
-| `jdate()` / `Jalalian::now()` | `CivilDateTime::now('Asia/Tehran')->jalali()` |
-| `jdate($dateTime)` / `Jalalian::fromDateTime($dt)` | `CivilDateTime::fromDateTime($dt)->jalali()` |
-| `Jalalian::forge($timestamp)` / `jdate($timestamp)` | `CivilDateTime::fromTimestamp($timestamp, 'Asia/Tehran')->jalali()` |
-| `Jalalian::fromCarbon($carbon)` | `CivilDateTime::fromDateTime($carbon)->jalali()` (Carbon is a `DateTimeInterface`) |
-| `new Jalalian(1405, 1, 19)` | `CivilDateTime::fromJalali(1405, 1, 19)` |
-| `Jalalian::fromFormat('Y/m/d', $s)` | `JalaliView::parseExact($s, 'Y/m/d')` |
-| `CalendarUtils::toJalali(2026, 4, 8)` | `CivilDateTime::fromGregorian(2026, 4, 8)->jalali()->toArray()` |
-| `CalendarUtils::toGregorian(1405, 1, 19)` | `CivilDateTime::fromJalali(1405, 1, 19)->gregorian()->toArray()` |
+| `new Jalalian($y, $m, $d)` | `CivilDateTime::fromJalali($y, $m, $d)` |
+| `Jalalian::now()` / `jdate()` | `CivilDateTime::now('Asia/Tehran')->jalali()` |
+| `Jalalian::forge($timestamp)` | `CivilDateTime::fromTimestamp($timestamp, 'Asia/Tehran')->jalali()` |
+| `Jalalian::fromDateTime($dt)` / `fromCarbon($carbon)` | `CivilDateTime::fromDateTime($dt)->jalali()` for `DateTimeInterface` |
+| `Jalalian::fromFormat('Y/m/d', $text)` | `JalaliView::parseExact($text, 'Y/m/d')` (argument order reversed) |
 | `CalendarUtils::checkDate($y, $m, $d)` | `CivilDateTime::isValidJalali($y, $m, $d)` |
-| `CalendarUtils::convertNumbers($s)` | `DigitTransliterator::toScript($s, 'persian')` |
-| `->format('%A، %d %B %Y')` (strftime `%` tokens) | `->format('l، d F Y')` (PHP `date()` tokens, see below) |
-| `->getYear()` / `getMonth()` / `getDay()` | `->year()` / `month()` / `day()` |
-| `->getHour()` / `getMinute()` / `getSecond()` | `->hour()` / `minute()` / `second()` |
-| `->getMonthDays()` | `->daysInMonth()` |
-| `->isLeapYear()` | `->isLeapYear()` |
-| `->getDayOfWeek()` (Saturday = 0) | `->dayOfWeek()` (Sunday = 0, PHP `date('w')`) or `->dayOfWeekIso()` |
-| `->addDays(3)` / `addMonths` / `addYears` | `->addDays(3)` … — returns a `CivilDateTime`, see below |
-| `->addHours(2)` / `addMinutes` / `addSeconds` | `$d->addHours(2)` (on the `CivilDateTime`, wall-clock) |
-| `->getTimestamp()` | `$d->toTimestamp()` |
-| `->ago()` | `$d->jalali()->withLocale('fa')->ago()` |
-| `->toCarbon()` | `Carbon::instance($d->toDateTimeImmutable())` |
+| `getYear()` / `getMonth()` / `getDay()` | `year()` / `month()` / `day()` on a view |
+| `getMonthDays()` | `daysInMonth()` on a view |
+| `getTimestamp()` | `toTimestamp()` on the core, with a timezone label |
+| `toCarbon()` | `Carbon\CarbonImmutable::instance($d->toDateTimeImmutable())` if Carbon is installed |
 
-### strftime tokens → `date()` tokens
+For numeric conversion tuples, use a calendar's `fromJdn($d->jdn)` or select `year()`, `month()`, `day()` from a view. `toArray()` is an associative array with time fields, not morilog's three-element conversion tuple.
 
-`morilog/jalali`'s `format()` takes strftime-style `%` tokens. Daynum uses PHP `date()` tokens everywhere ([formatting.md](formatting.md)):
+## There is no `jdate()` in Daynum
 
-| strftime | `date()` | Meaning |
-|---|---|---|
-| `%Y` | `Y` | 4-digit year |
-| `%y` | `y` | 2-digit year |
-| `%m` / `%n` | `m` / `n` | month, padded / unpadded |
-| `%d` / `%e` | `d` / `j` | day, padded / unpadded |
-| `%B` / `%b` | `F` / `M` | month name, full / short |
-| `%A` / `%a` | `l` / `D` | weekday name, full / short |
-| `%H` / `%I` | `H` / `h` | hour, 24h / 12h |
-| `%M` / `%S` | `i` / `s` | minute / second |
-| `%p` | `A` | AM/PM |
+Rewrite global helper calls explicitly. Daynum beta.2 removed its earlier helpers and renamed `Instant` to `CivilDateTime` and `instant()` to `dateTime()` without aliases. See the [changelog](../../CHANGELOG.md).
 
 ## Key differences
 
-### 1. Values are `CivilDateTime`; calendars are views
-
-`Jalalian` mixes "which date" and "which calendar" into one object. Daynum splits them: `CivilDateTime` is the date-time value, and `jalali()`, `gregorian()`, `hijri()` are views onto it.
+Daynum defaults to English/Latin display. Configure both locale and digits. Its `dayOfWeek()` uses Sunday=0; morilog's `getDayOfWeek()` uses Saturday=0. Calendar arithmetic returns `CivilDateTime` and requires a new view:
 
 ```php
-// morilog/jalali
-$d = Jalalian::fromFormat('Y/m/d', '1405/01/19');
-echo $d->format('%A %d %B %Y');
+<?php
+require 'vendor/autoload.php';
 
-// Daynum
-$d = JalaliView::parseExact('1405/01/19', 'Y/m/d');          // CivilDateTime
-echo $d->jalali()->withLocale('fa')->format('l d F Y');      // enter a view to format
+use Eram\Daynum\CivilDateTime;
+use Eram\Daynum\Calendar\Jalali\JalaliView;
+
+$d = JalaliView::parseExact('1405/01/19', 'Y/m/d', 'Asia/Tehran');
+$next = $d->jalali()->addMonths(1);
+echo $next->jalali()->withLocale('fa')->withDigits('persian')->format('l j F Y'), "\n";
+echo $d->jalali()->format('Y/m/d'), "\n";
 ```
 
-The same `CivilDateTime` is also `$d->gregorian()` and `$d->hijri()` with no conversion code.
-
-### 2. Arithmetic returns `CivilDateTime`, not a view
-
-```php
-// morilog/jalali
-echo $d->addMonths(1)->format('Y/m/d');
-
-// Daynum
-echo $d->jalali()->addMonths(1)->jalali()->format('Y/m/d');
+```text
+شنبه ۱۹ اردیبهشت ۱۴۰۵
+1405/01/19
 ```
 
-Arithmetic is calendar-specific ("one Jalali month"), but its result is calendar-neutral. See [concepts.md](concepts.md#civildatetime-vs-view).
+Daynum uses PHP-style tokens, not percent-prefixed strftime patterns: `%A` → `l`, `%d` → `d`, `%B` → `F`, `%Y` → `Y`. Do not mechanically keep `%` characters. Parsing rejects invalid dates and does not accept relative phrases such as “next Monday”. Test month-end clamping, name parsing, weekday numbering, range errors and timezone policy in your own migration cases.
 
-### 3. Locale and digits are per view, not global
+## When Carbon or native PHP is useful
 
-`morilog/jalali` renders Persian names by default and converts digits through `CalendarUtils::convertNumbers()`. Daynum defaults to English names and Latin digits; choose per view:
+Use [DateTimeImmutable](https://www.php.net/manual/en/class.datetimeimmutable.php) for native timezone conversion. [Carbon](https://github.com/CarbonPHP/carbon) extends PHP's date API with convenience methods; it offers `CarbonImmutable` as well as mutable `Carbon`. Keep it when your application depends on those APIs. Convert existing objects through `fromDateTime()` for calendar display, noting the [precision and overlap limitations](timezones.md).
 
-```php
-$d->jalali()->withLocale('fa')->withDigits('persian')->format('Y/m/d');
-// "۱۴۰۵/۰۱/۱۹"
-```
-
-No global state, so nothing leaks between requests.
-
-### 4. Parsing is strict
-
-`parseExact` matches the format character for character. For free-form user input, chain `tryParseExact` and fall back to `DateTimeImmutable`:
-
-```php
-$d = JalaliView::tryParseExact($raw, 'Y/m/d')
-   ?? JalaliView::tryParseExact($raw, 'Y-m-d')
-   ?? CivilDateTime::fromDateTime(new DateTimeImmutable($raw));
-```
-
-See [parsing.md](parsing.md).
-
-### 5. Time zones are labels; comparison is wall-clock
-
-A `CivilDateTime` stores a time-zone label next to the wall-clock date and time; it does not convert anything. Two values with the same wall-clock reading compare equal even if their labels differ. For real time-zone math, use `toDateTimeImmutable()`.
-
-See [timezones.md](timezones.md) and [concepts.md](concepts.md#civildatetime-is-wall-clock-time).
-
-### 6. No relative-date parsing
-
-`Jalalian` accepts Carbon-style strings like `"next Monday"`. Daynum does not parse them; let PHP do it first:
-
-```php
-$d = CivilDateTime::fromDateTime(new DateTimeImmutable('next Saturday', new DateTimeZone('Asia/Tehran')));
-```
-
-## Arabic month names on Jalali throw
-
-Formatting Jalali with `withLocale('ar')` and an `F`/`M` token throws. Use `withLocale('fa')` — Persian month names are in the same script. See [localization.md](localization.md#the-arabic--jalali-limitation).
-
-## Feature comparison
-
-| Feature | `morilog/jalali` | Daynum | Notes |
-|---|---|---|---|
-| Jalali ↔ Gregorian conversion | ✓ | ✓ | Same Birashk 33-year cycle (via jalaali-js) |
-| Hijri calendar | ✗ | ✓ | Umm al-Qura + civil |
-| Format tokens | strftime `%` | PHP `date()` |  |
-| Persian digits | `convertNumbers()` | per view |  |
-| Relative parsing ("tomorrow") | ✓ | ✗ | Use `DateTimeImmutable` |
-| Global `jdate()` helper | ✓ | ✗ | Write your own, see above |
-| Immutable | mostly | always |  |
-| ICU-tested | ✗ | ✓ |  |
-| Runtime dependencies | Carbon | none |  |
-
-## See also
-
-- [calendars/jalali.md](calendars/jalali.md) — algorithm details, ICU divergence windows
-- [getting-started.md](getting-started.md)
-- [cookbook.md](cookbook.md) — Laravel integration patterns
-- [faq.md](faq.md)
+Install Daynum alongside morilog while migrating. Remove morilog only after your application tests pass and no remaining dependencies or helper calls need it. No framework migration or package removal is performed by documentation examples.

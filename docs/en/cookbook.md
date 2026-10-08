@@ -1,263 +1,105 @@
+---
+title: "Cookbook"
+description: "Apply Daynum to input forms, monthly ranges and calendar fallback."
+---
 # Cookbook
-
-Task-indexed recipes. Each one is copy-pasteable and runs against Daynum as shipped — no pseudocode.
 
 ## Recipes
 
-1. [Convert a Gregorian date to Jalali (and back)](#convert-a-gregorian-date-to-jalali-and-back)
-2. [Display a date in both Jalali and Hijri alongside Gregorian](#display-a-date-in-both-jalali-and-hijri-alongside-gregorian)
-3. [Parse user input safely with `tryParseExact`](#parse-user-input-safely-with-tryparseexact)
-4. [Format with Persian digits and Persian month names](#format-with-persian-digits-and-persian-month-names)
-5. [Persist and reload a `CivilDateTime` via JSON](#persist-and-reload-a-civildatetime-via-json)
-6. [Store a `CivilDateTime` in a database (three-column pattern)](#store-a-civildatetime-in-a-database-three-column-pattern)
-7. [Add months at the end of month (clamping behavior)](#add-months-at-the-end-of-month-clamping-behavior)
-8. [Handle the Umm al-Qura range boundary (fall back to civil)](#handle-the-umm-al-qura-range-boundary-fall-back-to-civil)
-9. [Add real (DST-aware) hours via timestamps](#add-real-dst-aware-hours-via-timestamps)
-10. [Convert a `CivilDateTime` between timezones](#convert-a-civildatetime-between-timezones)
-11. [Use Daynum in a Laravel request/response](#use-daynum-in-a-laravel-requestresponse)
+Each recipe builds on a guide instead of defining a second API. Standalone examples include their expected output. The Laravel fragment requires its host application and is syntax-checked only.
 
 ## Convert a Gregorian date to Jalali (and back)
 
-```php
-use Eram\Daynum\CivilDateTime;
-
-$g = CivilDateTime::fromGregorian(2026, 4, 8);
-echo $g->jalali()->format('Y/m/d'), "\n";    // 1405/01/19
-
-$j = CivilDateTime::fromJalali(1405, 1, 19);
-echo $j->gregorian()->format('Y-m-d'), "\n"; // 2026-04-08
-```
-
-One `CivilDateTime`, read through different views. No conversion functions — views do the work.
-
-## Display a date in both Jalali and Hijri alongside Gregorian
-
-```php
-$d = CivilDateTime::fromGregorian(2026, 4, 8);
-
-printf(
-    "%s   |   %s   |   %s\n",
-    $d->gregorian()->format('l, F j, Y'),                        // "Wednesday, April 8, 2026"
-    $d->jalali()->withLocale('fa')->format('l j F Y'),           // "چهارشنبه 19 فروردین 1405"
-    $d->hijri()->format('j F Y'),                                // "20 Shawwal 1447"
-);
-```
+Construct once, then select the required view. The [first example](getting-started.md#first-example) displays all four calendars. Converting back uses `dateTime()->gregorian()`, not reparsing formatted display text.
 
 ## Parse user input safely with `tryParseExact`
 
-```php
-use Eram\Daynum\Calendar\Jalali\JalaliView;
-
-function parseJalaliBirthday(string $raw): ?CivilDateTime
-{
-    foreach (['Y/m/d', 'Y-m-d', 'Y.m.d'] as $fmt) {
-        $d = JalaliView::tryParseExact($raw, $fmt);
-        if ($d !== null) {
-            return $d;
-        }
-    }
-    return null;
-}
-
-parseJalaliBirthday('۱۴۰۵/۰۱/۱۹');     // CivilDateTime — Persian digits normalized
-parseJalaliBirthday('1405-01-19');    // CivilDateTime
-parseJalaliBirthday('nope');          // null
-```
-
-`tryParseExact` never throws — it returns `null` on any failure. Chain the formats you want to accept.
-
-## Format with Persian digits and Persian month names
-
-```php
-$d = CivilDateTime::fromJalali(1405, 1, 19, 14, 30);
-
-$output = $d->jalali()
-    ->withLocale('fa')
-    ->withDigits('persian')
-    ->format('l j F Y — H:i');
-// "چهارشنبه ۱۹ فروردین ۱۴۰۵ — ۱۴:۳۰"
-```
-
-## Persist and reload a `CivilDateTime` via JSON
-
-```php
-$original = CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
-
-// Persist
-$json = json_encode($original);
-// {"jdn":2461139,"secondsOfDay":52200,"tzLabel":"Asia/Tehran"}
-
-// Reload
-$decoded = json_decode($json, true);
-$restored = CivilDateTime::fromArray($decoded);
-
-$restored->equals($original);                         // true
-$restored->jalali()->format('Y/m/d H:i');             // "1405/01/19 14:30"
-$restored->gregorian()->format('Y-m-d H:i');          // "2026-04-08 14:30"
-```
-
-The contract: `jdn`, `secondsOfDay`, `tzLabel`. Nothing else. See [serialization.md](serialization.md).
-
-## Store a `CivilDateTime` in a database (three-column pattern)
-
-```sql
-CREATE TABLE events (
-    id        BIGSERIAL PRIMARY KEY,
-    title     TEXT NOT NULL,
-    event_jdn INTEGER NOT NULL,
-    event_sod INTEGER NOT NULL DEFAULT 0,
-    event_tz  TEXT,
-    INDEX (event_jdn)
-);
-```
-
-```php
-// Insert
-$pdo->prepare(
-    "INSERT INTO events (title, event_jdn, event_sod, event_tz) VALUES (?, ?, ?, ?)"
-)->execute([$title, $d->jdn, $d->secondsOfDay, $d->tzLabel]);
-
-// Select
-$row = $pdo->query("SELECT * FROM events WHERE id = 42")->fetch();
-$d = new CivilDateTime(
-    jdn: (int) $row['event_jdn'],
-    secondsOfDay: (int) $row['event_sod'],
-    tzLabel: $row['event_tz'],
-);
-
-// Range query — pure integer comparison, index-friendly
-$min = CivilDateTime::fromJalali(1405, 1, 1)->jdn;
-$max = CivilDateTime::fromJalali(1405, 12, 29)->jdn;
-$stmt = $pdo->prepare("SELECT * FROM events WHERE event_jdn BETWEEN ? AND ?");
-$stmt->execute([$min, $max]);
-```
-
-See [serialization.md](serialization.md#db-persistence-patterns) for alternative schemas.
+Use a known input calendar, explicit format and, for names, explicit locale. [Parsing](parsing.md) shows invalid Esfand 30 returning null. Preserve the original input for the form and show a friendly validation message rather than passing the exception message directly to users.
 
 ## Add months at the end of month (clamping behavior)
 
-```php
-// Gregorian: Jan 31 + 1 month → Feb 28/29 (clamped)
-$d = CivilDateTime::fromGregorian(2026, 1, 31);
-$d->gregorian()->addMonths(1);       // → 2026-02-28
-$d->gregorian()->addMonths(2);       // → 2026-03-31 (no clamp needed)
-$d->gregorian()->addMonths(3);       // → 2026-04-30
+For a monthly recurrence, decide whether the rule is “same numbered day, clamped” or “last day of every month”. Repeatedly adding one month to a clamped date drifts (January 31 → February 28 → March 28). Derive each occurrence from the original anchor with `addMonths($index)`, or explicitly call `endOfMonth()` in each target month. See the [arithmetic example](arithmetic.md#month-arithmetic-clamps-the-day).
 
-// Jalali: Shahrivar 31 + 1 month → Mehr 30 (clamped)
-$d = CivilDateTime::fromJalali(1405, 6, 31);
-$next = $d->jalali()->addMonths(1);
-$next->jalali()->format('Y/m/d');    // "1405/07/30"
+## Query a Jalali month
+
+Build a half-open range `[start, until)` with midnight boundaries. A timestamp-backed database should receive `$start->toTimestamp()` and `$until->toTimestamp()`; a civil store should compare day/time fields under the same zone policy. This example computes values only and makes no database writes.
+
+```php
+<?php
+require 'vendor/autoload.php';
+
+use Eram\Daynum\CivilDateTime;
+
+$d = CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
+$start = $d->jalali()->startOfMonth()->startOfDay();
+$until = $start->jalali()->addMonths(1);
+echo $start->gregorian()->format('c'), "\n";
+echo $until->gregorian()->format('c'), "\n";
+var_export($d->greaterThanOrEqual($start) && $d->lessThan($until));
+echo "\n";
 ```
 
-Clamping matches Carbon, `java.time`, and most mainstream date libraries. See [arithmetic.md](arithmetic.md#month-arithmetic-clamps-the-day).
+```text
+2026-03-21T00:00:00+03:30
+2026-04-21T00:00:00+03:30
+true
+```
 
 ## Handle the Umm al-Qura range boundary (fall back to civil)
 
+For a known Gregorian date, keep its day and choose a supported Hijri display. Include the calendar name so fallback is visible:
+
 ```php
-use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
+<?php
+require 'vendor/autoload.php';
 
-function renderHijri(CivilDateTime $d): string
-{
-    try {
-        return $d->hijri()->format('j F Y');          // prefer UAQ
-    } catch (UmmAlQuraOutOfRangeException) {
-        return $d->hijriCivil()->format('j F Y') . ' (civil)';
-    }
+use Eram\Daynum\CivilDateTime;
+
+$d = CivilDateTime::fromGregorian(1800, 1, 1);
+$view = $d->hijri();
+if (!$view->isInSupportedRange()) {
+    $view = $d->hijriCivil();
 }
-
-// Modern date: uses UAQ
-renderHijri(CivilDateTime::fromGregorian(2026, 4, 8));      // "20 Shawwal 1447"
-
-// Historical date: falls back to civil
-renderHijri(CivilDateTime::fromGregorian(1500, 1, 1));      // "5 Shaʻban 905 (civil)"
+if (!$view->isInSupportedRange()) {
+    throw new RuntimeException('No supported Hijri view');
+}
+echo $view->calendar()->name(), ': ', $view->format('Y/m/d'), "\n";
 ```
 
-See [calendars/hijri-umm-al-qura.md](calendars/hijri-umm-al-qura.md).
+```text
+hijri-civil: 1214/08/04
+```
+
+This does not reinterpret user-entered Umm al-Qura components as civil components.
 
 ## Add real (DST-aware) hours via timestamps
 
-`addHours()` is wall-clock arithmetic. When you need "N real hours later" across a DST change, go through a timestamp:
-
-```php
-function addRealHours(CivilDateTime $d, int $hours): CivilDateTime
-{
-    return CivilDateTime::fromTimestamp($d->toTimestamp() + $hours * 3600, $d->tzLabel ?? 'UTC');
-}
-
-$d = CivilDateTime::fromGregorian(2026, 3, 29, 0, 30, 0, 'Europe/London');  // just before BST
-addRealHours($d, 2)->gregorian()->format('Y-m-d H:i T');   // "2026-03-29 03:30 BST"
-$d->addHours(2)->gregorian()->format('H:i');               // "02:30" (wall-clock)
-```
-
-See [timezones.md](timezones.md).
+Use `CivilDateTime::fromTimestamp($d->toTimestamp() + 3600, $zone)` for one elapsed hour. The [DST example](timezones.md#doing-timezone-math) shows why `addHours(1)` can give a different wall-clock result.
 
 ## Convert a `CivilDateTime` between timezones
 
-```php
-$tehran = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
+See [conversion versus relabeling](timezones.md#converting-between-zones). Keep a timestamp when an ambiguous repeated hour must retain its exact occurrence.
 
-$utc = CivilDateTime::fromTimestamp($tehran->toTimestamp(), 'UTC');
-$utc->gregorian()->format('Y-m-d H:i T');   // "2026-04-08 11:00 UTC"
-```
+## Persist and reload a `CivilDateTime` via JSON
+
+Use the [serialization example](serialization.md#the-json-round-trip-contract). An ORM cast should validate decoded structure before calling `fromArray()` and preserve the three fields. It should not serialize a formatted Persian date as a timestamp.
 
 ## Use Daynum in a Laravel request/response
 
-### Eloquent cast stub
+Daynum has no framework dependency. In an application that already installs Laravel, validate the input type first, then its calendar date:
 
 ```php
-use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
-use Eram\Daynum\CivilDateTime;
-
-class CivilDateTimeCast implements CastsAttributes
-{
-    public function get($model, string $key, $value, array $attributes): ?CivilDateTime
-    {
-        if ($value === null) {
-            return null;
-        }
-        return CivilDateTime::fromArray(json_decode($value, true));
-    }
-
-    public function set($model, string $key, $value, array $attributes): ?string
-    {
-        return $value === null ? null : json_encode($value);
-    }
-}
-
-// In your model:
-protected $casts = [
-    'event_at' => CivilDateTimeCast::class,
-];
-```
-
-### Validation rule
-
-```php
-use Illuminate\Contracts\Validation\Rule;
 use Eram\Daynum\Calendar\Jalali\JalaliView;
 
-class ValidJalaliDate implements Rule
-{
-    public function passes($attribute, $value): bool
-    {
-        return is_string($value) && JalaliView::tryParseExact($value, 'Y/m/d') !== null;
-    }
-
-    public function message(): string
-    {
-        return 'The :attribute must be a valid Jalali date in Y/m/d format.';
-    }
+// Context: a Laravel request handler; Laravel is installed by the application.
+$input = $request->validate(['date' => ['required', 'string']]);
+$d = JalaliView::tryParseExact($input['date'], 'Y/m/d', 'Asia/Tehran');
+if ($d === null) {
+    throw \Illuminate\Validation\ValidationException::withMessages([
+        'date' => 'Invalid Jalali date (Y/m/d).',
+    ]);
 }
-
-// In a FormRequest:
-public function rules(): array
-{
-    return ['birthday' => ['required', new ValidJalaliDate()]];
-}
+return response()->json($d);
 ```
 
-## See also
-
-- [faq.md](faq.md) — surprising-but-intentional design decisions
-- [api-reference.md](api-reference.md) — every method at a glance
-- [migration-from-morilog-jalali.md](migration-from-morilog-jalali.md) — full migration guide
+The explicit zone is an application policy. For date-only data, leave it null if no moment interpretation is intended. The JSON response contains the civil representation, not locale settings. Adapt the message to your application's language.

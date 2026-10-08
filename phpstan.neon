@@ -3,4 +3,7 @@ parameters:
     paths:
         - src
         - tests
+        - tools/Documentation.php
+        - tools/check-docs.php
+        - tools/check-doc-examples.php
     phpVersion: 80100

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta.4] — 2026-10-08
+
+### Docs
+- Prepare 19 matching English and Persian guides with schemaVersion 1 navigation
+  for the Eram website, concise root READMEs, and maintainer publishing notes.
+- Correct comparison, algorithm attribution, parsing, range, timezone and
+  test-coverage claims; explicitly identify behavior added in beta.4.
+- Add documentation structure/link checks and executable-example verification
+  to the existing PHP CI matrix.
+
 ### Changed
 - `parseExact()` rejects repeated AM/PM (`a`/`A`) or UTC-offset (`P`/`p`/
   `O`) tokens that disagree, as it already did for every other field:

@@ -1,160 +1,44 @@
+---
+title: "Serialization"
+description: "Persist civil values without confusing component arrays with JSON."
+---
 # Serialization
-
-Daynum's serialization contract is deliberately simple: a `CivilDateTime` serializes to a three-field JSON object, and the round-trip is exact. The format is calendar-neutral — you never need to re-specify which calendar produced the value.
 
 ## The JSON round-trip contract
 
-```php
-$d = CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
+`CivilDateTime` implements `JsonSerializable`; its JSON has `jdn`, `secondsOfDay` and `tzLabel`. It does not remember the originating calendar, locale or digit style. Save those separately if they are part of your domain.
 
-json_encode($d);
-// {"jdn":2461139,"secondsOfDay":52200,"tzLabel":"Asia/Tehran"}
+```php
+<?php
+require 'vendor/autoload.php';
+
+use Eram\Daynum\CivilDateTime;
+
+$d = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
+$json = json_encode($d, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+echo $json, "\n";
+$copy = CivilDateTime::fromArray(json_decode($json, true, flags: JSON_THROW_ON_ERROR));
+var_export($copy->jsonSerialize() === $d->jsonSerialize());
+echo "\n";
+echo $copy->jalali()->format('Y/m/d'), "\n";
 ```
 
-The three fields are:
-
-| Field | Type | Meaning |
-|---|---|---|
-| `jdn` | `int` | Julian Day Number — the interlingua between all calendars |
-| `secondsOfDay` | `int` | Seconds since midnight, in `[0, 86400)` |
-| `tzLabel` | `string\|null` | IANA name, fixed offset, or `null` |
-
-Nothing else. No calendar identifier (it doesn't belong — JDN is neutral), no locale, no format string. These are all read/display concerns that belong on the view, not on the stored value.
+```text
+{"jdn":2461139,"secondsOfDay":52200,"tzLabel":"Asia/Tehran"}
+true
+1405/01/19
+```
 
 ## Reconstructing
 
-```php
-$data = json_decode($json, true);
-$d = CivilDateTime::fromArray($data);
-```
+`fromArray()` requires an integer `jdn`. Missing or null `secondsOfDay` becomes 0; otherwise it must be an integer from 0 to 86399. Missing/null `tzLabel` becomes null; otherwise it must be a string. Numeric strings are not integers. Extra keys are ignored. The timezone name and calendar range are not checked here; validate them for the intended use. Invalid shapes throw Daynum's `InvalidArgumentException`; invalid seconds throw `InvalidDateException`. JSON decoding has its own `JsonException` and shape/type checks.
 
-`CivilDateTime::fromArray` validates that `jdn` is an int, `secondsOfDay` is an int (defaulting to `0`), and `tzLabel` is a string or `null` (defaulting to `null`). Missing `secondsOfDay` and `tzLabel` are allowed:
-
-```php
-CivilDateTime::fromArray(['jdn' => 2461139]);  // works — time 00:00:00, no tz
-```
-
-Invalid input throws `InvalidArgumentException`:
-
-```php
-CivilDateTime::fromArray(['jdn' => '2461139']);   // throws — jdn must be int
-CivilDateTime::fromArray([]);                      // throws — missing jdn
-```
+Do not use `equals()` to verify all serialized fields: it ignores timezone labels. The example compares the serialized arrays instead.
 
 ## Calendar-specific array form
 
-For debugging or when you want human-readable fields, views also expose `toArray()`:
-
-```php
-$d->jalali()->toArray();
-// ['year'=>1405,'month'=>1,'day'=>19,'hour'=>14,'minute'=>30,'second'=>0,'tzLabel'=>'Asia/Tehran']
-
-$d->gregorian()->toArray();
-// ['year'=>2026,'month'=>4,'day'=>8,'hour'=>14,'minute'=>30,'second'=>0,'tzLabel'=>'Asia/Tehran']
-```
-
-**Important:** there is no inverse of `view->toArray()`. It's not a round-trip format — it's calendar-specific, so reconstructing from it would require choosing which calendar to reconstruct through.
-
-For round-trippable storage, use `json_encode($dateTime)` / `CivilDateTime::fromArray()`. Use `view->toArray()` for display, logging, and template rendering.
+A view's `toArray()` returns `year`, `month`, `day`, `hour`, `minute`, `second`, `tzLabel`, with components in that calendar. It has no `jdn` and cannot be passed to `CivilDateTime::fromArray()`. To rebuild it, select the correct `fromGregorian`/`fromJalali`/`fromHijri`/`fromHijriCivil` factory and map those fields explicitly.
 
 ## DB persistence patterns
 
-### Pattern 1: three columns (recommended)
-
-Store the three fields directly. This is the cleanest schema and plays nicely with indexes and range queries.
-
-```sql
-CREATE TABLE events (
-    id           BIGSERIAL PRIMARY KEY,
-    title        TEXT NOT NULL,
-    event_jdn    INTEGER NOT NULL,                -- day, orderable
-    event_sod    INTEGER NOT NULL DEFAULT 0,      -- time-of-day
-    event_tz     TEXT,                            -- nullable
-    INDEX (event_jdn)
-);
-```
-
-```php
-// Store
-$stmt->execute([
-    'event_jdn' => $d->jdn,
-    'event_sod' => $d->secondsOfDay,
-    'event_tz'  => $d->tzLabel,
-]);
-
-// Read
-$d = new CivilDateTime(
-    jdn: $row['event_jdn'],
-    secondsOfDay: $row['event_sod'],
-    tzLabel: $row['event_tz'],
-);
-```
-
-Range queries use plain integer comparisons on `event_jdn`, which is fast and index-friendly regardless of which calendar the input came from.
-
-### Pattern 2: one JSON column
-
-If your ORM or framework prefers a single column:
-
-```sql
-ALTER TABLE events ADD COLUMN event_datetime JSONB NOT NULL;
-```
-
-```php
-// Store
-$stmt->execute(['event_datetime' => json_encode($d)]);
-
-// Read
-$d = CivilDateTime::fromArray(json_decode($row['event_datetime'], true));
-```
-
-Simpler, but harder to query — you lose the ability to do an index-backed `WHERE event_jdn BETWEEN x AND y` without generated columns.
-
-### Pattern 3: native PHP datetime (interop)
-
-If you need to share a column with legacy code that already uses `DATETIME` / `TIMESTAMPTZ`, escape-hatch to `DateTimeImmutable`:
-
-```php
-// Store
-$native = $d->toDateTimeImmutable();
-$stmt->execute(['event_at' => $native->format('Y-m-d H:i:s'), 'event_tz' => $d->tzLabel]);
-
-// Read — two round trips
-$native = new DateTimeImmutable($row['event_at'], new DateTimeZone($row['event_tz'] ?? 'UTC'));
-$d = CivilDateTime::fromDateTime($native);
-```
-
-Note that `DATETIME` columns don't store timezones — you need a second column for that unless your DB has a `TIMESTAMPTZ` type (Postgres does; MySQL does not).
-
-## Storage size
-
-Three integers plus an optional short string. On PostgreSQL with the three-column schema, each `CivilDateTime` takes approximately `4 + 4 + 20 = 28` bytes. On a JSONB column, about 60 bytes with field names.
-
-## Calendar-neutrality is the whole point
-
-Because JDN is the interlingua, you never need to re-declare which calendar produced the value. Write Jalali input, read as Gregorian:
-
-```php
-// Request comes in as Jalali
-$input = CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0, 'Asia/Tehran');
-$pdo->exec("INSERT INTO events (event_jdn, event_sod, event_tz) VALUES ({$input->jdn}, {$input->secondsOfDay}, 'Asia/Tehran')");
-
-// Much later, display in English Gregorian
-$row = $pdo->query("SELECT * FROM events WHERE id = 1")->fetch();
-$d = new CivilDateTime($row['event_jdn'], $row['event_sod'], $row['event_tz']);
-echo $d->gregorian()->format('Y-m-d H:i e');  // "2026-04-08 14:30 Asia/Tehran"
-```
-
-Mixing input and output calendars is free — no conversion code, no migration scripts.
-
-## What `CivilDateTime` is not
-
-`CivilDateTime` is wall-clock time, not a UTC moment. Two `CivilDateTime` objects with the same `jdn` + `secondsOfDay` but different `tzLabel` will round-trip to the same string representation and compare `equals()`. If you need a physical-time-ordered column for a job queue or audit log, store the Unix timestamp alongside (`$d->toTimestamp()`) or use a `TIMESTAMPTZ` column instead.
-
-See [concepts.md](concepts.md#civildatetime-is-wall-clock-time).
-
-## See also
-
-- [timezones.md](timezones.md) — what `tzLabel` does and doesn't do
-- [cookbook.md](cookbook.md#persist-and-reload-a-civildatetime-via-json) — a full Laravel-style example
-- [api-reference.md](api-reference.md#eramdaynumcivildatetime) — `fromArray`, `jsonSerialize`, `toArray`
+Use three typed columns (integer JDN, integer seconds, nullable string label) or a JSON column for civil schedules. A database driver may return integers as strings; validate and cast at that boundary. Store the calendar identity too for rules such as “every Jalali month”. For actual event moments, persist UTC timestamps with any required original-zone metadata. A bare SQL datetime string loses the label; adding one later is an interpretation, not a recovered instant. Daynum does not ship ORM casts. See [recipes](cookbook.md) and [timezone limitations](timezones.md).

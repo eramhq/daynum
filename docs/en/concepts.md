@@ -1,97 +1,49 @@
-# Concepts
+---
+title: "Core concepts"
+description: "Understand civil time, calendar views, immutability and return types."
+---
+# Core concepts
 
-Daynum keeps five ideas in play. Understanding them up front makes every other page obvious.
+## CivilDateTime and JDN
 
-## CivilDateTime is wall-clock time
+`CivilDateTime` is an immutable value with three public readonly properties: integer `jdn` (Julian Day Number), integer `secondsOfDay` (0–86399) and nullable string `tzLabel`. Here JDN identifies a calendar day, not a fractional astronomical timestamp. Time precision is whole seconds; leap seconds and microseconds are not stored.
 
-`CivilDateTime` is a calendar-neutral **wall-clock** date-time: the triple `(JDN, time-of-day, timezone label)`. The label is carried along for formatting and for handing off to `DateTimeImmutable`; Daynum's own arithmetic and comparison never consult it.
+Calendar factories validate their date ranges. The low-level constructor `new CivilDateTime($jdn, $secondsOfDay, $tzLabel)` validates only seconds of day, not the JDN's suitability for every calendar or the timezone name. Use a view's `isInSupportedRange()` before displaying results near boundaries.
 
-So two values with the same date and time but different labels compare equal, even though they are different moments on the UTC timeline:
+## Views
 
-```php
-$a = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'Asia/Tehran');
-$b = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30, 0, 'UTC');
+`gregorian()`, `jalali()`, `hijri()` and `hijriCivil()` select how to interpret the day. They preserve time and timezone label. Each new view defaults to English and Latin digits. Creating a view does not guarantee that its date components can be read: Umm al-Qura conversion can throw when `year()` or `format()` is called.
 
-$a->equals($b);    // true — same wall-clock reading
-```
+`dateTime()` retrieves the core value. `calendar()` retrieves the calendar algorithm. `toArray()` on a view returns named date/time components; it is different from the core [JSON representation](serialization.md).
 
-For timeline-order comparison across timezones, compare `$d->toTimestamp()` values, or convert with `$d->toDateTimeImmutable()`. That is the escape hatch for all real timezone math — see [timezones.md](timezones.md).
+## Immutability and return types
 
-## Julian Day Number (JDN) is the interlingua
-
-Every calendar in Daynum converts to and from the Julian Day Number — the integer count of days since a fixed epoch (noon UT, 1 January 4713 BC Julian). This means converting between any two calendars is as trivial as composing two functions.
-
-```php
-$d = CivilDateTime::fromJalali(1405, 1, 19);
-$d->gregorian()->format('Y-m-d');   // "2026-04-08"
-$d->hijri()->format('j F Y');       // "20 Shawwal 1447"
-```
-
-You never touch JDNs directly in normal use — they live on the `CivilDateTime` as `$d->jdn`, but you read dates through calendar *views*.
-
-## CivilDateTime vs. View
-
-`CivilDateTime` is the immutable value. A **view** (`GregorianView`, `JalaliView`, `HijriUmmAlQuraView`, `HijriCivilView`) pairs that `CivilDateTime` with a specific calendar system and locale.
+`withLocale()` and `withDigits()` return a new view of the same type. Date arithmetic, `with()`, and boundary methods on views return `CivilDateTime`. Re-enter the desired view to continue calendar operations or formatting, and reapply locale/digits when needed. The original objects remain unchanged.
 
 ```php
-$d = CivilDateTime::fromGregorian(2026, 4, 8);     // just a CivilDateTime
+<?php
+require 'vendor/autoload.php';
 
-$d->gregorian()->year();                      // 2026 — entered a view
-$d->jalali()->year();                         // 1405 — different view, same CivilDateTime
-$d->jalali()->format('l j F Y');              // "Wednesday 19 Farvardin 1405"
+use Eram\Daynum\CivilDateTime;
+
+$d = CivilDateTime::fromJalali(1405, 1, 19, 14, 30);
+$view = $d->jalali()->withLocale('fa')->withDigits('persian');
+$next = $view->addMonths(1);
+echo get_class($next), "\n";
+echo $view->format('Y/m/d'), "\n";
+echo $next->jalali()->format('Y/m/d H:i'), "\n";
+echo $next->jalali()->withLocale('fa')->withDigits('persian')->format('Y/m/d'), "\n";
 ```
 
-**Arithmetic on a view returns a `CivilDateTime`, not another view.** To format the result, re-enter a view:
-
-```php
-$next = $d->jalali()->addMonths(1);   // CivilDateTime
-$next->jalali()->format('Y/m/d');     // re-enter Jalali view to format
+```text
+Eram\Daynum\CivilDateTime
+۱۴۰۵/۰۱/۱۹
+1405/02/19 14:30
+۱۴۰۵/۰۲/۱۹
 ```
 
-This shape is deliberate: the arithmetic is calendar-specific (month-clamping differs per calendar), but the result is calendar-neutral until you ask for a specific view again.
+`CivilDateTime` comparisons ignore the timezone label. Two equal wall-clock readings can represent different moments. Read [timezones](timezones.md) before using these values for event ordering or durations.
 
-## Immutability
+## Scope: what v1 does and doesn't ship
 
-Every value type in Daynum is a `final` class with `readonly` properties. Methods that appear to mutate — `addDays`, `subMonths`, `withLocale`, `withDigits`, `withTzLabel` — always return a new instance.
-
-```php
-$a = CivilDateTime::fromJalali(1405, 1, 19);
-$b = $a->jalali()->addDays(7);        // $a is unchanged
-$a === $b;                             // false
-```
-
-You can safely share a `CivilDateTime` across threads, caches, or call sites without worrying about aliasing.
-
-## Design decisions
-
-| | |
-|---|---|
-| **License** | MIT |
-| **PHP** | `>=8.1` — stays on the shared-hosting baseline |
-| **Runtime deps** | Zero. `ext-intl` is only used by the fixture generators, never by library code |
-| **Immutability** | Every value type is a `final` class with `readonly` properties |
-| **API naming** | Carbon / morilog style (`addDays`, `subMonths`, `lessThan`, `format('Y/m/d')`) — the same idioms the migration audience already types by reflex |
-| **Format tokens** | PHP `date()` syntax (`Y`, `m`, `d`, `F`, `l`, `H`, `i`, `s`, …), NOT ICU patterns |
-| **Month indexing** | **1-based** (`January = 1`), explicitly rejecting ICU's 0-based trap |
-| **Day of week** | `dayOfWeek()` is PHP's Sunday=0..Saturday=6; `dayOfWeekIso()` is ISO Monday=1..Sunday=7 |
-| **Proleptic Gregorian** | Year 0 exists, negative years permitted, no Oct 1582 cutover |
-| **Jalali algorithm** | 33-year Birashk cycle (ported from `jalaali-js`/`morilog`), supported range **1–3177 AP** |
-| **Hijri algorithms** | Saudi Umm al-Qura (KACST table, bundled from ICU) + tabular `islamic-civil` (Reingold–Dershowitz year-16 leap variant). UAQ throws on out-of-range; civil works for AH 1–9666. |
-| **Correctness strategy** | Differential testing against ICU on 220,000+ dates per calendar, pre-committed as gzipped JSONL so the conformance suite runs without `ext-intl` |
-
-## Scope: what's not shipped in v1
-
-The [README](../../README.md) covers the "Daynum is / isn't" framing. Beyond that headline list, the following are explicitly out of scope for v1:
-
-- Observational Hijri (`islamic`), `islamic-tbla` (Thursday-epoch), `islamic-rgsa`
-- Arabic Jalali output — ICU's Arabic transliterations of Persian month names are low quality, so Arabic + Jalali throws on `F`/`M` tokens. Use the Persian locale instead; it renders in the same Perso-Arabic script
-- Hebrew, Buddhist, Japanese, Indian, Coptic, Ethiopic — post-v1 milestones, each with its own ICU oracle
-- Sub-second precision, leap seconds, Julian/Gregorian cutover
-- Relative date parsing ("next Monday", "+2 weeks")
-- A framework bridge — a separate `daynum/laravel` package can ship post-v1 if demand exists
-
-## See also
-
-- [getting-started.md](getting-started.md) — install and run the first example
-- [timezones.md](timezones.md) — the escape hatch and when to use it
-- [arithmetic.md](arithmetic.md) — clamping, cross-calendar diffs, boundary behavior
+The current beta provides the four documented calendars and seven built-in locales. It does not provide subsecond storage, relative-date phrase parsing, holiday calendars or an ORM integration. See [limits and test scope](algorithms-and-attribution.md#limits); future calendars are not current API promises.

@@ -1,254 +1,83 @@
+---
+title: "Arithmetic"
+description: "Add calendar units, compare values and find weeks and boundaries."
+---
 # Arithmetic
-
-Daynum's date arithmetic is calendar-aware, immutable, and returns `CivilDateTime` — not views. Month arithmetic clamps; year arithmetic clamps; diffs are signed and calendar-specific.
 
 ## Arithmetic returns `CivilDateTime`, not view
 
-Since `CivilDateTime` is calendar-neutral, every arithmetic method returns a new `CivilDateTime`. To format or inspect the result, re-enter a calendar view:
-
-```php
-$next = $d->jalali()->addMonths(1);   // CivilDateTime
-$next->jalali()->format('Y/m/d');     // re-enter Jalali view
-```
-
-This shape is deliberate: the arithmetic itself is calendar-specific (a "month" means different things in different calendars), but the result is calendar-agnostic.
-
-## Available operations
-
-```php
-$view = $d->jalali();
-
-// Day arithmetic — trivially calendar-neutral
-$view->addDays(7);
-$view->subDays(7);
-
-// Month arithmetic — calendar-aware, clamps end-of-month
-$view->addMonths(3);
-$view->subMonths(3);
-
-// Year arithmetic — calendar-aware, clamps end-of-month
-$view->addYears(1);
-$view->subYears(1);
-
-// Boundary snapping — calendar-aware
-$view->startOfMonth();
-$view->endOfMonth();
-$view->startOfYear();
-$view->endOfYear();
-
-// Week boundaries — locale default, or explicit
-$view->startOfWeek();                                     // the view locale's first day
-$view->startOfWeek(\Eram\Daynum\WeekDay::Saturday);       // Saturday start
-$view->endOfWeek(\Eram\Daynum\WeekDay::Saturday);
-```
-
-## Time-of-day arithmetic
-
-Seconds, minutes, hours, days and weeks don't depend on the calendar, so they live on `CivilDateTime` itself:
-
-```php
-$d = CivilDateTime::fromJalali(1405, 1, 19, 22, 15, 0, 'Asia/Tehran');
-
-$d->addHours(3);        // 1405/01/20 01:15 — rolls over midnight
-$d->subMinutes(90);
-$d->addSeconds(30);
-$d->addWeeks(2);
-$d->addDays(1);         // same as $d->jalali()->addDays(1)
-
-$d->startOfDay();       // 00:00:00, same day
-$d->endOfDay();         // 23:59:59, same day
-```
-
-This is **wall-clock** arithmetic: it moves the reading on the clock face and ignores the timezone. On a night when the clocks spring forward, `01:30 + 1 hour` is still `02:30`, a time that doesn't exist in that zone. When you need exact elapsed time, go through a timestamp:
-
-```php
-$exact = CivilDateTime::fromTimestamp($d->toTimestamp() + 3600, $d->tzLabel ?? 'UTC');
-```
-
-See [timezones.md](timezones.md#doing-timezone-math).
-
-## Changing one part: `with()`
-
-`with()` replaces some parts of the date in the view's calendar and keeps the rest. Use named arguments:
-
-```php
-$d = CivilDateTime::fromJalali(1405, 1, 19, 14, 30, 0);
-
-$d->jalali()->with(day: 1);                        // 1405/01/01 14:30 — first of the month
-$d->jalali()->with(month: 7, day: 1);              // 1405/07/01 14:30 — 1 Mehr
-$d->jalali()->with(hour: 9, minute: 0, second: 0); // 1405/01/19 09:00
-$d->gregorian()->with(year: 2027);                 // same Gregorian day next year
-```
-
-Unlike `addMonths()`, `with()` does **not** clamp: `with(month: 7)` on Shahrivar 31 throws `InvalidDateException`, because Mehr has 30 days. Set the day too, or use `addMonths()` if you want clamping.
-
-## Quarters
-
-```php
-$view->quarter();          // 1–4; months 1–3 are quarter 1
-$view->startOfQuarter();   // first day of the quarter
-$view->endOfQuarter();     // last day of the quarter
-```
-
-Quarters follow the view's calendar, so `$d->jalali()->quarter()` is the Jalali quarter. In Jalali, quarters are the seasons — see [calendars/jalali.md](calendars/jalali.md#seasons).
+Use the calendar view for month/year operations: `$d->jalali()->addMonths(1)` counts a Jalali month. Every date-changing view method returns `CivilDateTime`, preserves the timezone label, and leaves the original untouched. Re-enter a view before calling another calendar method or `format()`.
 
 ## Month arithmetic clamps the day
 
-When the target month doesn't have the source day, the day clamps to the target month's last day. This matches Carbon, `java.time`, and most mainstream date libraries:
+`addMonths()`, `subMonths()`, `addYears()` and `subYears()` clamp a day that does not exist in the destination month to its last day. That makes addition and subtraction non-inverse at month ends. A leap-day year shift clamps too.
 
 ```php
-CivilDateTime::fromGregorian(2026, 1, 31)->gregorian()->addMonths(1);
-// → Feb 28, 2026 (not Feb 31, not an error)
+<?php
+require 'vendor/autoload.php';
 
-CivilDateTime::fromJalali(1405, 6, 31)->jalali()->addMonths(1);
-// → Mehr 30, 1405 (Shahrivar is 31 days, Mehr is 30)
+use Eram\Daynum\CivilDateTime;
+
+$d = CivilDateTime::fromGregorian(2026, 1, 31, 14, 30);
+$next = $d->gregorian()->addMonths(1);
+echo $next->gregorian()->format('Y-m-d H:i'), "\n";
+echo $next->gregorian()->subMonths(1)->gregorian()->format('Y-m-d'), "\n";
+echo $next->gregorian()->diffInMonths($d), "\n";
+echo $d->gregorian()->endOfMonth()->endOfDay()->gregorian()->format('Y-m-d H:i:s'), "\n";
 ```
 
-Year arithmetic clamps similarly — `2024-02-29 + 1 year` is `2025-02-28`, because 2025 isn't a leap year.
+```text
+2026-02-28 14:30
+2026-01-28
+0
+2026-01-31 23:59:59
+```
+
+## Changing one part: `with()`
+
+A view's `with(year:, month:, day:, hour:, minute:, second:)` keeps omitted/null components and validates the result. It does not clamp: January 31 with `month: 2` throws unless a valid day is supplied too. On the core value, `withTime()` replaces all three time components; `withJdn()` changes the day directly.
+
+## Time-of-day arithmetic
+
+The core has `add/subSeconds`, `add/subMinutes`, `add/subHours`, `add/subDays` and `add/subWeeks`; all require an integer amount, and negative amounts reverse direction. These shift wall-clock fields and ignore DST. A day is always 86400 wall-clock seconds and a week seven days. Views also have `addDays()`/`subDays()`, equivalent to the core methods. For elapsed hours use [timestamps](timezones.md#doing-timezone-math).
 
 ## Weeks
 
+`startOfWeek()` and `endOfWeek()` use the locale's first day, or an explicit `WeekDay`/ISO integer 1–7. The argument to `endOfWeek()` is the week's **start**, not its end. Both preserve time of day. `weekDay()` returns the enum, `dayOfWeek()` uses Sunday=0, and `dayOfWeekIso()` uses Monday=1. Weekend flags follow [locale rules](localization.md).
+
 ```php
+<?php
+require 'vendor/autoload.php';
+
+use Eram\Daynum\CivilDateTime;
 use Eram\Daynum\WeekDay;
 
-$d->jalali()->startOfWeek();                    // Monday — the default `en` locale
-$d->jalali()->withLocale('fa')->startOfWeek();  // Saturday — Iranian week
-$d->hijri()->withLocale('ar')->startOfWeek();   // Sunday — Saudi week
-
-$view->startOfWeek(WeekDay::Saturday);  // explicit start, any locale
-$view->endOfWeek(WeekDay::Saturday);    // 6 days after startOfWeek(Saturday)
+$v = CivilDateTime::fromGregorian(2026, 4, 8, 14, 30)->jalali()->withLocale('fa');
+echo $v->startOfWeek()->gregorian()->format('Y-m-d H:i'), "\n";
+echo $v->startOfWeek(WeekDay::Monday)->gregorian()->format('Y-m-d'), "\n";
+echo CivilDateTime::fromGregorian(2024, 12, 30)->gregorian()->format('o-\\WW'), "\n";
 ```
 
-With no argument, the week starts on the view locale's first day: `en` Monday (ISO 8601), `fa` Saturday, `ar` Sunday. `WeekDay` is an enum with `Monday=1 … Sunday=7`; you can also pass an `int` in `[1, 7]`. ISO `weekOfYear()` always uses Monday weeks regardless of locale.
-
-### Weekends
-
-```php
-$view->weekDay();     // WeekDay::Friday
-$view->isWeekend();   // the view locale's weekend
-$view->isWeekday();
+```text
+2026-04-04 14:30
+2026-04-06
+2025-W01
 ```
 
-| Locale | First day | Weekend |
-|---|---|---|
-| `en` | Monday | Saturday, Sunday |
-| `fa` | Saturday | Friday |
-| `ar` | Sunday | Friday, Saturday |
+`weekOfYear()`/`weekBasedYear()` and `W`/`o` always use Monday/Thursday week rules in the view's own calendar, independently of locale. Use a Gregorian view for ISO Gregorian week identifiers. At a supported-range edge, a Thursday or week-based year outside the range can cause `WeekAtBoundaryException`.
+
+## Quarters and boundaries
+
+`quarter()` is 1–4. `startOfMonth()`, `endOfMonth()`, `startOfYear()`, `endOfYear()`, `startOfQuarter()` and `endOfQuarter()` select calendar dates and preserve time. Call `startOfDay()` or `endOfDay()` on the returned core when you need `00:00:00` or `23:59:59`. For database queries, a half-open interval from the start to the next start avoids second-precision end-point assumptions; see [cookbook](cookbook.md).
 
 ## Diffs
 
-### `diffInDays` — on `CivilDateTime`
-
-Signed integer days, `this - other`:
-
-```php
-$a = CivilDateTime::fromGregorian(2026, 4, 10);
-$b = CivilDateTime::fromGregorian(2026, 4, 8);
-$a->diffInDays($b);    //  2
-$b->diffInDays($a);    // -2
-```
-
-`diffInDays` lives on `CivilDateTime` because a "day" is calendar-neutral — it's just the JDN difference. It counts calendar days and ignores the time of day: 23:00 → 01:00 the next morning is 1 day.
-
-### `diffInHours` / `diffInMinutes` / `diffInSeconds` — on `CivilDateTime`
-
-Signed wall-clock differences, truncated toward zero:
-
-```php
-$a = CivilDateTime::fromGregorian(2026, 4, 9, 1, 0, 0);
-$b = CivilDateTime::fromGregorian(2026, 4, 8, 22, 30, 30);
-$a->diffInSeconds($b);   //  8970
-$a->diffInMinutes($b);   //   149
-$a->diffInHours($b);     //     2
-$b->diffInHours($a);     //    -2
-```
-
-Like the arithmetic above, these ignore DST. For exact elapsed seconds, subtract timestamps: `$a->toTimestamp() - $b->toTimestamp()`.
-
-### `diffInMonths` / `diffInYears` — on the view
-
-Calendar-aware and signed. A month (or year) is not counted until the same day-of-month is reached in the trailing direction:
-
-```php
-$a = CivilDateTime::fromGregorian(2026, 4, 15);
-$b = CivilDateTime::fromGregorian(2026, 3, 14);
-$a->gregorian()->diffInMonths($b);   // 1  (day-of-month was reached)
-
-$c = CivilDateTime::fromGregorian(2026, 3, 16);
-$a->gregorian()->diffInMonths($c);   // 0  (still in same "month" from $c's POV)
-```
-
-The same logic applies to `diffInYears` — counting requires both month and day-of-month to be reached.
-
-Because `addMonths` clamps and `diffInMonths` waits for the day-of-month, the two are not always inverse at month ends:
-
-```php
-$jan31 = CivilDateTime::fromGregorian(2026, 1, 31);
-$feb28 = $jan31->gregorian()->addMonths(1);    // Feb 28 (clamped)
-$feb28->gregorian()->diffInMonths($jan31);      // 0 — day 28 hasn't reached day 31
-```
-
-For days 1–28 they always round-trip: `$v->addMonths($n)` diffed back against `$v` returns `$n`.
-
-Different calendars can give different answers for the same `CivilDateTime` pair:
-
-```php
-$a->jalali()->diffInMonths($b);      // may differ from the Gregorian count
-```
-
-## UAQ boundary crossing via arithmetic
-
-Arithmetic on a UAQ view produces a calendar-neutral `CivilDateTime`. Viewing the result in Hijri Umm al-Qura may throw if the new date is outside the table range (AH 1300–1600). Use `hijriCivil()` as a fallback:
-
-```php
-use Eram\Daynum\Exception\UmmAlQuraOutOfRangeException;
-
-$d = CivilDateTime::fromHijri(1600, 12, 29);     // near table edge
-$result = $d->hijri()->addDays(100);        // returns CivilDateTime (no error)
-
-$result->hijriCivil()->year();              // works — civil has no range limit
-
-try {
-    $result->hijri()->year();
-} catch (UmmAlQuraOutOfRangeException) {
-    // arithmetic moved us out of the bundled table
-}
-```
-
-See [calendars/hijri-umm-al-qura.md](calendars/hijri-umm-al-qura.md).
-
-## Supported-range checks
-
-```php
-$view->isInSupportedRange();    // bool
-```
-
-Use this when building queries that could reach a calendar's edge. If an arithmetic chain could push you into a gray zone, check before reading components.
+Differences are signed **this minus other**. Core `diffInDays()` subtracts JDNs and ignores time; seconds/minutes/hours use wall-clock readings, with minutes/hours truncated toward zero. View `diffInMonths()`/`diffInYears()` count whole calendar units using the day of month, ignoring time of day. A clamped February 28 is not a whole month after January 31 by that rule, as shown above. [Relative time](localization.md#relative-time) additionally checks the time of day.
 
 ## Comparison
 
-```php
-$a->equals($b);
-$a->lessThan($b);
-$a->lessThanOrEqual($b);
-$a->greaterThan($b);
-$a->greaterThanOrEqual($b);
+`equals()`, `lessThan()`, `greaterThan()`, `lessThanOrEqual()` and `greaterThanOrEqual()` compare JDN and seconds, ignoring timezone labels. `CivilDateTime::compare()` is a `usort` callback; `min()`/`max()` require at least one value and retain the first on a tie. `between($a, $b, $inclusive = true)` accepts bounds in either order; `isSameDay()` compares only JDN. Use timestamps to compare moments across zones.
 
-$a->between($lo, $hi);                    // inclusive; bounds in either order
-$a->between($lo, $hi, inclusive: false);
-$a->isSameDay($b);                        // same calendar day, any time
+## UAQ boundary crossing via arithmetic
 
-usort($dates, CivilDateTime::compare(...));   // sort ascending
-CivilDateTime::min($a, $b, $c);               // earliest
-CivilDateTime::max($a, $b, $c);               // latest
-```
-
-All of these are on `CivilDateTime` — not calendar-specific — because ordering only cares about the JDN and the time-of-day, not which calendar you happened to enter.
-
-Remember: comparison is wall-clock, not UTC. Two `CivilDateTime` objects with the same JDN/time but different `tzLabel` values are `equals()` even though they represent different physical moments. See [concepts.md](concepts.md#civildatetime-is-wall-clock-time).
-
-## See also
-
-- [concepts.md](concepts.md) — the CivilDateTime-vs-view split that makes this work
-- [calendars/hijri-umm-al-qura.md](calendars/hijri-umm-al-qura.md) — boundary handling
-- [cookbook.md](cookbook.md#add-months-at-the-end-of-month) — end-of-month clamping worked example
+Day/week shifts work on JDN and can leave any supported calendar range. The core constructor does not enforce a calendar range. Check `isInSupportedRange()` on the target view before reading it. Umm al-Qura month/year shifts need table data and can throw during arithmetic itself. See the [explicit boundary example](calendars/hijri-umm-al-qura.md#uaq-boundary-crossing-via-arithmetic).

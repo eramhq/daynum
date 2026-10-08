@@ -1,130 +1,37 @@
-# FAQ
+---
+title: "Frequently asked questions"
+description: "Resolve common surprises about dates, digits, parsing and timezones."
+---
+# Frequently asked questions
 
-Surprising-but-intentional decisions, gotchas, and the reasoning behind them.
+## Why are Jalali dates English by default?
 
-## Why is `CivilDateTime` wall-clock time, not a UTC moment?
+Calendar and locale are independent. Use `withLocale('fa')` for names and `withDigits('persian')` for digits. Each newly selected view starts with `en`/`latn`; see [localization](localization.md).
 
-Daynum is a multi-calendar library. Its currency is **wall-clock dates**: "Farvardin 19, 1405" or "21 Shawwal 1447". These are civil concepts — they don't refer to points on the UTC timeline until you pick a timezone.
+## Why can't I format the result of addMonths directly?
 
-If `CivilDateTime` were a UTC moment, then every calendar operation would need to resolve a timezone first, and every comparison would need a DST table. That's exactly what `DateTimeImmutable` already does, and Daynum has no business re-implementing it.
+It returns `CivilDateTime`. Select `jalali()` (or another view) again before `format()`. See [return types](concepts.md#immutability-and-return-types).
 
-Instead, `CivilDateTime` stores `(JDN, time-of-day, timezone label)`. Two `CivilDateTime` values with the same JDN and time — regardless of stored zone — compare equal and format to the same string. When you need physical-time math, escape to `DateTimeImmutable` with `$d->toDateTimeImmutable()`. See [concepts.md](concepts.md#civildatetime-is-wall-clock-time).
+## Why does endOfMonth keep the hour?
 
-## Why isn't `equals()` timezone-aware?
+Calendar boundaries choose a day. Use `endOfMonth()->endOfDay()` for 23:59:59, or a half-open range for database queries. See [arithmetic](arithmetic.md).
 
-Because the whole type is civil. Making `equals()` timezone-aware would create an asymmetry: `format()` ignores the zone, `equals()` respects it, and you'd get bugs where two equal displays compare unequal.
+## Does changing the timezone label convert the time?
 
-If you want physical-time comparison, compare timestamps:
+No. It changes the interpretation of the same wall-clock fields. For the same instant in another zone, convert through timestamps or native PHP. [Timezones](timezones.md) has executable examples.
 
-```php
-$a->toTimestamp() === $b->toTimestamp();
-```
+## Why does an invalid date return null in one API and throw in another?
 
-## Why no relative date parsing ("next Monday", "+2 weeks")?
+`tryFrom…()` and `tryParseExact()` are nullable alternatives to throwing factories/parsers. They are not catch-all wrappers for configuration errors. See [errors](exceptions.md).
 
-Two reasons:
+## Can I parse names or relative phrases?
 
-1. **Ambiguity.** What does "next Monday" mean on a Monday? Every library answers differently, and the answer most users expect depends on region and context.
-2. **Scope.** Daynum is a multi-calendar library, not a natural-language date parser. Supporting relative dates would force us to ship different expressions per locale, which is a rabbit hole.
+Month and weekday names are supported with an explicit parse locale. Relative phrases such as “next Monday” are not. See [parsing](parsing.md), including the changes introduced in beta.4.
 
-If you need it, use PHP's `strtotime()` or the `DateTimeImmutable` constructor, then import the result:
+## Is civil Hijri an unlimited fallback?
 
-```php
-$d = CivilDateTime::fromDateTime(new DateTimeImmutable('next Monday'));
-```
+No. It supports construction in AH 1–9666 and uses a different calendar model from Umm al-Qura. Select and label that model explicitly; see [calendar choice](overview.md#choose-a-calendar).
 
-## Why no Arabic Jalali month names?
+## Does Daynum replace Carbon or morilog/jalali everywhere?
 
-ICU's Arabic transliterations of Persian month names are low-quality phonetic approximations (e.g., `فرفردن` for Farvardin) that no modern Arabic-speaking audience actually reads. Shipping them would be shipping bad data.
-
-The Arabic locale intentionally omits Jalali month tables, so `$d->jalali()->withLocale('ar')->format('F')` throws. If you're rendering Jalali to an Arabic-script audience, use `withLocale('fa')` — Persian month names render in the same Perso-Arabic script and are universally recognized.
-
-See [localization.md](localization.md#the-arabic--jalali-limitation).
-
-## Why Birashk, not Borkowski (ICU's Persian calendar)?
-
-Daynum prioritizes compatibility with the dominant PHP/JS Jalali ecosystem — `morilog/jalali`, `jalaali-js`, `date-fns-jalali` — over strict ICU conformance. Every migrating developer already tests against Birashk output; switching to Borkowski would break those tests without improving anything for the target audience.
-
-Across the 1700–2300 Gregorian window, Birashk and ICU's `persian` agree on 99.5% of days. The 0.5% where they disagree forms four contiguous windows, documented in [calendars/jalali.md](calendars/jalali.md#jalali-and-icu-a-note-on-correctness).
-
-## Why does Hijri Umm al-Qura throw instead of returning a civil fallback?
-
-Outside the bundled table range (AH 1300–1600), ICU silently falls back to the arithmetic civil calendar. That means an application displaying AH 1250 through ICU gets `islamic-civil` output mislabeled as UAQ — exactly the kind of quiet credibility hazard Daynum exists to prevent.
-
-So Daynum throws a loud `UmmAlQuraOutOfRangeException` and directs you to `fromHijriCivil()`. The user decides what calendar to fall back to — Daynum never guesses. See [calendars/hijri-umm-al-qura.md](calendars/hijri-umm-al-qura.md#why-throw-instead-of-silently-falling-back).
-
-## Why do I have to re-enter a view after arithmetic?
-
-Because arithmetic returns `CivilDateTime`, not another view:
-
-```php
-$next = $d->jalali()->addMonths(1);   // CivilDateTime, not JalaliView
-$next->jalali()->format('Y/m/d');     // re-enter Jalali view
-```
-
-`CivilDateTime` is calendar-neutral. If `addMonths` returned a view, we'd need one of:
-
-- Glue the last-used calendar onto the `CivilDateTime` (breaks calendar-neutrality, bad for storage)
-- Make the arithmetic mutate the view in place (not immutable anymore)
-- Return a view with an implicit "current" calendar (confusing when you mix calendars)
-
-Re-entering the view is one extra method call and keeps the model clean. See [concepts.md](concepts.md#civildatetime-vs-view).
-
-## Why don't you ship `islamic-tbla` or observational `islamic`?
-
-- `islamic-tbla` is the same arithmetic calendar as `islamic-civil` but with a Thursday epoch (JDN 1948439) instead of Friday (JDN 1948440). A rare regional variant. Could ship later if users ask.
-- Observational `islamic` depends on astronomical new-moon visibility, which is **non-deterministic** — different observers in different locations see the new moon on different nights. Pretending to compute it from a closed-form formula would be a lie, so Daynum will never ship it.
-
-See [calendars/hijri-civil.md](calendars/hijri-civil.md#why-not-other-islamic-variants).
-
-## How locale-aware is parsing?
-
-`parseExact` matches month and weekday names (`F M l D`) in **one** locale you name — it does not guess the language. Within that locale it forgives the differences that come from keyboards and fonts (Arabic `ي`/`ك` for Persian `ی`/`ک`, a missing ZWNJ or ezafe, Latin letter case) and nothing else: no abbreviations beyond the locale's own short names, no transliterations ("fâr"), no fuzzy matching.
-
-For machine-generated input, numeric tokens (`Y m d`) are still the most robust choice. For free-form input, fall back to `DateTimeImmutable` + `CivilDateTime::fromDateTime()`, then validate.
-
-See [parsing.md](parsing.md#month-and-weekday-names).
-
-## Why does `diffInDays` live on `CivilDateTime` but `diffInMonths` on the view?
-
-A "day" is calendar-neutral — `diffInDays` is just a JDN subtraction. It belongs on `CivilDateTime`.
-
-A "month" is calendar-specific — Jalali months and Gregorian months have different lengths, and the diff in Jalali months between two dates is not the same as the diff in Gregorian months. So `diffInMonths` must live on a view that picks a calendar.
-
-```php
-$a->diffInDays($b);                  // on CivilDateTime
-$a->jalali()->diffInMonths($b);      // on the view
-$a->gregorian()->diffInMonths($b);   // potentially different answer
-```
-
-## Why `1`-based months?
-
-Because 0-based months are the single most common source of off-by-one bugs in date code, and Daynum's audience has been typing `$month = 4` for years. `January = 1`. Always. Explicitly rejecting ICU's 0-based trap is a feature.
-
-## Why no sub-second precision?
-
-- The multi-calendar audience never asks for it.
-- Sub-second math introduces float/int precision choices that distract from the calendar math, which is Daynum's actual job.
-- If you need microseconds, escape to `DateTimeImmutable`.
-
-## Why does `c` always render Gregorian, even from a Jalali view?
-
-`c` is ISO 8601, which is defined in the Gregorian calendar. A Jalali ISO 8601 string would confuse every downstream consumer. The `c` and `r` tokens exist for interchange with other systems — they always use Gregorian, regardless of the calling view. See [formatting.md](formatting.md#composite-c-token).
-
-## Is Daynum a Carbon replacement?
-
-No. Carbon covers Gregorian + rich timezone arithmetic + relative parsing; Daynum covers multi-calendar + correctness + a small deterministic API. They solve different problems. You can use both in the same project — `CivilDateTime::fromDateTime(Carbon::parse(...))` is a clean bridge.
-
-Daynum is a replacement for `morilog/jalali`.
-
-## Why no ORM integration / Laravel package?
-
-It's on the post-v1 roadmap. Daynum v1 keeps `daynum/laravel` out of scope on purpose — the core library should be tight, tested, and tiny before we ship integrations. If demand appears, a separate `daynum/laravel` package can land without forcing a dependency on Illuminate into the core.
-
-Framework integration code stubs are in [cookbook.md](cookbook.md#use-daynum-in-a-laravel-requestresponse).
-
-## See also
-
-- [concepts.md](concepts.md) — the model behind every "why" answer above
-- [cookbook.md](cookbook.md) — how to actually do things
-- [migration-from-morilog-jalali.md](migration-from-morilog-jalali.md)
+No. morilog v3 is also immutable; Carbon and native PHP have useful timezone and application APIs. Choose by task and test your call sites. See the sourced [migration guide](migration-from-morilog-jalali.md).
